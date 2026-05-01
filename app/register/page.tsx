@@ -465,21 +465,26 @@ const questions: Record<Level, string[]> = {
   ],
 };
 
-const steps = ["Course", "Value", "Centre", "Details", "Verify", "Upload", "Action"];
+const steps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Action"];
+
+const intermediateQuestionKeys = {
+  priorExposure: "Do you have basic knowledge or prior exposure to this trade?",
+  completedBasicCourse: "Have you completed a basic course before?",
+  experienceBrief: "Describe your experience briefly.",
+  screeningAvailability: "Are you available for screening?",
+};
 
 const advancedQuestionKeys = {
   priorTraining: "Do you have prior training or demonstrable experience?",
   previousCertificate: "Do you have a previous certificate?",
   practicalExperience: "Describe your practical experience.",
   assessmentAvailability: "Are you available for assessment/interview?",
-  priorTrainingOther: "Prior training or experience details",
-  previousCertificateOther: "Previous certificate response details",
   certificateType: "Previous certificate type",
   certificateTypeOther: "Previous certificate type details",
-  assessmentAvailabilityOther: "Assessment/interview availability details",
 };
 
-const yesNoOtherOptions = ["Yes", "No", "Other, please describe"];
+const yesNoOptions = ["Yes", "No"];
+const availabilityOptions = ["Yes", "No", "Maybe"];
 const certificateTypeOptions = [
   "City & Guilds",
   "Trade Test",
@@ -554,12 +559,6 @@ export default function RegisterPage() {
       });
 
       if (selectedLevel === "Advanced") {
-        if (answers[advancedQuestionKeys.priorTraining] === "Other, please describe" && !answers[advancedQuestionKeys.priorTrainingOther]?.trim()) {
-          nextErrors[advancedQuestionKeys.priorTrainingOther] = "Please describe your prior training or experience.";
-        }
-        if (answers[advancedQuestionKeys.previousCertificate] === "Other, please describe" && !answers[advancedQuestionKeys.previousCertificateOther]?.trim()) {
-          nextErrors[advancedQuestionKeys.previousCertificateOther] = "Please describe your certificate status.";
-        }
         if (answers[advancedQuestionKeys.previousCertificate] === "Yes") {
           if (!answers[advancedQuestionKeys.certificateType]?.trim()) {
             nextErrors[advancedQuestionKeys.certificateType] = "Please choose the certification type.";
@@ -567,9 +566,6 @@ export default function RegisterPage() {
           if (answers[advancedQuestionKeys.certificateType] === "Other, please describe" && !answers[advancedQuestionKeys.certificateTypeOther]?.trim()) {
             nextErrors[advancedQuestionKeys.certificateTypeOther] = "Please describe the certification type.";
           }
-        }
-        if (answers[advancedQuestionKeys.assessmentAvailability] === "Other, please describe" && !answers[advancedQuestionKeys.assessmentAvailabilityOther]?.trim()) {
-          nextErrors[advancedQuestionKeys.assessmentAvailabilityOther] = "Please describe your assessment/interview availability.";
         }
       }
     }
@@ -621,7 +617,7 @@ export default function RegisterPage() {
               MPVTL Application Form
             </p>
             <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <h2 className="max-w-3xl text-[1.75rem] font-semibold leading-tight sm:text-[2.125rem]">
+              <h2 className="max-w-3xl text-[1.5rem] font-semibold leading-tight sm:text-[2.125rem]">
                 Select your course and complete your registration details.
               </h2>
               <p className="max-w-sm text-sm leading-6 text-slate-300">
@@ -655,6 +651,8 @@ export default function RegisterPage() {
                         filteredCourses={filteredCourses}
                         selectedCourseId={selectedCourseId}
                         setSelectedCourseId={selectCourse}
+                        selectedCourse={selectedCourse}
+                        onContinue={nextStep}
                         error={errors.course}
                       />
                     )}
@@ -743,11 +741,11 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
         <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-brand-100 blur-3xl" />
 
         <div className="relative">
-          <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-navy-950">
-            <GraduationCap size={18} className="text-brand-700" />
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
+            <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
             MPVTL Short Course Registration
           </div>
-          <h1 className="mt-6 max-w-3xl text-[2.125rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
+          <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
             Begin Your Professional Skills Journey with MPVTL
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
@@ -804,7 +802,7 @@ function Stepper({ currentStep }: { currentStep: number }) {
             return (
               <div key={label} className="min-w-0 text-center" aria-label={`Step ${index + 1}: ${label}`}>
                 <span
-                  className={`mx-auto grid h-9 w-9 place-items-center rounded-full text-sm font-bold transition sm:h-10 sm:w-10 ${
+                  className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition sm:h-10 sm:w-10 sm:text-sm ${
                     active
                       ? "bg-brand-700 text-white shadow-redGlow"
                       : done
@@ -869,6 +867,8 @@ function CourseStep(props: {
   filteredCourses: Course[];
   selectedCourseId: string;
   setSelectedCourseId: (value: string) => void;
+  selectedCourse?: Course;
+  onContinue: () => void;
   error?: string;
 }) {
   return (
@@ -898,22 +898,42 @@ function CourseStep(props: {
 
       {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
+      {props.selectedCourse && (
+        <div className="mt-6 flex flex-col gap-4 rounded-3xl border border-brand-100 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+              Selected Course
+            </p>
+            <p className="mt-2 font-bold text-navy-950">{props.selectedCourse.name}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {props.selectedCourse.duration} - {props.selectedCourse.certificate}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={props.onContinue}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600"
+          >
+            Continue
+            <ArrowRight size={17} />
+          </button>
+        </div>
+      )}
+
       <div className="mt-7 grid gap-4 md:grid-cols-2">
         {props.filteredCourses.map((course) => {
           const selected = props.selectedCourseId === course.id;
 
           return (
-            <button
-              type="button"
+            <article
               key={course.id}
-              onClick={() => props.setSelectedCourseId(course.id)}
               className={`rounded-3xl border p-5 text-left transition hover:-translate-y-1 hover:shadow-lg ${
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-base font-bold text-navy-950">{course.name}</h3>
-                {selected && <CheckCircle2 className="shrink-0 text-brand-700" />}
+                <h3 className="text-sm font-bold text-navy-950 sm:text-base">{course.name}</h3>
+                {selected && <CheckCircle2 className="shrink-0 text-brand-700" size={20} />}
               </div>
               <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide">
                 <span className="rounded-full bg-navy-950 px-3 py-1 text-white">{course.category}</span>
@@ -923,7 +943,27 @@ function CourseStep(props: {
                 <span>{course.duration}</span>
                 <span>{course.certificate}</span>
               </div>
-            </button>
+              <div className="mt-5">
+                {selected ? (
+                  <button
+                    type="button"
+                    onClick={props.onContinue}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-600"
+                  >
+                    Continue
+                    <ArrowRight size={17} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => props.setSelectedCourseId(course.id)}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-navy-900 transition hover:border-brand-500 hover:text-brand-700"
+                  >
+                    Select Course
+                  </button>
+                )}
+              </div>
+            </article>
           );
         })}
       </div>
@@ -940,11 +980,11 @@ function CourseStep(props: {
 function ValueStep({ course }: { course: Course }) {
   return (
     <div>
-      <StepHeader icon={<Sparkles />} title="Course Value" subtitle={course.description} />
+      <StepHeader icon={<Sparkles />} title="Course Description" subtitle={course.description} />
 
       <div className="mt-7 rounded-3xl bg-navy-950 p-6 text-white">
         <p className="text-sm font-bold uppercase tracking-[0.22em] text-brand-200">{course.level} Level</p>
-        <h3 className="mt-3 text-[1.75rem] font-semibold leading-tight">{course.name}</h3>
+        <h3 className="mt-3 text-[1.5rem] font-semibold leading-tight sm:text-[1.75rem]">{course.name}</h3>
         <p className="mt-4 max-w-3xl text-slate-300">{course.value}</p>
       </div>
 
@@ -986,8 +1026,8 @@ function LocationStep(props: {
               }`}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-[1.375rem] font-bold leading-tight text-navy-950">{location.name}</h3>
-                {selected && <CheckCircle2 className="text-brand-700" />}
+                <h3 className="text-lg font-bold leading-tight text-navy-950 sm:text-[1.375rem]">{location.name}</h3>
+                {selected && <CheckCircle2 className="text-brand-700" size={20} />}
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-600">{location.address}</p>
               <div className="mt-5 grid gap-3 text-sm text-slate-700">
@@ -1056,25 +1096,189 @@ function VerificationStep(props: {
   setAnswers: (value: Record<string, string>) => void;
   errors: Record<string, string>;
 }) {
+  const updateAnswer = (key: string, value: string, clearKeys: string[] = []) => {
+    const nextAnswers = { ...props.answers, [key]: value };
+    clearKeys.forEach((clearKey) => {
+      delete nextAnswers[clearKey];
+    });
+    props.setAnswers(nextAnswers);
+  };
+
+  if (props.level === "Intermediate") {
+    return (
+      <div>
+        <StepHeader icon={<ShieldCheck />} title="Intermediate Verification Questions" subtitle="These questions capture screening-ready information in a structured format." />
+
+        <div className="mt-7 grid gap-5">
+          <SelectField
+            label={intermediateQuestionKeys.priorExposure}
+            value={props.answers[intermediateQuestionKeys.priorExposure] ?? ""}
+            onChange={(value) => updateAnswer(intermediateQuestionKeys.priorExposure, value)}
+            options={yesNoOptions}
+            error={props.errors[intermediateQuestionKeys.priorExposure]}
+          />
+          <SelectField
+            label={intermediateQuestionKeys.completedBasicCourse}
+            value={props.answers[intermediateQuestionKeys.completedBasicCourse] ?? ""}
+            onChange={(value) => updateAnswer(intermediateQuestionKeys.completedBasicCourse, value)}
+            options={yesNoOptions}
+            error={props.errors[intermediateQuestionKeys.completedBasicCourse]}
+          />
+          <AnswerTextArea
+            label={intermediateQuestionKeys.experienceBrief}
+            value={props.answers[intermediateQuestionKeys.experienceBrief] ?? ""}
+            onChange={(value) => updateAnswer(intermediateQuestionKeys.experienceBrief, value)}
+            error={props.errors[intermediateQuestionKeys.experienceBrief]}
+          />
+          <SelectField
+            label={intermediateQuestionKeys.screeningAvailability}
+            value={props.answers[intermediateQuestionKeys.screeningAvailability] ?? ""}
+            onChange={(value) => updateAnswer(intermediateQuestionKeys.screeningAvailability, value)}
+            options={availabilityOptions}
+            error={props.errors[intermediateQuestionKeys.screeningAvailability]}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (props.level === "Advanced") {
+    return (
+      <div>
+        <StepHeader icon={<ShieldCheck />} title="Advanced Verification Questions" subtitle="These questions capture screening-ready information in a structured format." />
+
+        <div className="mt-7 grid gap-5">
+          <SelectField
+            label={advancedQuestionKeys.priorTraining}
+            value={props.answers[advancedQuestionKeys.priorTraining] ?? ""}
+            onChange={(value) => updateAnswer(advancedQuestionKeys.priorTraining, value)}
+            options={yesNoOptions}
+            error={props.errors[advancedQuestionKeys.priorTraining]}
+          />
+
+          <SelectField
+            label={advancedQuestionKeys.previousCertificate}
+            value={props.answers[advancedQuestionKeys.previousCertificate] ?? ""}
+            onChange={(value) => updateAnswer(
+              advancedQuestionKeys.previousCertificate,
+              value,
+              [
+                advancedQuestionKeys.certificateType,
+                advancedQuestionKeys.certificateTypeOther,
+              ],
+            )}
+            options={yesNoOptions}
+            error={props.errors[advancedQuestionKeys.previousCertificate]}
+          />
+          {props.answers[advancedQuestionKeys.previousCertificate] === "Yes" && (
+            <SelectField
+              label="Type of certification"
+              value={props.answers[advancedQuestionKeys.certificateType] ?? ""}
+              onChange={(value) => updateAnswer(advancedQuestionKeys.certificateType, value, [advancedQuestionKeys.certificateTypeOther])}
+              options={certificateTypeOptions}
+              error={props.errors[advancedQuestionKeys.certificateType]}
+            />
+          )}
+          {props.answers[advancedQuestionKeys.certificateType] === "Other, please describe" && (
+            <AnswerTextArea
+              label="Please describe the certification type"
+              value={props.answers[advancedQuestionKeys.certificateTypeOther] ?? ""}
+              onChange={(value) => updateAnswer(advancedQuestionKeys.certificateTypeOther, value)}
+              error={props.errors[advancedQuestionKeys.certificateTypeOther]}
+            />
+          )}
+
+          <AnswerTextArea
+            label={advancedQuestionKeys.practicalExperience}
+            value={props.answers[advancedQuestionKeys.practicalExperience] ?? ""}
+            onChange={(value) => updateAnswer(advancedQuestionKeys.practicalExperience, value)}
+            error={props.errors[advancedQuestionKeys.practicalExperience]}
+          />
+
+          <SelectField
+            label={advancedQuestionKeys.assessmentAvailability}
+            value={props.answers[advancedQuestionKeys.assessmentAvailability] ?? ""}
+            onChange={(value) => updateAnswer(advancedQuestionKeys.assessmentAvailability, value)}
+            options={availabilityOptions}
+            error={props.errors[advancedQuestionKeys.assessmentAvailability]}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <StepHeader icon={<ShieldCheck />} title={`${props.level} Verification Questions`} subtitle="These questions adjust to the selected course level." />
 
       <div className="mt-7 grid gap-5">
         {props.questions.map((question) => (
-          <div key={question}>
-            <label className="text-sm font-bold text-navy-950">{question}</label>
-            <textarea
-              value={props.answers[question] ?? ""}
-              onChange={(event) => props.setAnswers({ ...props.answers, [question]: event.target.value })}
-              rows={3}
-              className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
-            />
-            {props.errors[question] && <p className="mt-2 text-sm font-semibold text-brand-700">{props.errors[question]}</p>}
-          </div>
+          <AnswerTextArea
+            key={question}
+            label={question}
+            value={props.answers[question] ?? ""}
+            onChange={(value) => updateAnswer(question, value)}
+            error={props.errors[question]}
+          />
         ))}
       </div>
     </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  error?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-navy-950">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
+      >
+        <option value="">Select an option</option>
+        {options.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+      {error && <span className="mt-2 block text-sm font-semibold text-brand-700">{error}</span>}
+    </label>
+  );
+}
+
+function AnswerTextArea({
+  label,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-navy-950">{label}</span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={3}
+        className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
+      />
+      {error && <span className="mt-2 block text-sm font-semibold text-brand-700">{error}</span>}
+    </label>
   );
 }
 
@@ -1094,8 +1298,8 @@ function EvidenceStep(props: {
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
         {fields.map((field) => (
-          <label key={field} className="group flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center transition hover:border-brand-600 hover:bg-white">
-            <FileUp className="text-brand-700" size={36} />
+          <label key={field} className="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center transition hover:border-brand-600 hover:bg-white sm:min-h-52 sm:p-6">
+            <FileUp className="h-8 w-8 text-brand-700 sm:h-9 sm:w-9" />
             <span className="mt-4 font-bold text-navy-950">{field}</span>
             <span className="mt-2 text-sm text-slate-500">{props.files[field] || "Click to choose a file"}</span>
             <input
@@ -1141,7 +1345,7 @@ function FinalStep(props: {
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-950 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-navy-950 text-white sm:h-12 sm:w-12 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
                 {props.level === "Basic" ? <Award /> : <ShieldCheck />}
               </div>
               <h3 className="mt-5 text-lg font-bold text-navy-950">{action}</h3>
@@ -1167,11 +1371,11 @@ function SuccessScreen() {
         initial={{ scale: 0.4, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 180, damping: 14 }}
-        className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-brand-700 text-white shadow-redGlow"
+        className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-brand-700 text-white shadow-redGlow sm:h-24 sm:w-24 [&_svg]:h-10 [&_svg]:w-10 sm:[&_svg]:h-12 sm:[&_svg]:w-12"
       >
         <CheckCircle2 size={48} />
       </motion.div>
-      <h2 className="mt-8 text-[2.125rem] font-semibold leading-tight text-navy-950">Registration saved successfully.</h2>
+      <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration saved successfully.</h2>
       <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-600">
         Your temporary frontend submission has been saved to localStorage. Backend submission,
         secure uploads, payment, email, and exports are intentionally not connected yet.
@@ -1183,11 +1387,11 @@ function SuccessScreen() {
 function StepHeader({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white sm:h-14 sm:w-14 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
         {icon}
       </div>
       <div>
-        <h3 className="text-[1.75rem] font-semibold leading-tight text-navy-950">{title}</h3>
+        <h3 className="text-[1.5rem] font-semibold leading-tight text-navy-950 sm:text-[1.75rem]">{title}</h3>
         <p className="mt-2 max-w-3xl leading-7 text-slate-600">{subtitle}</p>
       </div>
     </div>
