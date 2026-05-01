@@ -1386,14 +1386,14 @@ function SuccessScreen() {
 
 function StepHeader({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white sm:h-14 sm:w-14 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
-        {icon}
-      </div>
-      <div>
+    <div>
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white sm:h-14 sm:w-14 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
+          {icon}
+        </div>
         <h3 className="text-[1.5rem] font-semibold leading-tight text-navy-950 sm:text-[1.75rem]">{title}</h3>
-        <p className="mt-2 max-w-3xl leading-7 text-slate-600">{subtitle}</p>
       </div>
+      <p className="mt-3 max-w-3xl leading-7 text-slate-600 sm:ml-[4.5rem]">{subtitle}</p>
     </div>
   );
 }
