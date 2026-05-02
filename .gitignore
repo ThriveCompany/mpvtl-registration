@@ -4,3 +4,4 @@ next-dev.log
 next-dev.err.log
 *.log
 .env*
+!.env.example

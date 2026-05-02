@@ -11,7 +11,7 @@ export default function Home() {
           Short Course Registration
         </h1>
         <p className="mt-4 leading-7 text-slate-600">
-          The registration frontend is ready. Continue to the short course form.
+          Take the next step toward practical skills, career confidence, and professional growth with MPVTL.
         </p>
         <Link
           href="/register"

@@ -444,32 +444,17 @@ const courseLocationIds: Record<string, string[]> = {
   "engineering-hse": ["L2000"],
 };
 
-const questions: Record<Level, string[]> = {
-  Basic: [
-    "Can you read and write in English?",
-    "Are you new to this field?",
-    "Why do you want to take this course?",
-    "Are you available for practical training?",
-  ],
-  Intermediate: [
-    "Do you have basic knowledge or prior exposure to this trade?",
-    "Have you completed a basic course before?",
-    "Describe your experience briefly.",
-    "Are you available for screening?",
-  ],
-  Advanced: [
-    "Do you have prior training or demonstrable experience?",
-    "Do you have a previous certificate?",
-    "Describe your practical experience.",
-    "Are you available for assessment/interview?",
-  ],
+const basicQuestionKeys = {
+  readWriteEnglish: "Can you read and write in English?",
+  newToField: "Are you new to this field?",
+  courseReason: "Why do you want to take this course?",
+  courseReasonOther: "Course interest details",
+  practicalAvailability: "Are you available for practical training?",
 };
-
-const steps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Action"];
 
 const intermediateQuestionKeys = {
   priorExposure: "Do you have basic knowledge or prior exposure to this trade?",
-  completedBasicCourse: "Have you completed a basic course before?",
+  completedBasicCourse: "Have you completed a basic course in this field before?",
   experienceBrief: "Describe your experience briefly.",
   screeningAvailability: "Are you available for screening?",
 };
@@ -483,8 +468,40 @@ const advancedQuestionKeys = {
   certificateTypeOther: "Previous certificate type details",
 };
 
+const questions: Record<Level, string[]> = {
+  Basic: [
+    basicQuestionKeys.readWriteEnglish,
+    basicQuestionKeys.newToField,
+    basicQuestionKeys.courseReason,
+    basicQuestionKeys.practicalAvailability,
+  ],
+  Intermediate: [
+    intermediateQuestionKeys.priorExposure,
+    intermediateQuestionKeys.completedBasicCourse,
+    intermediateQuestionKeys.experienceBrief,
+    intermediateQuestionKeys.screeningAvailability,
+  ],
+  Advanced: [
+    advancedQuestionKeys.priorTraining,
+    advancedQuestionKeys.previousCertificate,
+    advancedQuestionKeys.practicalExperience,
+    advancedQuestionKeys.assessmentAvailability,
+  ],
+};
+
+const standardSteps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Action"];
+const basicSteps = ["Course", "Description", "Centre", "Details", "Verify", "Confirm", "Action"];
+
 const yesNoOptions = ["Yes", "No"];
 const availabilityOptions = ["Yes", "No", "Maybe"];
+const courseReasonOptions = [
+  "Start a new skill or career",
+  "Improve my current work",
+  "Start or grow a business",
+  "Prepare for employment",
+  "Build personal confidence",
+  "Other, please describe",
+];
 const certificateTypeOptions = [
   "City & Guilds",
   "Trade Test",
@@ -511,9 +528,14 @@ export default function RegisterPage() {
   });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<Record<string, string>>({});
+  const [basicDeclaration, setBasicDeclaration] = useState("");
+  const [receiveUpdates, setReceiveUpdates] = useState(true);
   const [finalAction, setFinalAction] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
 
   const selectedCourse = courses.find((course) => course.id === selectedCourseId);
   const availableLocations = selectedCourse
@@ -522,6 +544,7 @@ export default function RegisterPage() {
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
   const selectedLevel = selectedCourse?.level ?? "Basic";
   const activeQuestions = questions[selectedLevel];
+  const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -539,7 +562,9 @@ export default function RegisterPage() {
     setSelectedCourseId(courseId);
     setSelectedLocation("");
     setAnswers({});
+    setBasicDeclaration("");
     setFinalAction("");
+    setSubmitError("");
   }
 
   function validateStep(targetStep = step) {
@@ -568,6 +593,15 @@ export default function RegisterPage() {
           }
         }
       }
+
+      if (selectedLevel === "Basic") {
+        if (answers[basicQuestionKeys.courseReason] === "Other, please describe" && !answers[basicQuestionKeys.courseReasonOther]?.trim()) {
+          nextErrors[basicQuestionKeys.courseReasonOther] = "Please describe your reason.";
+        }
+      }
+    }
+    if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
+      nextErrors.basicDeclaration = "Please write your declaration before continuing.";
     }
     if (targetStep >= 6 && !finalAction) nextErrors.finalAction = "Please choose a final action.";
 
@@ -577,18 +611,21 @@ export default function RegisterPage() {
 
   function nextStep() {
     if (!validateStep(step)) return;
-    setStep((current) => Math.min(current + 1, steps.length - 1));
+    if (step === 0) setShowIntro(false);
+    setStep((current) => Math.min(current + 1, activeSteps.length - 1));
     setErrors({});
+    setSubmitError("");
   }
 
   function previousStep() {
     setStep((current) => Math.max(current - 1, 0));
     setErrors({});
+    setSubmitError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!validateStep(6) || !selectedCourse) return;
+    if (isSubmitting || !validateStep(6) || !selectedCourse) return;
 
     const payload = {
       course: selectedCourse,
@@ -596,19 +633,43 @@ export default function RegisterPage() {
       applicant: details,
       verification: answers,
       uploads: files,
+      basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
+      receiveUpdates,
       finalAction,
       submittedAt: new Date().toISOString(),
     };
 
-    // Future phase: connect this payload to backend APIs, secure file storage,
-    // email notifications, Excel/CSV exports, and payment confirmation.
+    // Power Automate receives the registration JSON now. Future phases can add
+    // secure file storage, email workflows, Excel exports, and payment checks.
     localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
-    setSubmitted(true);
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/submit-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => null) as { message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(result?.message || "We could not submit your registration right now.");
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "We could not submit your registration right now. Your details are still saved on this device.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_55%,#eef2f7_100%)] text-slate-900">
-      <IntroCard onRegister={scrollToForm} />
+      <AnimatePresence initial={false}>
+        {showIntro && <IntroCard onRegister={scrollToForm} />}
+      </AnimatePresence>
 
       <section ref={formRef} id="registration-form" className="px-4 pb-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -618,11 +679,8 @@ export default function RegisterPage() {
             </p>
             <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <h2 className="max-w-3xl text-[1.5rem] font-semibold leading-tight sm:text-[2.125rem]">
-                Select your course and complete your registration details.
+                Select your course and complete your registration.
               </h2>
-              <p className="max-w-sm text-sm leading-6 text-slate-300">
-                A guided application flow for short courses, centres, and screening steps.
-              </p>
             </div>
           </div>
 
@@ -630,7 +688,7 @@ export default function RegisterPage() {
             <SuccessScreen />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              <Stepper currentStep={step} />
+              <Stepper currentStep={step} steps={activeSteps} />
 
               <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
                 <AnimatePresence mode="wait">
@@ -677,12 +735,23 @@ export default function RegisterPage() {
                         errors={errors}
                       />
                     )}
-                    {step === 5 && <EvidenceStep files={files} setFiles={setFiles} />}
+                    {step === 5 && selectedLevel === "Basic" && (
+                      <BasicDeclarationStep
+                        declaration={basicDeclaration}
+                        setDeclaration={setBasicDeclaration}
+                        fullName={details.fullName}
+                        courseName={selectedCourse?.name ?? ""}
+                        error={errors.basicDeclaration}
+                      />
+                    )}
+                    {step === 5 && selectedLevel !== "Basic" && <EvidenceStep files={files} setFiles={setFiles} />}
                     {step === 6 && (
                       <FinalStep
                         level={selectedLevel}
                         finalAction={finalAction}
                         setFinalAction={setFinalAction}
+                        receiveUpdates={receiveUpdates}
+                        setReceiveUpdates={setReceiveUpdates}
                         error={errors.finalAction}
                       />
                     )}
@@ -700,7 +769,13 @@ export default function RegisterPage() {
                     Back
                   </button>
 
-                  {step < steps.length - 1 ? (
+                  {submitError && (
+                    <p className="text-sm font-semibold leading-6 text-brand-700 sm:max-w-md">
+                      {submitError}
+                    </p>
+                  )}
+
+                  {step < activeSteps.length - 1 ? (
                     <button
                       type="button"
                       onClick={nextStep}
@@ -712,9 +787,10 @@ export default function RegisterPage() {
                   ) : (
                     <button
                       type="submit"
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600"
+                      disabled={isSubmitting}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Submit Registration
+                      {isSubmitting ? "Submitting..." : "Submit Registration"}
                       <CheckCircle2 size={18} />
                     </button>
                   )}
@@ -730,7 +806,11 @@ export default function RegisterPage() {
 
 function IntroCard({ onRegister }: { onRegister: () => void }) {
   return (
-    <section className="px-4 py-10 sm:px-6 sm:py-16 lg:px-8">
+    <motion.section
+      exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className="px-4 py-10 sm:px-6 sm:py-16 lg:px-8"
+    >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -766,11 +846,11 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
           </motion.button>
         </div>
       </motion.div>
-    </section>
+    </motion.section>
   );
 }
 
-function Stepper({ currentStep }: { currentStep: number }) {
+function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] }) {
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
@@ -904,7 +984,7 @@ function CourseStep(props: {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
               Selected Course
             </p>
-            <p className="mt-2 font-bold text-navy-950">{props.selectedCourse.name}</p>
+            <p className="mt-2 text-[15px] font-bold uppercase text-navy-950 sm:text-[17px]">{props.selectedCourse.name}</p>
             <p className="mt-1 text-sm text-slate-600">
               {props.selectedCourse.duration} - {props.selectedCourse.certificate}
             </p>
@@ -932,10 +1012,10 @@ function CourseStep(props: {
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-sm font-bold text-navy-950 sm:text-base">{course.name}</h3>
+                <h3 className="text-[15px] font-bold uppercase text-navy-950 sm:text-[17px]">{course.name}</h3>
                 {selected && <CheckCircle2 className="shrink-0 text-brand-700" size={20} />}
               </div>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide">
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wide">
                 <span className="rounded-full bg-navy-950 px-3 py-1 text-white">{course.category}</span>
                 <span className="rounded-full border border-brand-100 bg-white px-3 py-1 text-brand-700">{course.level}</span>
               </div>
@@ -984,7 +1064,7 @@ function ValueStep({ course }: { course: Course }) {
 
       <div className="mt-7 rounded-3xl bg-navy-950 p-6 text-white">
         <p className="text-sm font-bold uppercase tracking-[0.22em] text-brand-200">{course.level} Level</p>
-        <h3 className="mt-3 text-[1.5rem] font-semibold leading-tight sm:text-[1.75rem]">{course.name}</h3>
+        <h3 className="mt-3 text-[1.5rem] font-semibold uppercase leading-tight sm:text-[1.75rem]">{course.name}</h3>
         <p className="mt-4 max-w-3xl text-slate-300">{course.value}</p>
       </div>
 
@@ -1103,6 +1183,53 @@ function VerificationStep(props: {
     });
     props.setAnswers(nextAnswers);
   };
+
+  if (props.level === "Basic") {
+    return (
+      <div>
+        <StepHeader icon={<ShieldCheck />} title="Basic Verification Questions" subtitle="These questions capture clear entry information before registration." />
+
+        <div className="mt-7 grid gap-5">
+          <SelectField
+            label={basicQuestionKeys.readWriteEnglish}
+            value={props.answers[basicQuestionKeys.readWriteEnglish] ?? ""}
+            onChange={(value) => updateAnswer(basicQuestionKeys.readWriteEnglish, value)}
+            options={yesNoOptions}
+            error={props.errors[basicQuestionKeys.readWriteEnglish]}
+          />
+          <SelectField
+            label={basicQuestionKeys.newToField}
+            value={props.answers[basicQuestionKeys.newToField] ?? ""}
+            onChange={(value) => updateAnswer(basicQuestionKeys.newToField, value)}
+            options={yesNoOptions}
+            error={props.errors[basicQuestionKeys.newToField]}
+          />
+          <SelectField
+            label={basicQuestionKeys.courseReason}
+            value={props.answers[basicQuestionKeys.courseReason] ?? ""}
+            onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
+            options={courseReasonOptions}
+            error={props.errors[basicQuestionKeys.courseReason]}
+          />
+          {props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
+            <AnswerTextArea
+              label="Please describe your reason"
+              value={props.answers[basicQuestionKeys.courseReasonOther] ?? ""}
+              onChange={(value) => updateAnswer(basicQuestionKeys.courseReasonOther, value)}
+              error={props.errors[basicQuestionKeys.courseReasonOther]}
+            />
+          )}
+          <SelectField
+            label={basicQuestionKeys.practicalAvailability}
+            value={props.answers[basicQuestionKeys.practicalAvailability] ?? ""}
+            onChange={(value) => updateAnswer(basicQuestionKeys.practicalAvailability, value)}
+            options={availabilityOptions}
+            error={props.errors[basicQuestionKeys.practicalAvailability]}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (props.level === "Intermediate") {
     return (
@@ -1282,6 +1409,45 @@ function AnswerTextArea({
   );
 }
 
+function BasicDeclarationStep(props: {
+  declaration: string;
+  setDeclaration: (value: string) => void;
+  fullName: string;
+  courseName: string;
+  error?: string;
+}) {
+  const suggestedDeclaration = props.fullName && props.courseName
+    ? `I am ${props.fullName}, and I am interested in ${props.courseName}.`
+    : "I am [Full Name], and I am interested in [Selected Course].";
+
+  return (
+    <div>
+      <StepHeader icon={<GraduationCap />} title="Applicant Declaration" subtitle="For Basic courses, write a simple declaration before final submission." />
+
+      <div className="mt-7 rounded-3xl border border-brand-100 bg-brand-50 p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+          Write this statement
+        </p>
+        <p className="mt-3 text-base font-semibold leading-7 text-navy-950">
+          {suggestedDeclaration}
+        </p>
+      </div>
+
+      <label className="mt-5 block">
+        <span className="text-sm font-bold text-navy-950">Your declaration</span>
+        <textarea
+          value={props.declaration}
+          onChange={(event) => props.setDeclaration(event.target.value)}
+          rows={4}
+          placeholder={suggestedDeclaration}
+          className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
+        />
+        {props.error && <span className="mt-2 block text-sm font-semibold text-brand-700">{props.error}</span>}
+      </label>
+    </div>
+  );
+}
+
 function EvidenceStep(props: {
   files: Record<string, string>;
   setFiles: (value: Record<string, string>) => void;
@@ -1290,10 +1456,10 @@ function EvidenceStep(props: {
 
   return (
     <div>
-      <StepHeader icon={<FileUp />} title="Upload Evidence" subtitle="Select supporting files for this frontend preview." />
+      <StepHeader icon={<FileUp />} title="Upload Evidence" subtitle="Select supporting files for MPVTL review." />
 
       <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
-        Upload preview only. Secure storage will be connected in the next development phase.
+        File names are captured for now. Secure storage will be connected in the next development phase.
       </div>
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
@@ -1321,6 +1487,8 @@ function FinalStep(props: {
   level: Level;
   finalAction: string;
   setFinalAction: (value: string) => void;
+  receiveUpdates: boolean;
+  setReceiveUpdates: (value: boolean) => void;
   error?: string;
 }) {
   const actions = props.level === "Basic"
@@ -1329,7 +1497,7 @@ function FinalStep(props: {
 
   return (
     <div>
-      <StepHeader icon={<CheckCircle2 />} title="Final Action" subtitle="Choose what happens next for this frontend registration preview." />
+      <StepHeader icon={<CheckCircle2 />} title="Final Action" subtitle="Choose how MPVTL should proceed with your registration." />
       {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
@@ -1350,12 +1518,22 @@ function FinalStep(props: {
               </div>
               <h3 className="mt-5 text-lg font-bold text-navy-950">{action}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                This action is visual only until backend, payment, and communication services are connected.
+                Your choice will be submitted with your registration so MPVTL can follow up clearly.
               </p>
             </button>
           );
         })}
       </div>
+
+      <label className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+        <input
+          type="checkbox"
+          checked={props.receiveUpdates}
+          onChange={(event) => props.setReceiveUpdates(event.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-700"
+        />
+        <span>Receive updates from MPVTL</span>
+      </label>
     </div>
   );
 }
@@ -1375,10 +1553,9 @@ function SuccessScreen() {
       >
         <CheckCircle2 size={48} />
       </motion.div>
-      <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration saved successfully.</h2>
+      <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration submitted successfully.</h2>
       <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-600">
-        Your temporary frontend submission has been saved to localStorage. Backend submission,
-        secure uploads, payment, email, and exports are intentionally not connected yet.
+        Your registration has been sent to MPVTL. A backup copy is also saved on this device.
       </p>
     </motion.div>
   );
