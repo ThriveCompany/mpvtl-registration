@@ -889,7 +889,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
             {[
               { icon: <BriefcaseBusiness size={18} />, title: "Practical Training", text: "Skill-focused learning for real work." },
               { icon: <Award size={18} />, title: "Certification Pathways", text: "MPVTL and international routes." },
-              { icon: <Building2 size={18} />, title: "Training Centres", text: "Course Training centres matched to your choice." },
+              { icon: <Building2 size={18} />, title: "Training Centres", text: "Training centres matched to your selected course." },
             ].map((item, index) => (
               <motion.div
                 key={item.title}
