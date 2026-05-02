@@ -640,7 +640,7 @@ export default function RegisterPage() {
       submittedAt: new Date().toISOString(),
     };
 
-    // Power Automate receives the registration JSON now. Future phases can add
+    // The server route forwards this registration to Make. Future phases can add
     // secure file storage, email workflows, Excel exports, and payment checks.
     localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
     setSubmitError("");

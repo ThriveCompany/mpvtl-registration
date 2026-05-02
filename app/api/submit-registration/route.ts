@@ -6,6 +6,7 @@ type RegistrationPayload = {
   course?: {
     id?: string;
     name?: string;
+    category?: string;
     level?: string;
   };
   location?: {
@@ -19,6 +20,7 @@ type RegistrationPayload = {
     hostel?: string;
   };
   verification?: Record<string, string>;
+  uploads?: Record<string, string>;
   basicDeclaration?: string;
   receiveUpdates?: boolean;
   finalAction?: string;
@@ -69,7 +71,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: validationError }, { status: 400 });
   }
 
-  const webhookUrl = process.env.POWER_AUTOMATE_WEBHOOK_URL;
+  const webhookUrl =
+    process.env.MAKE_WEBHOOK_URL ||
+    process.env.POWER_AUTOMATE_WEBHOOK_URL ||
+    "https://hook.eu1.make.com/cpyp3ci3c99mak45tayhle1u6yy4dca1";
+
   if (!webhookUrl) {
     return NextResponse.json(
       { message: "Submission service is not configured yet. Please contact MPVTL support." },
@@ -81,7 +87,21 @@ export async function POST(request: Request) {
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        fullname: payload.applicant?.fullName || "",
+        email: payload.applicant?.email || "",
+        phone: payload.applicant?.phone || "",
+        course: payload.course?.name || "",
+        category: payload.course?.category || "",
+        level: payload.course?.level || "",
+        location: payload.location?.name || payload.location?.id || "",
+        hostel: payload.applicant?.hostel === "Yes" ? "Yes" : "No",
+        action: payload.finalAction || "",
+        verification: payload.verification || {},
+        uploads: payload.uploads || {},
+        basicDeclaration: payload.basicDeclaration || "",
+        receiveUpdates: payload.receiveUpdates ?? true,
+      }),
     });
 
     if (!response.ok) {

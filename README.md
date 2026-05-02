@@ -1,6 +1,6 @@
 # MPVTL Short Course Registration
 
-Next.js App Router project for the MPVTL short course registration experience, with a minimal API route that forwards submissions to Power Automate.
+Next.js App Router project for the MPVTL short course registration experience, with a minimal API route that forwards submissions to Make.
 
 ## Local Development
 
@@ -18,7 +18,7 @@ http://localhost:3000/register
 Create a local `.env.local` file when you are ready to submit live registrations:
 
 ```bash
-POWER_AUTOMATE_WEBHOOK_URL=your_power_automate_webhook_url
+MAKE_WEBHOOK_URL=your_make_webhook_url
 ```
 
 ## Production Deployment With PM2
@@ -45,7 +45,7 @@ pm2 save
 curl http://localhost:3000/register
 ```
 
-Set `POWER_AUTOMATE_WEBHOOK_URL` on the VPS before starting PM2 so `/api/submit-registration` can forward completed forms.
+Set `MAKE_WEBHOOK_URL` on the VPS before starting PM2 so `/api/submit-registration` can forward completed forms.
 
 The production start script binds Next.js to all network interfaces on port 3000:
 
