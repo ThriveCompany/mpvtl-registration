@@ -672,8 +672,13 @@ export default function RegisterPage() {
       </AnimatePresence>
 
       <section ref={formRef} id="registration-form" className="px-4 pb-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <ScrollDrop className="mb-6 rounded-[1.75rem] bg-navy-950 p-5 text-white shadow-premium sm:p-7">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.08, ease: "easeOut" }}
+          className="mx-auto max-w-7xl"
+        >
+          <div className="mb-6 rounded-[1.75rem] bg-navy-950 p-5 text-white shadow-premium sm:p-7">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-brand-200">
               MPVTL Application Form
             </p>
@@ -682,19 +687,12 @@ export default function RegisterPage() {
                 Select your course and complete your registration.
               </h2>
             </div>
-          </ScrollDrop>
+          </div>
 
           {submitted ? (
             <SuccessScreen />
           ) : (
-            <motion.form
-              onSubmit={handleSubmit}
-              initial={{ opacity: 0, y: -18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.12 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="grid gap-6 lg:grid-cols-[280px_1fr]"
-            >
+            <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <Stepper currentStep={step} steps={activeSteps} />
 
               <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
@@ -803,9 +801,9 @@ export default function RegisterPage() {
                   )}
                 </div>
               </div>
-            </motion.form>
+            </form>
           )}
-        </div>
+        </motion.div>
       </section>
     </main>
   );
@@ -817,12 +815,13 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
       exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
       className="px-4 py-10 sm:px-6 sm:py-16 lg:px-8"
-    >
+      >
       <motion.div
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 14, scale: 0.985 }}
         animate={{
           opacity: 1,
           y: 0,
+          scale: 1,
           boxShadow: [
             "0 24px 80px rgba(2, 10, 22, 0.18)",
             "0 30px 96px rgba(127, 29, 45, 0.16)",
@@ -832,6 +831,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
         transition={{
           opacity: { duration: 0.5, ease: "easeOut" },
           y: { duration: 0.5, ease: "easeOut" },
+          scale: { duration: 0.5, ease: "easeOut" },
           boxShadow: { repeat: Infinity, duration: 5.8, ease: "easeInOut" },
         }}
         className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-premium sm:p-10"
@@ -852,51 +852,39 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
 
         <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div>
-            <ScrollDrop className="inline-block">
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
-                <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
-                MPVTL Short Course Registration
-              </div>
-            </ScrollDrop>
-            <ScrollDrop delay={0.08}>
-              <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
-                Begin Your Professional Skills Journey with MPVTL
-              </h1>
-            </ScrollDrop>
-            <ScrollDrop delay={0.16}>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                Register for practical short courses designed to build real competence,
-                career confidence, and professional growth.
-              </p>
-            </ScrollDrop>
-            <ScrollDrop className="inline-block" delay={0.24}>
-              <motion.button
-                type="button"
-                onClick={onRegister}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                animate={{ boxShadow: ["0 0 0 rgba(127,29,45,0)", "0 18px 55px rgba(127,29,45,0.22)", "0 0 0 rgba(127,29,45,0)"] }}
-                transition={{ repeat: Infinity, duration: 2.6 }}
-                className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand-700 px-7 py-4 text-sm font-bold text-white transition hover:bg-brand-600"
-              >
-                Register Now
-                <ChevronDown size={19} />
-              </motion.button>
-            </ScrollDrop>
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
+              <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
+              MPVTL Short Course Registration
+            </div>
+            <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
+              Begin Your Professional Skills Journey with MPVTL
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              Register for practical short courses designed to build real competence,
+              career confidence, and professional growth.
+            </p>
+            <motion.button
+              type="button"
+              onClick={onRegister}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              animate={{ boxShadow: ["0 0 0 rgba(127,29,45,0)", "0 18px 55px rgba(127,29,45,0.22)", "0 0 0 rgba(127,29,45,0)"] }}
+              transition={{ repeat: Infinity, duration: 2.6 }}
+              className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand-700 px-7 py-4 text-sm font-bold text-white transition hover:bg-brand-600"
+            >
+              Register Now
+              <ChevronDown size={19} />
+            </motion.button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="hidden gap-3 sm:grid sm:grid-cols-3 lg:grid-cols-1">
             {[
-              { icon: <BriefcaseBusiness size={18} />, title: "Practical Training", text: "Skill-focused learning for real work." },
-              { icon: <Award size={18} />, title: "Certification Pathways", text: "MPVTL and international routes." },
-              { icon: <Building2 size={18} />, title: "Training Centres", text: "Training centres matched to your selected course." },
-            ].map((item, index) => (
-              <motion.div
+              { icon: <BriefcaseBusiness size={18} />, title: "Hands-On Training", text: "Learn by doing with real tools and real tasks." },
+              { icon: <Award size={18} />, title: "Global Certification Pathways", text: "Aligned with international standards for recognised credentials." },
+              { icon: <CheckCircle2 size={18} />, title: "Job-Ready Skills", text: "Gain practical competence you can apply immediately." },
+            ].map((item) => (
+              <div
                 key={item.title}
-                initial={{ opacity: 0, y: -18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.45, delay: 0.12 + index * 0.1, ease: "easeOut" }}
                 className="rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-navy-950 text-white">
@@ -908,34 +896,12 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {item.text}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </motion.div>
     </motion.section>
-  );
-}
-
-function ScrollDrop({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -18, filter: "blur(3px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.24 }}
-      transition={{ duration: 0.48, delay, ease: "easeOut" }}
-      className={className}
-    >
-      {children}
-    </motion.div>
   );
 }
 
@@ -1094,27 +1060,14 @@ function CourseStep(props: {
         </motion.div>
       )}
 
-      <motion.div
-        className="mt-7 grid gap-4 md:grid-cols-2"
-        initial="hidden"
-        animate="show"
-        variants={{
-          hidden: {},
-          show: { transition: { staggerChildren: 0.035 } },
-        }}
-      >
+      <div className="mt-7 grid gap-4 md:grid-cols-2">
         {props.filteredCourses.map((course) => {
           const selected = props.selectedCourseId === course.id;
 
           return (
-            <motion.article
+            <article
               key={course.id}
               onClick={() => props.setSelectedCourseId(course.id)}
-              variants={{
-                hidden: { opacity: 0, y: -14 },
-                show: { opacity: 1, y: 0 },
-              }}
-              transition={{ duration: 0.28, ease: "easeOut" }}
               className={`cursor-pointer rounded-3xl border p-5 text-left transition hover:border-brand-300 ${
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
@@ -1157,10 +1110,10 @@ function CourseStep(props: {
                   </button>
                 )}
               </div>
-            </motion.article>
+            </article>
           );
         })}
-      </motion.div>
+      </div>
 
       {props.filteredCourses.length === 0 && (
         <div className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
