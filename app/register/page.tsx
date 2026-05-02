@@ -1017,6 +1017,9 @@ function CourseStep(props: {
   return (
     <div>
       <StepHeader icon={<Search />} title="Choose Your Course" compactIcon />
+      <p className="mt-3 max-w-3xl leading-7 text-slate-600 sm:ml-[4.5rem] xl:hidden">
+        Search, filter, and select the MPVTL short course you want to register for.
+      </p>
 
       <div className="mt-7 grid gap-4 md:grid-cols-[1fr_280px]">
         <label className="relative block">
