@@ -853,7 +853,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
 
         <div className="relative grid gap-8 xl:grid-cols-[1.15fr_0.85fr] xl:items-center">
           <div>
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-navy-950 sm:gap-3 sm:px-4 sm:text-sm">
               <Image
                 src="/MPVTL Logo new (Image).jpg"
                 alt="MPVTL logo"
