@@ -813,21 +813,33 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
     >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          boxShadow: [
+            "0 24px 80px rgba(2, 10, 22, 0.18)",
+            "0 30px 96px rgba(127, 29, 45, 0.16)",
+            "0 24px 80px rgba(2, 10, 22, 0.18)",
+          ],
+        }}
+        transition={{
+          opacity: { duration: 0.5, ease: "easeOut" },
+          y: { duration: 0.5, ease: "easeOut" },
+          boxShadow: { repeat: Infinity, duration: 5.8, ease: "easeInOut" },
+        }}
         className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-premium sm:p-10"
       >
         <div className="absolute inset-x-0 top-0 h-2 bg-brand-700" />
         <motion.div
           aria-hidden="true"
-          animate={{ y: [0, 14, 0], opacity: [0.5, 0.85, 0.5] }}
-          transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+          animate={{ opacity: [0.45, 0.78, 0.45] }}
+          transition={{ repeat: Infinity, duration: 6.4, ease: "easeInOut" }}
           className="absolute -right-16 top-8 h-56 w-56 rounded-full bg-brand-100 blur-3xl"
         />
         <motion.div
           aria-hidden="true"
-          animate={{ x: [0, 18, 0], opacity: [0.28, 0.5, 0.28] }}
-          transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
+          animate={{ opacity: [0.22, 0.42, 0.22] }}
+          transition={{ repeat: Infinity, duration: 7.2, ease: "easeInOut" }}
           className="absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-navy-50 blur-3xl"
         />
 
@@ -867,11 +879,10 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
               <motion.div
                 key={item.title}
                 initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0, y: index === 1 ? [0, -8, 0] : [0, 6, 0] }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{
                   opacity: { duration: 0.35, delay: 0.18 + index * 0.12 },
                   x: { duration: 0.35, delay: 0.18 + index * 0.12 },
-                  y: { repeat: Infinity, duration: 4.8 + index * 0.5, ease: "easeInOut" },
                 }}
                 className="rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur"
               >
@@ -1069,9 +1080,7 @@ function CourseStep(props: {
                 show: { opacity: 1, y: 0 },
               }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              whileHover={{ y: -5 }}
-              whileTap={{ scale: 0.99 }}
-              className={`cursor-pointer rounded-3xl border p-5 text-left transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg ${
+              className={`cursor-pointer rounded-3xl border p-5 text-left transition hover:border-brand-300 ${
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
             >
