@@ -850,7 +850,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
           className="absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-navy-50 blur-3xl"
         />
 
-        <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div className="relative grid gap-8 xl:grid-cols-[1.15fr_0.85fr] xl:items-center">
           <div>
             <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
               <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
@@ -877,7 +877,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
             </motion.button>
           </div>
 
-          <div className="hidden gap-3 sm:grid sm:grid-cols-3 lg:grid-cols-1">
+          <div className="hidden gap-3 xl:grid xl:grid-cols-1">
             {[
               { icon: <BriefcaseBusiness size={18} />, title: "Hands-On Training", text: "Learn by doing with real tools and real tasks." },
               { icon: <Award size={18} />, title: "Global Certification Pathways", text: "Aligned with international standards for recognised credentials." },
@@ -1008,7 +1008,7 @@ function CourseStep(props: {
 }) {
   return (
     <div>
-      <StepHeader icon={<Search />} title="Choose Your Course" subtitle="Search, filter, and select the MPVTL short course you want to register for." />
+      <StepHeader icon={<Search />} title="Choose Your Course" compactIcon />
 
       <div className="mt-7 grid gap-4 md:grid-cols-[1fr_280px]">
         <label className="relative block">
@@ -1628,16 +1628,30 @@ function SuccessScreen() {
   );
 }
 
-function StepHeader({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
+function StepHeader({
+  icon,
+  title,
+  subtitle,
+  compactIcon = false,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle?: string;
+  compactIcon?: boolean;
+}) {
+  const iconSizeClass = compactIcon
+    ? "[&_svg]:h-[19px] [&_svg]:w-[19px] sm:[&_svg]:h-[23px] sm:[&_svg]:w-[23px]"
+    : "[&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6";
+
   return (
     <div>
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white sm:h-14 sm:w-14 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
+        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-navy-950 text-white sm:h-14 sm:w-14 ${iconSizeClass}`}>
           {icon}
         </div>
         <h3 className="text-[1.5rem] font-semibold leading-tight text-navy-950 sm:text-[1.75rem]">{title}</h3>
       </div>
-      <p className="mt-3 max-w-3xl leading-7 text-slate-600 sm:ml-[4.5rem]">{subtitle}</p>
+      {subtitle && <p className="mt-3 max-w-3xl leading-7 text-slate-600 sm:ml-[4.5rem]">{subtitle}</p>}
     </div>
   );
 }
