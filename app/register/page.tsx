@@ -18,6 +18,7 @@ import {
   Wifi,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import type { FormEvent, ReactNode } from "react";
 import { useMemo, useRef, useState } from "react";
 
@@ -815,9 +816,9 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
       exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
       className="px-4 py-10 sm:px-6 sm:py-16 lg:px-8"
-      >
+    >
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.985 }}
+        initial={{ opacity: 0, y: 32, scale: 0.975 }}
         animate={{
           opacity: 1,
           y: 0,
@@ -829,9 +830,9 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
           ],
         }}
         transition={{
-          opacity: { duration: 0.5, ease: "easeOut" },
-          y: { duration: 0.5, ease: "easeOut" },
-          scale: { duration: 0.5, ease: "easeOut" },
+          opacity: { duration: 0.58, ease: "easeOut" },
+          y: { duration: 0.58, ease: "easeOut" },
+          scale: { duration: 0.58, ease: "easeOut" },
           boxShadow: { repeat: Infinity, duration: 5.8, ease: "easeInOut" },
         }}
         className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-premium sm:p-10"
@@ -853,7 +854,14 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
         <div className="relative grid gap-8 xl:grid-cols-[1.15fr_0.85fr] xl:items-center">
           <div>
             <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
-              <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
+              <Image
+                src="/mpvtl-logo.svg"
+                alt="MPVTL logo"
+                width={18}
+                height={18}
+                className="h-4 w-4 object-contain sm:h-[18px] sm:w-[18px]"
+                priority
+              />
               MPVTL Short Course Registration
             </div>
             <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
