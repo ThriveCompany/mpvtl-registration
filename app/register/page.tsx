@@ -815,35 +815,78 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative mx-auto max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-premium sm:p-10"
+        className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-premium sm:p-10"
       >
         <div className="absolute inset-x-0 top-0 h-2 bg-brand-700" />
-        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-brand-100 blur-3xl" />
+        <motion.div
+          aria-hidden="true"
+          animate={{ y: [0, 14, 0], opacity: [0.5, 0.85, 0.5] }}
+          transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+          className="absolute -right-16 top-8 h-56 w-56 rounded-full bg-brand-100 blur-3xl"
+        />
+        <motion.div
+          aria-hidden="true"
+          animate={{ x: [0, 18, 0], opacity: [0.28, 0.5, 0.28] }}
+          transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
+          className="absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-navy-50 blur-3xl"
+        />
 
-        <div className="relative">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
-            <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
-            MPVTL Short Course Registration
+        <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-bold text-navy-950 sm:gap-3 sm:px-4">
+              <GraduationCap size={16} className="text-brand-700 sm:h-[18px] sm:w-[18px]" />
+              MPVTL Short Course Registration
+            </div>
+            <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
+              Begin Your Professional Skills Journey with MPVTL
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              Register for practical short courses designed to build real competence,
+              career confidence, and professional growth.
+            </p>
+            <motion.button
+              type="button"
+              onClick={onRegister}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              animate={{ boxShadow: ["0 0 0 rgba(127,29,45,0)", "0 18px 55px rgba(127,29,45,0.22)", "0 0 0 rgba(127,29,45,0)"] }}
+              transition={{ repeat: Infinity, duration: 2.6 }}
+              className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand-700 px-7 py-4 text-sm font-bold text-white transition hover:bg-brand-600"
+            >
+              Register Now
+              <ChevronDown size={19} />
+            </motion.button>
           </div>
-          <h1 className="mt-6 max-w-3xl text-[1.875rem] font-semibold leading-tight text-navy-950 sm:text-[2.875rem]">
-            Begin Your Professional Skills Journey with MPVTL
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-            Register for practical short courses designed to build real competence,
-            career confidence, and professional growth.
-          </p>
-          <motion.button
-            type="button"
-            onClick={onRegister}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            animate={{ boxShadow: ["0 0 0 rgba(127,29,45,0)", "0 18px 55px rgba(127,29,45,0.22)", "0 0 0 rgba(127,29,45,0)"] }}
-            transition={{ repeat: Infinity, duration: 2.6 }}
-            className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand-700 px-7 py-4 text-sm font-bold text-white transition hover:bg-brand-600"
-          >
-            Register Now
-            <ChevronDown size={19} />
-          </motion.button>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {[
+              { icon: <BriefcaseBusiness size={18} />, title: "Practical Training", text: "Skill-focused learning for real work." },
+              { icon: <Award size={18} />, title: "Certification Pathways", text: "MPVTL and international routes." },
+              { icon: <Building2 size={18} />, title: "Training Centres", text: "Course centres matched to your choice." },
+            ].map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0, y: index === 1 ? [0, -8, 0] : [0, 6, 0] }}
+                transition={{
+                  opacity: { duration: 0.35, delay: 0.18 + index * 0.12 },
+                  x: { duration: 0.35, delay: 0.18 + index * 0.12 },
+                  y: { repeat: Infinity, duration: 4.8 + index * 0.5, ease: "easeInOut" },
+                }}
+                className="rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-navy-950 text-white">
+                  {item.icon}
+                </div>
+                <p className="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-brand-700">
+                  {item.title}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {item.text}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </motion.div>
     </motion.section>
@@ -979,7 +1022,12 @@ function CourseStep(props: {
       {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       {props.selectedCourse && (
-        <div className="mt-6 flex flex-col gap-4 rounded-3xl border border-brand-100 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+          className="mt-6 flex flex-col gap-4 rounded-3xl border border-brand-100 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
               Selected Course
@@ -997,17 +1045,32 @@ function CourseStep(props: {
             Continue
             <ArrowRight size={17} />
           </button>
-        </div>
+        </motion.div>
       )}
 
-      <div className="mt-7 grid gap-4 md:grid-cols-2">
+      <motion.div
+        className="mt-7 grid gap-4 md:grid-cols-2"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.035 } },
+        }}
+      >
         {props.filteredCourses.map((course) => {
           const selected = props.selectedCourseId === course.id;
 
           return (
-            <article
+            <motion.article
               key={course.id}
               onClick={() => props.setSelectedCourseId(course.id)}
+              variants={{
+                hidden: { opacity: 0, y: 14 },
+                show: { opacity: 1, y: 0 },
+              }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              whileHover={{ y: -5 }}
+              whileTap={{ scale: 0.99 }}
               className={`cursor-pointer rounded-3xl border p-5 text-left transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg ${
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
@@ -1050,10 +1113,10 @@ function CourseStep(props: {
                   </button>
                 )}
               </div>
-            </article>
+            </motion.article>
           );
         })}
-      </div>
+      </motion.div>
 
       {props.filteredCourses.length === 0 && (
         <div className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
