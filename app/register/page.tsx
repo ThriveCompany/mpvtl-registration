@@ -1007,7 +1007,8 @@ function CourseStep(props: {
           return (
             <article
               key={course.id}
-              className={`rounded-3xl border p-5 text-left transition hover:-translate-y-1 hover:shadow-lg ${
+              onClick={() => props.setSelectedCourseId(course.id)}
+              className={`cursor-pointer rounded-3xl border p-5 text-left transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg ${
                 selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
               }`}
             >
@@ -1027,7 +1028,10 @@ function CourseStep(props: {
                 {selected ? (
                   <button
                     type="button"
-                    onClick={props.onContinue}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      props.onContinue();
+                    }}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-600"
                   >
                     Continue
@@ -1036,7 +1040,10 @@ function CourseStep(props: {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => props.setSelectedCourseId(course.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      props.setSelectedCourseId(course.id);
+                    }}
                     className="inline-flex w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-navy-900 transition hover:border-brand-500 hover:text-brand-700"
                   >
                     Select Course
