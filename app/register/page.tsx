@@ -543,6 +543,7 @@ export default function RegisterPage() {
     ? locations.filter((location) => courseLocationIds[selectedCourse.id]?.includes(location.id))
     : [];
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
+  const isOnlineMode = selectedLocationData?.id === "L2000";
   const selectedLevel = selectedCourse?.level ?? "Basic";
   const activeQuestions = questions[selectedLevel];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
@@ -562,10 +563,21 @@ export default function RegisterPage() {
   function selectCourse(courseId: string) {
     setSelectedCourseId(courseId);
     setSelectedLocation("");
+    setDetails((current) => ({ ...current, hostel: "" }));
     setAnswers({});
     setBasicDeclaration("");
     setFinalAction("");
     setSubmitError("");
+  }
+
+  function selectLocation(locationId: string) {
+    const location = locations.find((item) => item.id === locationId);
+
+    setSelectedLocation(locationId);
+    setDetails((current) => ({
+      ...current,
+      hostel: location?.id === "L2000" ? "No" : selectedLocationData?.id === "L2000" ? "" : current.hostel,
+    }));
   }
 
   function validateStep(targetStep = step) {
@@ -577,7 +589,7 @@ export default function RegisterPage() {
       if (!details.fullName.trim()) nextErrors.fullName = "Full name is required.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) nextErrors.email = "Enter a valid email address.";
       if (!details.phone.trim()) nextErrors.phone = "Phone number is required.";
-      if (!details.hostel) nextErrors.hostel = "Please choose Yes or No.";
+      if (!isOnlineMode && !details.hostel) nextErrors.hostel = "Please choose Yes or No.";
     }
     if (targetStep >= 4) {
       activeQuestions.forEach((question) => {
@@ -631,7 +643,7 @@ export default function RegisterPage() {
     const payload = {
       course: selectedCourse,
       location: selectedLocationData,
-      applicant: details,
+      applicant: { ...details, hostel: isOnlineMode ? "No" : details.hostel },
       verification: answers,
       uploads: files,
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
@@ -725,12 +737,12 @@ export default function RegisterPage() {
                       <LocationStep
                         locations={availableLocations}
                         selectedLocation={selectedLocation}
-                        setSelectedLocation={setSelectedLocation}
+                        setSelectedLocation={selectLocation}
                         error={errors.location}
                       />
                     )}
                     {step === 3 && (
-                      <DetailsStep details={details} setDetails={setDetails} errors={errors} />
+                      <DetailsStep details={details} setDetails={setDetails} errors={errors} isOnlineMode={isOnlineMode} />
                     )}
                     {step === 4 && (
                       <VerificationStep
@@ -1167,7 +1179,16 @@ function LocationStep(props: {
 }) {
   return (
     <div>
-      <StepHeader icon={<MapPin />} title="Choose Centre / Mode" subtitle="Pick a training centre or online mode using MPVTL centre and facility information." />
+      <StepHeader
+        icon={<MapPin />}
+        title={(
+          <>
+            <span className="sm:hidden">Select Location</span>
+            <span className="hidden sm:inline">Choose Centre / Mode</span>
+          </>
+        )}
+        subtitle="Pick a training centre or online mode using MPVTL centre and facility information."
+      />
       {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
@@ -1210,6 +1231,7 @@ function DetailsStep(props: {
   details: { fullName: string; email: string; phone: string; hostel: string };
   setDetails: (value: { fullName: string; email: string; phone: string; hostel: string }) => void;
   errors: Record<string, string>;
+  isOnlineMode: boolean;
 }) {
   const update = (key: keyof typeof props.details, value: string) => {
     props.setDetails({ ...props.details, [key]: value });
@@ -1224,24 +1246,26 @@ function DetailsStep(props: {
         <TextField label="Email Address" value={props.details.email} onChange={(value) => update("email", value)} error={props.errors.email} />
         <TextField label="Phone Number" value={props.details.phone} onChange={(value) => update("phone", value)} error={props.errors.phone} />
 
-        <div>
-          <p className="mb-3 text-sm font-bold text-navy-950">Need hostel?</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {["Yes", "No"].map((option) => (
-              <button
-                type="button"
-                key={option}
-                onClick={() => update("hostel", option)}
-                className={`rounded-2xl border px-5 py-4 text-left font-bold transition ${
-                  props.details.hostel === option ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
+        {!props.isOnlineMode && (
+          <div>
+            <p className="mb-3 text-sm font-bold text-navy-950">Need hostel?</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {["Yes", "No"].map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  onClick={() => update("hostel", option)}
+                  className={`rounded-2xl border px-5 py-4 text-left font-bold transition ${
+                    props.details.hostel === option ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {props.errors.hostel && <p className="mt-2 text-sm font-semibold text-brand-700">{props.errors.hostel}</p>}
           </div>
-          {props.errors.hostel && <p className="mt-2 text-sm font-semibold text-brand-700">{props.errors.hostel}</p>}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1646,7 +1670,7 @@ function StepHeader({
   compactIcon = false,
 }: {
   icon: ReactNode;
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   compactIcon?: boolean;
 }) {
