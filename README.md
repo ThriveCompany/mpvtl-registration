@@ -90,6 +90,8 @@ This runs:
 next start -H 0.0.0.0 -p 3000
 ```
 
+`npm run build` cleans the generated `.next` folder first so PM2 does not reuse stale server chunks from an older deployment.
+
 ## Upload Storage
 
 Registration evidence files are stored on the server under:

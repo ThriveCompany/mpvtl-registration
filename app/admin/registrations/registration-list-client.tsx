@@ -16,13 +16,26 @@ type RegistrationListItem = {
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
   const [alert, setAlert] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const audioRef = useRef<AudioContext | null>(null);
 
   async function loadRegistrations() {
-    const response = await fetch("/api/admin/registrations", { cache: "no-store" });
-    if (response.ok) {
-      const result = await response.json() as { registrations: RegistrationListItem[] };
-      setRegistrations(result.registrations);
+    try {
+      setError("");
+      const response = await fetch("/api/admin/registrations", { cache: "no-store" });
+      const result = await response.json().catch(() => null) as { registrations?: unknown; message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(result?.message || "Could not load registrations.");
+      }
+
+      setRegistrations(Array.isArray(result?.registrations) ? result.registrations as RegistrationListItem[] : []);
+    } catch (loadError) {
+      setRegistrations([]);
+      setError(loadError instanceof Error ? loadError.message : "Could not load registrations.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -49,20 +62,34 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   }
 
   async function checkNotifications() {
-    const response = await fetch("/api/admin/notifications", { cache: "no-store" });
-    if (!response.ok) return;
+    try {
+      const response = await fetch("/api/admin/notifications", { cache: "no-store" });
+      if (!response.ok) return;
 
-    const result = await response.json() as { count: number };
-    if (result.count > 0) {
-      setAlert("New Registration");
-      playRing();
-      await loadRegistrations();
+      const result = await response.json().catch(() => null) as { count?: unknown; notifications?: unknown } | null;
+      const notificationCount = typeof result?.count === "number"
+        ? result.count
+        : Array.isArray(result?.notifications)
+          ? result.notifications.length
+          : 0;
+
+      if (notificationCount > 0) {
+        setAlert("New Registration");
+        playRing();
+        await loadRegistrations();
+      }
+    } catch {
+      // Polling should never take down the admin page.
     }
   }
 
   async function markSeen() {
-    await fetch("/api/admin/notifications/mark-seen", { method: "PATCH" });
-    setAlert("");
+    try {
+      await fetch("/api/admin/notifications/mark-seen", { method: "PATCH" });
+      setAlert("");
+    } catch {
+      setAlert("");
+    }
   }
 
   useEffect(() => {
@@ -106,7 +133,19 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
         )}
 
         <div className="grid gap-4">
-          {registrations.map((registration) => (
+          {loading && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+              Loading registrations...
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="rounded-3xl border border-brand-100 bg-brand-50 p-8 text-center text-sm font-semibold text-brand-800">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && registrations.map((registration) => (
             <Link
               key={registration.id}
               href={`/admin/registrations/${registration.id}`}
@@ -126,7 +165,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             </Link>
           ))}
 
-          {registrations.length === 0 && (
+          {!loading && !error && registrations.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
               No registrations yet.
             </div>

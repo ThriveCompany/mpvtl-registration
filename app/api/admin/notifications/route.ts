@@ -21,28 +21,36 @@ function notificationWhere(admin: NonNullable<Awaited<ReturnType<typeof getCurre
 export async function GET() {
   const admin = await getCurrentAdmin();
   if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized", count: 0, notifications: [] }, { status: 401 });
   }
 
-  const notifications = await prisma.registrationNotification.findMany({
-    where: notificationWhere(admin),
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: {
-      registration: {
-        select: {
-          id: true,
-          fullName: true,
-          course: true,
-          center: true,
-          createdAt: true,
+  try {
+    const notifications = await prisma.registrationNotification.findMany({
+      where: notificationWhere(admin),
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        registration: {
+          select: {
+            id: true,
+            fullName: true,
+            course: true,
+            center: true,
+            createdAt: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  return NextResponse.json({
-    count: notifications.length,
-    notifications,
-  });
+    return NextResponse.json({
+      count: notifications.length,
+      notifications: Array.isArray(notifications) ? notifications : [],
+    });
+  } catch (error) {
+    console.error("Could not load notifications", error);
+    return NextResponse.json(
+      { message: "Could not load notifications.", count: 0, notifications: [] },
+      { status: 500 },
+    );
+  }
 }

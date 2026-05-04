@@ -741,9 +741,10 @@ export default function RegisterPage() {
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
   const shouldAskHostel = locationHasHostel(selectedLocationData);
   const selectedLevel = selectedCourse?.level ?? "Basic";
-  const activeQuestions = questions[selectedLevel];
+  const activeQuestions = Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
-  const uploadedFiles = Object.values(files).filter(Boolean) as UploadedFileData[];
+  const stepItems = Array.isArray(activeSteps) ? activeSteps : [];
+  const uploadedFiles = Object.values(files ?? {}).filter(Boolean) as UploadedFileData[];
   const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
 
@@ -912,7 +913,7 @@ export default function RegisterPage() {
   function nextStep() {
     if (!validateStep(step)) return;
     if (step === 0) setShowIntro(false);
-    setStep((current) => Math.min(current + 1, activeSteps.length - 1));
+    setStep((current) => stepItems.length > 0 ? Math.min(current + 1, stepItems.length - 1) : current);
     setErrors({});
     setSubmitError("");
   }
@@ -1028,7 +1029,7 @@ export default function RegisterPage() {
             />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              <Stepper currentStep={step} steps={activeSteps} />
+              <Stepper currentStep={step} steps={stepItems} />
 
               <div ref={stepPanelRef} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
                 <AnimatePresence mode="wait">
@@ -1127,7 +1128,7 @@ export default function RegisterPage() {
                     </p>
                   )}
 
-                  {step < activeSteps.length - 1 ? (
+                  {step < stepItems.length - 1 ? (
                     <button
                       type="button"
                       onClick={nextStep}
@@ -1260,7 +1261,11 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
 }
 
 function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] }) {
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const stepItems = Array.isArray(steps) ? steps : [];
+  const boundedStep = stepItems.length > 0
+    ? Math.min(Math.max(currentStep, 0), stepItems.length - 1)
+    : 0;
+  const progress = stepItems.length > 0 ? ((boundedStep + 1) / stepItems.length) * 100 : 0;
 
   return (
     <aside className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:sticky lg:top-6 lg:h-fit">
@@ -1269,7 +1274,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
           Progress
         </p>
         <p className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-navy-950">
-          Step {currentStep + 1} of {steps.length}
+          Step {stepItems.length > 0 ? boundedStep + 1 : 0} of {stepItems.length}
         </p>
       </div>
 
@@ -1284,9 +1289,9 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
 
       <div className="mt-5 lg:hidden">
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-          {steps.map((label, index) => {
-            const active = index === currentStep;
-            const done = index < currentStep;
+          {stepItems.map((label, index) => {
+            const active = index === boundedStep;
+            const done = index < boundedStep;
 
             return (
               <div key={label} className="min-w-0 text-center" aria-label={`Step ${index + 1}: ${label}`}>
@@ -1317,15 +1322,15 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
             Current step
           </p>
           <p className="mt-1 text-base font-bold text-navy-950">
-            {steps[currentStep]}
+            {stepItems[boundedStep] ?? "Registration"}
           </p>
         </div>
       </div>
 
       <div className="mt-5 hidden gap-3 lg:grid">
-        {steps.map((label, index) => {
-          const active = index === currentStep;
-          const done = index < currentStep;
+        {stepItems.map((label, index) => {
+          const active = index === boundedStep;
+          const done = index < boundedStep;
 
           return (
             <div
@@ -1360,6 +1365,8 @@ function CourseStep(props: {
   onContinue: () => void;
   error?: string;
 }) {
+  const filteredCourses = Array.isArray(props.filteredCourses) ? props.filteredCourses : [];
+
   return (
     <div>
       <StepHeader icon={<Search />} title="Choose Your Course" compactIcon />
@@ -1418,7 +1425,7 @@ function CourseStep(props: {
       )}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {props.filteredCourses.map((course) => {
+        {filteredCourses.map((course) => {
           const selected = props.selectedCourseId === course.id;
 
           return (
@@ -1472,7 +1479,7 @@ function CourseStep(props: {
         })}
       </div>
 
-      {props.filteredCourses.length === 0 && (
+      {filteredCourses.length === 0 && (
         <div className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
           No courses match your search yet.
         </div>
@@ -1512,6 +1519,8 @@ function LocationStep(props: {
   setSelectedLocation: (value: string) => void;
   error?: string;
 }) {
+  const locations = Array.isArray(props.locations) ? props.locations : [];
+
   return (
     <div>
       <StepHeader
@@ -1527,7 +1536,7 @@ function LocationStep(props: {
       {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {props.locations.map((location) => {
+        {locations.map((location) => {
           const selected = props.selectedLocation === location.id;
 
           return (
@@ -1553,7 +1562,7 @@ function LocationStep(props: {
         })}
       </div>
 
-      {props.locations.length === 0 && (
+      {locations.length === 0 && (
         <div className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
           Select a course first to view its available centres.
         </div>
@@ -1636,6 +1645,7 @@ function VerificationStep(props: {
   errors: Record<string, string>;
 }) {
   const courseName = props.courseName || "selected course";
+  const questions = Array.isArray(props.questions) ? props.questions : [];
   const updateAnswer = (key: keyof AnswerState, value: string, clearKeys: (keyof AnswerState)[] = []) => {
     const nextAnswers = { ...props.answers, [key]: value } as AnswerState;
     clearKeys.forEach((clearKey) => {
@@ -1799,7 +1809,7 @@ function VerificationStep(props: {
       <StepHeader icon={<ShieldCheck />} title={`${props.level} Verification Questions`} subtitle="These questions adjust to the selected course level." />
 
       <div className="mt-7 grid gap-5">
-        {props.questions.map((question) => (
+        {questions.map((question) => (
           <AnswerTextArea
             key={question}
             label={question}
@@ -1826,6 +1836,8 @@ function SelectField({
   options: string[];
   error?: string;
 }) {
+  const optionItems = Array.isArray(options) ? options : [];
+
   return (
     <label className="block">
       <span className="text-sm font-bold text-navy-950">{label}</span>
@@ -1835,7 +1847,7 @@ function SelectField({
         className="mt-2 h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
       >
         <option value="">Select an option</option>
-        {options.map((option) => (
+        {optionItems.map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
       </select>
@@ -2120,11 +2132,13 @@ function StepHeader({
 }
 
 function InfoList({ title, items }: { title: string; items: string[] }) {
+  const listItems = Array.isArray(items) ? items : [];
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
       <h4 className="text-sm font-bold text-navy-950">{title}</h4>
       <ul className="mt-4 space-y-3">
-        {items.map((item) => (
+        {listItems.map((item) => (
           <li key={item} className="flex gap-3 text-sm leading-6 text-slate-600">
             <CheckCircle2 className="mt-0.5 shrink-0 text-brand-700" size={17} />
             {item}

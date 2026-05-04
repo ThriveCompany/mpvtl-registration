@@ -8,32 +8,45 @@ export async function GET(
 ) {
   const admin = await getCurrentAdmin();
   if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized", registration: null }, { status: 401 });
   }
 
   const { id } = await context.params;
-  const registration = await prisma.registration.findUnique({
-    where: { id },
-    include: {
-      files: {
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true,
-          originalName: true,
-          mimeType: true,
-          size: true,
-          createdAt: true,
+  try {
+    const registration = await prisma.registration.findUnique({
+      where: { id },
+      include: {
+        files: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+          },
+        },
+        approvedBy: {
+          select: { id: true, name: true, email: true },
         },
       },
-      approvedBy: {
-        select: { id: true, name: true, email: true },
+    });
+
+    if (!registration || !canViewCenter(admin, registration.center)) {
+      return NextResponse.json({ message: "Registration not found.", registration: null }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      registration: {
+        ...registration,
+        files: Array.isArray(registration.files) ? registration.files : [],
       },
-    },
-  });
-
-  if (!registration || !canViewCenter(admin, registration.center)) {
-    return NextResponse.json({ message: "Registration not found." }, { status: 404 });
+    });
+  } catch (error) {
+    console.error("Could not load admin registration", error);
+    return NextResponse.json(
+      { message: "Could not load registration.", registration: null },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({ registration });
 }

@@ -24,12 +24,23 @@ export default function UsersClient() {
     active: true,
   });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   async function loadUsers() {
-    const response = await fetch("/api/admin/users", { cache: "no-store" });
-    if (response.ok) {
-      const result = await response.json() as { users: AdminUserRow[] };
-      setUsers(result.users);
+    try {
+      const response = await fetch("/api/admin/users", { cache: "no-store" });
+      const result = await response.json().catch(() => null) as { users?: unknown; message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(result?.message || "Could not load users.");
+      }
+
+      setUsers(Array.isArray(result?.users) ? result.users as AdminUserRow[] : []);
+    } catch (loadError) {
+      setUsers([]);
+      setMessage(loadError instanceof Error ? loadError.message : "Could not load users.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -93,7 +104,12 @@ export default function UsersClient() {
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Existing users</h2>
           <div className="mt-5 grid gap-3">
-            {users.map((user) => (
+            {loading && (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                Loading users...
+              </div>
+            )}
+            {!loading && users.map((user) => (
               <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
                 <p className="font-bold text-navy-950">{user.name}</p>
                 <p className="mt-1 text-sm text-slate-600">{user.email}</p>
@@ -102,6 +118,11 @@ export default function UsersClient() {
                 </p>
               </div>
             ))}
+            {!loading && users.length === 0 && (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                No admin users found.
+              </div>
+            )}
           </div>
         </section>
       </div>

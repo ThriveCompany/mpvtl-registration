@@ -21,13 +21,21 @@ function notificationWhere(admin: NonNullable<Awaited<ReturnType<typeof getCurre
 export async function PATCH() {
   const admin = await getCurrentAdmin();
   if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized", success: false }, { status: 401 });
   }
 
-  await prisma.registrationNotification.updateMany({
-    where: notificationWhere(admin),
-    data: { seen: true },
-  });
+  try {
+    await prisma.registrationNotification.updateMany({
+      where: notificationWhere(admin),
+      data: { seen: true },
+    });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Could not mark notifications as seen", error);
+    return NextResponse.json(
+      { message: "Could not update notifications.", success: false },
+      { status: 500 },
+    );
+  }
 }

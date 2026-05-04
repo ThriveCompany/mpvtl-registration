@@ -9,23 +9,31 @@ const roles: AdminRole[] = ["SUPER_ADMIN", "MARKETING_OFFICIAL", "CENTER_MANAGER
 export async function GET() {
   const admin = await getCurrentAdmin();
   if (!admin || admin.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Forbidden", users: [] }, { status: 403 });
   }
 
-  const users = await prisma.adminUser.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      center: true,
-      active: true,
-      createdAt: true,
-    },
-  });
+  try {
+    const users = await prisma.adminUser.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        center: true,
+        active: true,
+        createdAt: true,
+      },
+    });
 
-  return NextResponse.json({ users });
+    return NextResponse.json({ users: Array.isArray(users) ? users : [] });
+  } catch (error) {
+    console.error("Could not load admin users", error);
+    return NextResponse.json(
+      { message: "Could not load users.", users: [] },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {

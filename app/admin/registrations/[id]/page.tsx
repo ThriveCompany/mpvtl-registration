@@ -29,7 +29,11 @@ export default async function RegistrationProfilePage({
 
   if (!registration || !canViewCenter(admin, registration.center)) notFound();
 
-  const answers = registration.verificationAnswers as Record<string, string>;
+  const answers = typeof registration.verificationAnswers === "object" && registration.verificationAnswers !== null
+    ? registration.verificationAnswers as Record<string, string>
+    : {};
+  const answerEntries = Object.entries(answers);
+  const files = Array.isArray(registration.files) ? registration.files : [];
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
@@ -84,19 +88,20 @@ export default async function RegistrationProfilePage({
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Verification Answers</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {Object.entries(answers).map(([key, value]) => (
+            {answerEntries.map(([key, value]) => (
               <div key={key} className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{formatLabel(key)}</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-navy-950">{value || "Not applicable"}</p>
               </div>
             ))}
+            {answerEntries.length === 0 && <p className="text-sm text-slate-600">No verification answers available.</p>}
           </div>
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Uploaded Evidence</h2>
           <div className="mt-5 grid gap-3">
-            {registration.files.map((file) => (
+            {files.map((file) => (
               <a
                 key={file.id}
                 href={`/api/admin/files/${file.id}`}
@@ -107,7 +112,7 @@ export default async function RegistrationProfilePage({
                 {file.originalName} - {Math.ceil(file.size / 1024)}KB
               </a>
             ))}
-            {registration.files.length === 0 && <p className="text-sm text-slate-600">No evidence uploaded.</p>}
+            {files.length === 0 && <p className="text-sm text-slate-600">No evidence uploaded.</p>}
           </div>
         </section>
       </div>
