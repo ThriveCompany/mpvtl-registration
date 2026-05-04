@@ -4,14 +4,116 @@ import { canViewCenter, getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ProfileActions from "./profile-actions";
 
-function formatLabel(key: string) {
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (letter) => letter.toUpperCase());
-}
-
 function safeArray<T>(value: readonly T[] | null | undefined): T[] {
   return Array.isArray(value) ? [...value] : [];
+}
+
+type VerificationLevel = "Basic" | "Intermediate" | "Advanced";
+
+type VerificationAnswerKey =
+  | "priorExposure"
+  | "completedBasicCourse"
+  | "experienceDescription"
+  | "availableForEntryReview"
+  | "availableForScreening"
+  | "canReadAndWrite"
+  | "newToField"
+  | "reasonForCourse"
+  | "availableForPracticalTraining"
+  | "priorTraining"
+  | "hasPreviousCertificate"
+  | "practicalExperience"
+  | "availableForAssessment";
+
+type VerificationDisplayItem = {
+  key: VerificationAnswerKey;
+  fallbackKey?: VerificationAnswerKey;
+  question: string;
+  longAnswer?: boolean;
+};
+
+function normalizeLevel(level: string): VerificationLevel {
+  if (level === "Intermediate" || level === "Advanced") return level;
+  return "Basic";
+}
+
+function getVerificationDisplayItems(level: string, course: string): VerificationDisplayItem[] {
+  const courseName = course || "this course";
+  const normalizedLevel = normalizeLevel(level);
+
+  if (normalizedLevel === "Intermediate") {
+    return [
+      {
+        key: "priorExposure",
+        question: `Do you have basic knowledge or prior exposure to ${courseName}?`,
+      },
+      {
+        key: "completedBasicCourse",
+        question: `Have you completed a basic course in ${courseName} before?`,
+      },
+      {
+        key: "experienceDescription",
+        question: `Describe your experience with ${courseName} briefly.`,
+        longAnswer: true,
+      },
+      {
+        key: "availableForEntryReview",
+        fallbackKey: "availableForScreening",
+        question: "Are you available for entry review?",
+      },
+    ];
+  }
+
+  if (normalizedLevel === "Advanced") {
+    return [
+      {
+        key: "priorTraining",
+        question: `Do you have prior training or demonstrable experience in ${courseName}?`,
+      },
+      {
+        key: "hasPreviousCertificate",
+        question: "Do you have a previous certificate?",
+      },
+      {
+        key: "practicalExperience",
+        question: `Describe your practical experience with ${courseName}.`,
+        longAnswer: true,
+      },
+      {
+        key: "availableForAssessment",
+        question: "Are you available for assessment or interview?",
+      },
+    ];
+  }
+
+  return [
+    {
+      key: "canReadAndWrite",
+      question: "Can you read and write in English?",
+    },
+    {
+      key: "newToField",
+      question: `Are you new to ${courseName}?`,
+    },
+    {
+      key: "reasonForCourse",
+      question: `Why do you want to take ${courseName}?`,
+      longAnswer: true,
+    },
+    {
+      key: "availableForPracticalTraining",
+      question: "Are you available for practical training?",
+    },
+  ];
+}
+
+function getAnswer(
+  answers: Record<string, string>,
+  key: VerificationAnswerKey,
+  fallbackKey?: VerificationAnswerKey,
+) {
+  const value = answers[key]?.trim() || (fallbackKey ? answers[fallbackKey]?.trim() : "");
+  return value || "Not provided";
 }
 
 export default async function RegistrationProfilePage({
@@ -36,7 +138,7 @@ export default async function RegistrationProfilePage({
   const answers = typeof registration.verificationAnswers === "object" && registration.verificationAnswers !== null
     ? registration.verificationAnswers as Record<string, string>
     : {};
-  const answerEntries = safeArray(Object.entries(answers));
+  const verificationItems = getVerificationDisplayItems(registration.level, registration.course);
   const files = Array.isArray(registration.files) ? registration.files : [];
   const detailItems = safeArray([
     ["Full name", registration.fullName],
@@ -93,13 +195,17 @@ export default async function RegistrationProfilePage({
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Verification Answers</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {safeArray(answerEntries).map(([key, value]) => (
-              <div key={key} className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{formatLabel(key)}</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-navy-950">{value || "Not applicable"}</p>
+            {safeArray(verificationItems).map((item) => (
+              <div
+                key={item.key}
+                className={`rounded-2xl bg-slate-50 p-4 ${item.longAnswer ? "md:col-span-2" : ""}`}
+              >
+                <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                  {getAnswer(answers, item.key, item.fallbackKey)}
+                </p>
               </div>
             ))}
-            {answerEntries.length === 0 && <p className="text-sm text-slate-600">No verification answers available.</p>}
           </div>
         </section>
 
