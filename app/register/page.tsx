@@ -55,6 +55,33 @@ type UploadedFileData = {
   uploadedFileSize: number;
 };
 
+const verificationAnswerKeys = [
+  "priorExposure",
+  "completedBasicCourse",
+  "experienceDescription",
+  "availableForScreening",
+  "canReadAndWrite",
+  "newToField",
+  "reasonForCourse",
+  "availableForPracticalTraining",
+  "priorTraining",
+  "hasPreviousCertificate",
+  "practicalExperience",
+  "availableForAssessment",
+] as const;
+
+type VerificationAnswerKey = (typeof verificationAnswerKeys)[number];
+type VerificationAnswers = Record<VerificationAnswerKey, string>;
+
+const supplementalAnswerKeys = {
+  reasonForCourseOther: "reasonForCourseOther",
+  previousCertificateType: "previousCertificateType",
+  previousCertificateTypeOther: "previousCertificateTypeOther",
+} as const;
+
+type SupplementalAnswerKey = (typeof supplementalAnswerKeys)[keyof typeof supplementalAnswerKeys];
+type AnswerState = VerificationAnswers & Partial<Record<SupplementalAnswerKey, string>>;
+
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_LABEL = "2MB";
 const DRAFT_STORAGE_KEY = "mpvtlShortCourseRegistrationDraft";
@@ -467,30 +494,30 @@ const courseLocationIds: Record<string, string[]> = {
 };
 
 const basicQuestionKeys = {
-  readWriteEnglish: "Can you read and write in English?",
-  newToField: "Are you new to the selected course?",
-  courseReason: "Why do you want to take the selected course?",
-  courseReasonOther: "Course interest details",
-  practicalAvailability: "Are you available for practical training?",
-};
+  readWriteEnglish: "canReadAndWrite",
+  newToField: "newToField",
+  courseReason: "reasonForCourse",
+  courseReasonOther: supplementalAnswerKeys.reasonForCourseOther,
+  practicalAvailability: "availableForPracticalTraining",
+} as const;
 
 const intermediateQuestionKeys = {
-  priorExposure: "Do you have basic knowledge or prior exposure to the selected course?",
-  completedBasicCourse: "Have you completed a basic course in this field before?",
-  experienceBrief: "Describe your experience briefly.",
-  screeningAvailability: "Are you available for screening?",
-};
+  priorExposure: "priorExposure",
+  completedBasicCourse: "completedBasicCourse",
+  experienceBrief: "experienceDescription",
+  screeningAvailability: "availableForScreening",
+} as const;
 
 const advancedQuestionKeys = {
-  priorTraining: "Do you have prior training or demonstrable experience?",
-  previousCertificate: "Do you have a previous certificate?",
-  practicalExperience: "Describe your practical experience.",
-  assessmentAvailability: "Are you available for assessment/interview?",
-  certificateType: "Previous certificate type",
-  certificateTypeOther: "Previous certificate type details",
-};
+  priorTraining: "priorTraining",
+  previousCertificate: "hasPreviousCertificate",
+  practicalExperience: "practicalExperience",
+  assessmentAvailability: "availableForAssessment",
+  certificateType: supplementalAnswerKeys.previousCertificateType,
+  certificateTypeOther: supplementalAnswerKeys.previousCertificateTypeOther,
+} as const;
 
-const questions: Record<Level, string[]> = {
+const questions: Record<Level, VerificationAnswerKey[]> = {
   Basic: [
     basicQuestionKeys.readWriteEnglish,
     basicQuestionKeys.newToField,
@@ -567,30 +594,67 @@ function readFileAsBase64(file: File) {
   });
 }
 
-function formatVerificationAnswers(level: Level, courseName: string, rawAnswers: Record<string, string>) {
-  const labels: Record<string, string> = {
-    [basicQuestionKeys.readWriteEnglish]: basicQuestionKeys.readWriteEnglish,
-    [basicQuestionKeys.newToField]: `Are you new to ${courseName}?`,
-    [basicQuestionKeys.courseReason]: `Why do you want to take ${courseName}?`,
-    [basicQuestionKeys.courseReasonOther]: `Reason for taking ${courseName}`,
-    [basicQuestionKeys.practicalAvailability]: `Are you available for practical training in ${courseName}?`,
-    [intermediateQuestionKeys.priorExposure]: `Do you have basic knowledge or prior exposure to ${courseName}?`,
-    [intermediateQuestionKeys.completedBasicCourse]: `Have you completed a basic course in ${courseName} before?`,
-    [intermediateQuestionKeys.experienceBrief]: `Describe your experience with ${courseName} briefly.`,
-    [intermediateQuestionKeys.screeningAvailability]: `Are you available for ${courseName} screening?`,
-    [advancedQuestionKeys.priorTraining]: `Do you have prior training or demonstrable experience in ${courseName}?`,
-    [advancedQuestionKeys.previousCertificate]: `Do you have a previous certificate in ${courseName}?`,
-    [advancedQuestionKeys.practicalExperience]: `Describe your practical experience in ${courseName}.`,
-    [advancedQuestionKeys.assessmentAvailability]: `Are you available for ${courseName} assessment/interview?`,
-    [advancedQuestionKeys.certificateType]: `Type of certification for ${courseName}`,
-    [advancedQuestionKeys.certificateTypeOther]: `Certification type details for ${courseName}`,
+function createEmptyVerificationAnswers(): VerificationAnswers {
+  return Object.fromEntries(verificationAnswerKeys.map((key) => [key, ""])) as VerificationAnswers;
+}
+
+function createEmptyAnswerState(): AnswerState {
+  return createEmptyVerificationAnswers();
+}
+
+function normalizeAnswerState(value: unknown): AnswerState {
+  const normalized = createEmptyAnswerState();
+  if (typeof value !== "object" || value === null) return normalized;
+
+  const source = value as Record<string, unknown>;
+  const legacyKeyMap: Record<string, keyof AnswerState> = {
+    "Can you read and write in English?": "canReadAndWrite",
+    "Are you new to this field?": "newToField",
+    "Are you new to the selected course?": "newToField",
+    "Why do you want to take this course?": "reasonForCourse",
+    "Why do you want to take the selected course?": "reasonForCourse",
+    "Course interest details": supplementalAnswerKeys.reasonForCourseOther,
+    "Are you available for practical training?": "availableForPracticalTraining",
+    "Do you have basic knowledge or prior exposure to this trade?": "priorExposure",
+    "Do you have basic knowledge or prior exposure to the selected course?": "priorExposure",
+    "Have you completed a basic course before?": "completedBasicCourse",
+    "Have you completed a basic course in this field before?": "completedBasicCourse",
+    "Describe your experience briefly.": "experienceDescription",
+    "Are you available for screening?": "availableForScreening",
+    "Do you have prior training or demonstrable experience?": "priorTraining",
+    "Do you have a previous certificate?": "hasPreviousCertificate",
+    "Describe your practical experience.": "practicalExperience",
+    "Are you available for assessment/interview?": "availableForAssessment",
+    "Previous certificate type": supplementalAnswerKeys.previousCertificateType,
+    "Previous certificate type details": supplementalAnswerKeys.previousCertificateTypeOther,
   };
 
-  return Object.fromEntries(
-    Object.entries(rawAnswers)
-      .filter(([, value]) => value.trim().length > 0)
-      .map(([key, value]) => [labels[key] ?? `${level}: ${key}`, value]),
-  );
+  Object.entries(source).forEach(([key, value]) => {
+    if (typeof value !== "string") return;
+    const stableKey = (verificationAnswerKeys as readonly string[]).includes(key)
+      ? key as keyof AnswerState
+      : legacyKeyMap[key];
+
+    if (stableKey) normalized[stableKey] = value;
+  });
+
+  return normalized;
+}
+
+function buildVerificationAnswers(rawAnswers: AnswerState): VerificationAnswers {
+  const stableAnswers = createEmptyVerificationAnswers();
+
+  verificationAnswerKeys.forEach((key) => {
+    stableAnswers[key] = rawAnswers[key]?.trim() ?? "";
+  });
+
+  if (rawAnswers.reasonForCourse === "Other, please describe") {
+    stableAnswers.reasonForCourse = rawAnswers.reasonForCourseOther?.trim()
+      ? `Other: ${rawAnswers.reasonForCourseOther.trim()}`
+      : "Other, please describe";
+  }
+
+  return stableAnswers;
 }
 
 function clampStep(value: unknown, maxStep: number) {
@@ -628,7 +692,7 @@ function writeRegistrationDraft(draft: {
   selectedCourseId: string;
   selectedLocation: string;
   details: { fullName: string; email: string; phone: string; hostel: string };
-  answers: Record<string, string>;
+  answers: AnswerState;
   files: Record<string, UploadedFileData | undefined>;
   basicDeclaration: string;
   receiveUpdates: boolean;
@@ -662,7 +726,7 @@ export default function RegisterPage() {
     phone: "",
     hostel: "",
   });
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<AnswerState>(createEmptyAnswerState());
   const [files, setFiles] = useState<Record<string, UploadedFileData | undefined>>({});
   const [basicDeclaration, setBasicDeclaration] = useState("");
   const [receiveUpdates, setReceiveUpdates] = useState(true);
@@ -729,7 +793,7 @@ export default function RegisterPage() {
         phone: draft.details?.phone ?? "",
         hostel: draft.details?.hostel ?? "",
       });
-      setAnswers(draft.answers ?? {});
+      setAnswers(normalizeAnswerState(draft.answers));
       setFiles(draft.files ?? {});
       setBasicDeclaration(draft.basicDeclaration ?? "");
       setReceiveUpdates(draft.receiveUpdates ?? true);
@@ -784,7 +848,7 @@ export default function RegisterPage() {
     setSelectedCourseId(courseId);
     setSelectedLocation("");
     setDetails((current) => ({ ...current, hostel: "" }));
-    setAnswers({});
+    setAnswers(createEmptyAnswerState());
     setFiles({});
     setBasicDeclaration("");
     setSubmitError("");
@@ -864,13 +928,14 @@ export default function RegisterPage() {
     event.preventDefault();
     if (isSubmitting || !validateStep(6) || !selectedCourse) return;
 
-    const verificationAnswers = formatVerificationAnswers(selectedLevel, selectedCourse.name, answers);
+    const verificationAnswers = buildVerificationAnswers(answers);
     const payload = {
       course: selectedCourse,
       location: selectedLocationData,
       applicant: { ...details, hostel: shouldAskHostel ? details.hostel : "No" },
       verification: answers,
       verificationAnswers,
+      ...verificationAnswers,
       uploads: uploadedFiles,
       uploadedFileName: primaryUpload?.uploadedFileName || "",
       uploadedFileType: primaryUpload?.uploadedFileType || "",
@@ -1529,14 +1594,14 @@ function DetailsStep(props: {
 function VerificationStep(props: {
   level: Level;
   courseName: string;
-  questions: string[];
-  answers: Record<string, string>;
-  setAnswers: (value: Record<string, string>) => void;
+  questions: VerificationAnswerKey[];
+  answers: AnswerState;
+  setAnswers: (value: AnswerState) => void;
   errors: Record<string, string>;
 }) {
   const courseName = props.courseName || "selected course";
-  const updateAnswer = (key: string, value: string, clearKeys: string[] = []) => {
-    const nextAnswers = { ...props.answers, [key]: value };
+  const updateAnswer = (key: keyof AnswerState, value: string, clearKeys: (keyof AnswerState)[] = []) => {
+    const nextAnswers = { ...props.answers, [key]: value } as AnswerState;
     clearKeys.forEach((clearKey) => {
       delete nextAnswers[clearKey];
     });
@@ -1550,7 +1615,7 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
-            label={basicQuestionKeys.readWriteEnglish}
+            label="Can you read and write in English?"
             value={props.answers[basicQuestionKeys.readWriteEnglish] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.readWriteEnglish, value)}
             options={yesNoOptions}
