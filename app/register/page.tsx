@@ -20,7 +20,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import type { FormEvent, ReactNode } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Level = "Basic" | "Intermediate" | "Advanced";
 
@@ -57,6 +57,7 @@ type UploadedFileData = {
 
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_LABEL = "2MB";
+const DRAFT_STORAGE_KEY = "mpvtlShortCourseRegistrationDraft";
 
 const categories = [
   "All Categories",
@@ -592,9 +593,64 @@ function formatVerificationAnswers(level: Level, courseName: string, rawAnswers:
   );
 }
 
+function clampStep(value: unknown, maxStep: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.min(Math.max(Math.round(value), 0), maxStep)
+    : 0;
+}
+
+function readRegistrationDraft() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return JSON.parse(window.localStorage.getItem(DRAFT_STORAGE_KEY) || "null") as {
+      step?: number;
+      search?: string;
+      category?: string;
+      selectedCourseId?: string;
+      selectedLocation?: string;
+      details?: { fullName?: string; email?: string; phone?: string; hostel?: string };
+      answers?: Record<string, string>;
+      files?: Record<string, UploadedFileData | undefined>;
+      basicDeclaration?: string;
+      receiveUpdates?: boolean;
+      showIntro?: boolean;
+    } | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeRegistrationDraft(draft: {
+  step: number;
+  search: string;
+  category: string;
+  selectedCourseId: string;
+  selectedLocation: string;
+  details: { fullName: string; email: string; phone: string; hostel: string };
+  answers: Record<string, string>;
+  files: Record<string, UploadedFileData | undefined>;
+  basicDeclaration: string;
+  receiveUpdates: boolean;
+  showIntro: boolean;
+}) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    try {
+      window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ ...draft, files: {} }));
+    } catch {
+      // Some private browser modes block localStorage; the form still works.
+    }
+  }
+}
+
 export default function RegisterPage() {
   const formRef = useRef<HTMLElement | null>(null);
   const stepPanelRef = useRef<HTMLDivElement | null>(null);
+  const previousStepRef = useRef(0);
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
@@ -616,6 +672,7 @@ export default function RegisterPage() {
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
+  const [draftReady, setDraftReady] = useState(false);
 
   const selectedCourse = courses.find((course) => course.id === selectedCourseId);
   const availableLocations = selectedCourse
@@ -642,11 +699,86 @@ export default function RegisterPage() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function scrollToStepTop() {
-    requestAnimationFrame(() => {
-      stepPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  function scrollToStepTop(delay = 35) {
+    window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        const target = stepPanelRef.current;
+        if (!target) return;
+
+        const top = target.getBoundingClientRect().top + window.scrollY - 12;
+        window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+      });
+    }, delay);
   }
+
+  useEffect(() => {
+    const draft = readRegistrationDraft();
+
+    if (draft) {
+      const draftCourse = courses.find((course) => course.id === draft.selectedCourseId);
+      const draftSteps = draftCourse?.level === "Basic" ? basicSteps : standardSteps;
+
+      setStep(clampStep(draft.step, draftSteps.length - 1));
+      setSearch(draft.search ?? "");
+      setCategory(categories.includes(draft.category ?? "") ? draft.category ?? "All Categories" : "All Categories");
+      setSelectedCourseId(draft.selectedCourseId ?? "");
+      setSelectedLocation(draft.selectedLocation ?? "");
+      setDetails({
+        fullName: draft.details?.fullName ?? "",
+        email: draft.details?.email ?? "",
+        phone: draft.details?.phone ?? "",
+        hostel: draft.details?.hostel ?? "",
+      });
+      setAnswers(draft.answers ?? {});
+      setFiles(draft.files ?? {});
+      setBasicDeclaration(draft.basicDeclaration ?? "");
+      setReceiveUpdates(draft.receiveUpdates ?? true);
+      setShowIntro(draft.showIntro ?? !draft.step);
+    }
+
+    setDraftReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady) return;
+
+    writeRegistrationDraft({
+      step,
+      search,
+      category,
+      selectedCourseId,
+      selectedLocation,
+      details,
+      answers,
+      files,
+      basicDeclaration,
+      receiveUpdates,
+      showIntro,
+    });
+  }, [
+    answers,
+    basicDeclaration,
+    category,
+    details,
+    draftReady,
+    files,
+    receiveUpdates,
+    search,
+    selectedCourseId,
+    selectedLocation,
+    showIntro,
+    step,
+  ]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+
+    const previousStep = previousStepRef.current;
+    previousStepRef.current = step;
+
+    if (previousStep === step) return;
+    scrollToStepTop(previousStep === 0 && step === 1 ? 340 : 45);
+  }, [draftReady, step]);
 
   function selectCourse(courseId: string) {
     setSelectedCourseId(courseId);
@@ -720,14 +852,12 @@ export default function RegisterPage() {
     setStep((current) => Math.min(current + 1, activeSteps.length - 1));
     setErrors({});
     setSubmitError("");
-    scrollToStepTop();
   }
 
   function previousStep() {
     setStep((current) => Math.max(current - 1, 0));
     setErrors({});
     setSubmitError("");
-    scrollToStepTop();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
