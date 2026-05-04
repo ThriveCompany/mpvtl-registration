@@ -12,21 +12,21 @@ export async function GET(
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { fileId } = await context.params;
-  const file = await prisma.registrationFile.findUnique({
-    where: { id: fileId },
-    include: {
-      registration: {
-        select: { center: true },
-      },
-    },
-  });
-
-  if (!file || !canViewCenter(admin, file.registration.center)) {
-    return NextResponse.json({ message: "File not found." }, { status: 404 });
-  }
-
   try {
+    const { fileId } = await context.params;
+    const file = await prisma.registrationFile.findUnique({
+      where: { id: fileId },
+      include: {
+        registration: {
+          select: { center: true },
+        },
+      },
+    });
+
+    if (!file || !canViewCenter(admin, file.registration.center)) {
+      return NextResponse.json({ message: "File not found." }, { status: 404 });
+    }
+
     const data = await readFile(file.storagePath);
 
     return new Response(data, {
@@ -36,7 +36,8 @@ export async function GET(
         "Content-Disposition": `inline; filename="${encodeURIComponent(file.originalName)}"`,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Could not load registration file", error);
     return NextResponse.json({ message: "Stored file is unavailable." }, { status: 404 });
   }
 }

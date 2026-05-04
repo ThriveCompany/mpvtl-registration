@@ -587,8 +587,12 @@ function getCenterWhatsAppUrl(location?: LocationOption) {
   return `https://wa.me/${sanitizeWhatsAppNumber(phoneNumber)}?text=${message}`;
 }
 
+function safeArray<T>(value: readonly T[] | null | undefined): T[] {
+  return Array.isArray(value) ? [...value] : [];
+}
+
 function createEmptyVerificationAnswers(): VerificationAnswers {
-  return Object.fromEntries(verificationAnswerKeys.map((key) => [key, ""])) as VerificationAnswers;
+  return Object.fromEntries(safeArray(verificationAnswerKeys).map((key) => [key, ""])) as VerificationAnswers;
 }
 
 function createEmptyAnswerState(): AnswerState {
@@ -938,7 +942,7 @@ export default function RegisterPage() {
       verification: answers,
       verificationAnswers,
       ...verificationAnswers,
-      uploads: uploadedFiles.map(({ file, ...upload }) => upload),
+      uploads: safeArray(uploadedFiles).map(({ file, ...upload }) => upload),
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
       receiveUpdates,
       finalAction,
@@ -1158,6 +1162,12 @@ export default function RegisterPage() {
 }
 
 function IntroCard({ onRegister }: { onRegister: () => void }) {
+  const trustCards = safeArray([
+    { icon: <BriefcaseBusiness size={18} />, title: "Hands-On Training", text: "Learn by doing with real tools and real tasks." },
+    { icon: <Award size={18} />, title: "Global Certification Pathways", text: "Aligned with international standards for recognised credentials." },
+    { icon: <CheckCircle2 size={18} />, title: "Job-Ready Skills", text: "Gain practical competence you can apply immediately." },
+  ]);
+
   return (
     <motion.section
       exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
@@ -1233,11 +1243,7 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
           </div>
 
           <div className="hidden gap-3 xl:grid xl:grid-cols-1">
-            {[
-              { icon: <BriefcaseBusiness size={18} />, title: "Hands-On Training", text: "Learn by doing with real tools and real tasks." },
-              { icon: <Award size={18} />, title: "Global Certification Pathways", text: "Aligned with international standards for recognised credentials." },
-              { icon: <CheckCircle2 size={18} />, title: "Job-Ready Skills", text: "Gain practical competence you can apply immediately." },
-            ].map((item) => (
+            {safeArray(trustCards).map((item) => (
               <div
                 key={item.title}
                 className="rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur"
@@ -1289,7 +1295,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
 
       <div className="mt-5 lg:hidden">
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-          {stepItems.map((label, index) => {
+          {safeArray(stepItems).map((label, index) => {
             const active = index === boundedStep;
             const done = index < boundedStep;
 
@@ -1328,7 +1334,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
       </div>
 
       <div className="mt-5 hidden gap-3 lg:grid">
-        {stepItems.map((label, index) => {
+        {safeArray(stepItems).map((label, index) => {
           const active = index === boundedStep;
           const done = index < boundedStep;
 
@@ -1389,7 +1395,7 @@ function CourseStep(props: {
           onChange={(event) => props.setCategory(event.target.value)}
           className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
         >
-          {categories.map((item) => (
+          {safeArray(categories).map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -1425,7 +1431,7 @@ function CourseStep(props: {
       )}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {filteredCourses.map((course) => {
+        {safeArray(filteredCourses).map((course) => {
           const selected = props.selectedCourseId === course.id;
 
           return (
@@ -1536,7 +1542,7 @@ function LocationStep(props: {
       {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {locations.map((location) => {
+        {safeArray(locations).map((location) => {
           const selected = props.selectedLocation === location.id;
 
           return (
@@ -1591,7 +1597,7 @@ function DetailsStep(props: {
         <div>
           <p className="mb-3 text-sm font-bold text-navy-950">Which session are you registering for?</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            {trainingSessions.map((session) => (
+            {safeArray(trainingSessions).map((session) => (
               <button
                 type="button"
                 key={session}
@@ -1615,7 +1621,7 @@ function DetailsStep(props: {
           <div>
             <p className="mb-3 text-sm font-bold text-navy-950">Need hostel?</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              {["Yes", "No"].map((option) => (
+              {safeArray(["Yes", "No"]).map((option) => (
                 <button
                   type="button"
                   key={option}
@@ -1809,7 +1815,7 @@ function VerificationStep(props: {
       <StepHeader icon={<ShieldCheck />} title={`${props.level} Verification Questions`} subtitle="These questions adjust to the selected course level." />
 
       <div className="mt-7 grid gap-5">
-        {questions.map((question) => (
+        {safeArray(questions).map((question) => (
           <AnswerTextArea
             key={question}
             label={question}
@@ -1847,7 +1853,7 @@ function SelectField({
         className="mt-2 h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
       >
         <option value="">Select an option</option>
-        {optionItems.map((option) => (
+        {safeArray(optionItems).map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
       </select>
@@ -1975,7 +1981,7 @@ function EvidenceStep(props: {
       {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {fields.map((field) => {
+        {safeArray(fields).map((field) => {
           const selectedFile = props.files[field];
 
           return (
@@ -2138,7 +2144,7 @@ function InfoList({ title, items }: { title: string; items: string[] }) {
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
       <h4 className="text-sm font-bold text-navy-950">{title}</h4>
       <ul className="mt-4 space-y-3">
-        {listItems.map((item) => (
+        {safeArray(listItems).map((item) => (
           <li key={item} className="flex gap-3 text-sm leading-6 text-slate-600">
             <CheckCircle2 className="mt-0.5 shrink-0 text-brand-700" size={17} />
             {item}

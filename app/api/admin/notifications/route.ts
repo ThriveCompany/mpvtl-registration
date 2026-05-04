@@ -42,9 +42,11 @@ export async function GET() {
       },
     });
 
+    const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
     return NextResponse.json({
-      count: notifications.length,
-      notifications: Array.isArray(notifications) ? notifications : [],
+      count: safeNotifications.length,
+      notifications: safeNotifications,
     });
   } catch (error) {
     console.error("Could not load notifications", error);

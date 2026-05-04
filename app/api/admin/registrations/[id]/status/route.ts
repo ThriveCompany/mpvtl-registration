@@ -23,28 +23,36 @@ export async function PATCH(
     return NextResponse.json({ message: "Invalid status." }, { status: 400 });
   }
 
-  const registration = await prisma.registration.findUnique({ where: { id } });
-  if (!registration || !canViewCenter(admin, registration.center)) {
-    return NextResponse.json({ message: "Registration not found." }, { status: 404 });
-  }
+  try {
+    const registration = await prisma.registration.findUnique({ where: { id } });
+    if (!registration || !canViewCenter(admin, registration.center)) {
+      return NextResponse.json({ message: "Registration not found.", registration: null }, { status: 404 });
+    }
 
-  const updated = await prisma.registration.update({
-    where: { id },
-    data: {
-      status: nextStatus,
-      approvedAt: nextStatus === "APPROVED" ? new Date() : registration.approvedAt,
-      approvedById: nextStatus === "APPROVED" ? admin.id : registration.approvedById,
-    },
-  });
-
-  if (nextStatus === "APPROVED") {
-    await sendApprovalEmail({
-      to: updated.email,
-      fullName: updated.fullName,
-      course: updated.course,
-      center: updated.center,
+    const updated = await prisma.registration.update({
+      where: { id },
+      data: {
+        status: nextStatus,
+        approvedAt: nextStatus === "APPROVED" ? new Date() : registration.approvedAt,
+        approvedById: nextStatus === "APPROVED" ? admin.id : registration.approvedById,
+      },
     });
-  }
 
-  return NextResponse.json({ registration: updated });
+    if (nextStatus === "APPROVED") {
+      await sendApprovalEmail({
+        to: updated.email,
+        fullName: updated.fullName,
+        course: updated.course,
+        center: updated.center,
+      });
+    }
+
+    return NextResponse.json({ registration: updated });
+  } catch (error) {
+    console.error("Could not update registration status", error);
+    return NextResponse.json(
+      { message: "Could not update registration status.", registration: null },
+      { status: 500 },
+    );
+  }
 }

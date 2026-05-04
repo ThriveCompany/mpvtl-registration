@@ -28,9 +28,13 @@ function readBoolean(formData: FormData, key: string) {
   return readText(formData, key) !== "false";
 }
 
+function safeArray<T>(value: readonly T[] | null | undefined): T[] {
+  return Array.isArray(value) ? [...value] : [];
+}
+
 function getVerificationAnswers(formData: FormData) {
   return Object.fromEntries(
-    verificationAnswerKeys.map((key) => [key, readText(formData, key)]),
+    safeArray(verificationAnswerKeys).map((key) => [key, readText(formData, key)]),
   );
 }
 

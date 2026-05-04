@@ -10,6 +10,10 @@ function formatLabel(key: string) {
     .replace(/^./, (letter) => letter.toUpperCase());
 }
 
+function safeArray<T>(value: readonly T[] | null | undefined): T[] {
+  return Array.isArray(value) ? [...value] : [];
+}
+
 export default async function RegistrationProfilePage({
   params,
 }: {
@@ -32,8 +36,22 @@ export default async function RegistrationProfilePage({
   const answers = typeof registration.verificationAnswers === "object" && registration.verificationAnswers !== null
     ? registration.verificationAnswers as Record<string, string>
     : {};
-  const answerEntries = Object.entries(answers);
+  const answerEntries = safeArray(Object.entries(answers));
   const files = Array.isArray(registration.files) ? registration.files : [];
+  const detailItems = safeArray([
+    ["Full name", registration.fullName],
+    ["Email", registration.email],
+    ["Phone", registration.phone],
+    ["Course", registration.course],
+    ["Category", registration.category],
+    ["Level", registration.level],
+    ["Center", registration.center],
+    ["Session", registration.session],
+    ["Hostel", registration.hostel],
+    ["Action", registration.action],
+    ["Receive updates", registration.receiveUpdates ? "Yes" : "No"],
+    ["Status", registration.status],
+  ] as const);
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
@@ -50,20 +68,7 @@ export default async function RegistrationProfilePage({
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-navy-950">Registration Details</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {[
-                ["Full name", registration.fullName],
-                ["Email", registration.email],
-                ["Phone", registration.phone],
-                ["Course", registration.course],
-                ["Category", registration.category],
-                ["Level", registration.level],
-                ["Center", registration.center],
-                ["Session", registration.session],
-                ["Hostel", registration.hostel],
-                ["Action", registration.action],
-                ["Receive updates", registration.receiveUpdates ? "Yes" : "No"],
-                ["Status", registration.status],
-              ].map(([label, value]) => (
+              {safeArray(detailItems).map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
                   <p className="mt-2 font-semibold text-navy-950">{value}</p>
@@ -88,7 +93,7 @@ export default async function RegistrationProfilePage({
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Verification Answers</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {answerEntries.map(([key, value]) => (
+            {safeArray(answerEntries).map(([key, value]) => (
               <div key={key} className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{formatLabel(key)}</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-navy-950">{value || "Not applicable"}</p>
@@ -101,7 +106,7 @@ export default async function RegistrationProfilePage({
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Uploaded Evidence</h2>
           <div className="mt-5 grid gap-3">
-            {files.map((file) => (
+            {safeArray(files).map((file) => (
               <a
                 key={file.id}
                 href={`/api/admin/files/${file.id}`}

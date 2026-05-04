@@ -19,6 +19,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const audioRef = useRef<AudioContext | null>(null);
+  const visibleRegistrations = Array.isArray(registrations) ? registrations : [];
 
   async function loadRegistrations() {
     try {
@@ -145,7 +146,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             </div>
           )}
 
-          {!loading && !error && registrations.map((registration) => (
+          {!loading && !error && (Array.isArray(visibleRegistrations) ? visibleRegistrations : []).map((registration) => (
             <Link
               key={registration.id}
               href={`/admin/registrations/${registration.id}`}
@@ -165,7 +166,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             </Link>
           ))}
 
-          {!loading && !error && registrations.length === 0 && (
+          {!loading && !error && visibleRegistrations.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
               No registrations yet.
             </div>

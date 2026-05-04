@@ -25,6 +25,7 @@ export default function UsersClient() {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const visibleUsers = Array.isArray(users) ? users : [];
 
   async function loadUsers() {
     try {
@@ -109,7 +110,7 @@ export default function UsersClient() {
                 Loading users...
               </div>
             )}
-            {!loading && users.map((user) => (
+            {!loading && (Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
               <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
                 <p className="font-bold text-navy-950">{user.name}</p>
                 <p className="mt-1 text-sm text-slate-600">{user.email}</p>
@@ -118,7 +119,7 @@ export default function UsersClient() {
                 </p>
               </div>
             ))}
-            {!loading && users.length === 0 && (
+            {!loading && visibleUsers.length === 0 && (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                 No admin users found.
               </div>

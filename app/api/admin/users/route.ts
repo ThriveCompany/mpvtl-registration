@@ -65,9 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Center is required for center managers." }, { status: 400 });
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
-
   try {
+    const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.adminUser.create({
       data: {
         name,
