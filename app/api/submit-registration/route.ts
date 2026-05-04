@@ -31,6 +31,8 @@ type RegistrationPayload = {
     id?: string;
     name?: string;
   };
+  session?: string;
+  trainingSession?: string;
   applicant?: {
     fullName?: string;
     email?: string;
@@ -115,6 +117,7 @@ function validateRegistration(payload: RegistrationPayload) {
   if (!hasText(payload.course?.name)) return "Course is required.";
   if (!hasText(payload.course?.level)) return "Course level is required.";
   if (!hasText(payload.location?.name)) return "Centre or mode is required.";
+  if (!hasText(payload.session || payload.trainingSession)) return "Training session is required.";
   if (!hasText(payload.applicant?.fullName)) return "Full name is required.";
   if (!hasText(payload.applicant?.email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.applicant?.email ?? "")) {
     return "A valid email address is required.";
@@ -200,6 +203,8 @@ export async function POST(request: Request) {
         category: payload.course?.category || "",
         level: payload.course?.level || "",
         location: payload.location?.name || payload.location?.id || "",
+        session: payload.session || payload.trainingSession || "",
+        trainingSession: payload.trainingSession || payload.session || "",
         hostel: payload.applicant?.hostel === "Yes" ? "Yes" : "No",
         action: payload.finalAction || "Submit Registration",
         receiveUpdates: payload.receiveUpdates ?? true,

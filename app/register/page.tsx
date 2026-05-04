@@ -99,6 +99,11 @@ const categories = [
   "Health & Safety",
 ];
 
+const trainingSessions = [
+  "July - September, 2026 Batch",
+  "October - December, 2026 Batch",
+];
+
 const shortCourseRequirements: Record<Level, string> = {
   Basic:
     "No formal educational qualification required. Applicants must be at least 14, provide valid identification, complete registration, and show willingness to follow MPVTL rules. Ability to read and write in English is an advantage.",
@@ -673,6 +678,7 @@ function readRegistrationDraft() {
       category?: string;
       selectedCourseId?: string;
       selectedLocation?: string;
+      selectedSession?: string;
       details?: { fullName?: string; email?: string; phone?: string; hostel?: string };
       answers?: Record<string, string>;
       files?: Record<string, UploadedFileData | undefined>;
@@ -691,6 +697,7 @@ function writeRegistrationDraft(draft: {
   category: string;
   selectedCourseId: string;
   selectedLocation: string;
+  selectedSession: string;
   details: { fullName: string; email: string; phone: string; hostel: string };
   answers: AnswerState;
   files: Record<string, UploadedFileData | undefined>;
@@ -720,6 +727,7 @@ export default function RegisterPage() {
   const [category, setCategory] = useState("All Categories");
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedSession, setSelectedSession] = useState("");
   const [details, setDetails] = useState({
     fullName: "",
     email: "",
@@ -787,6 +795,7 @@ export default function RegisterPage() {
       setCategory(categories.includes(draft.category ?? "") ? draft.category ?? "All Categories" : "All Categories");
       setSelectedCourseId(draft.selectedCourseId ?? "");
       setSelectedLocation(draft.selectedLocation ?? "");
+      setSelectedSession(trainingSessions.includes(draft.selectedSession ?? "") ? draft.selectedSession ?? "" : "");
       setDetails({
         fullName: draft.details?.fullName ?? "",
         email: draft.details?.email ?? "",
@@ -812,6 +821,7 @@ export default function RegisterPage() {
       category,
       selectedCourseId,
       selectedLocation,
+      selectedSession,
       details,
       answers,
       files,
@@ -830,6 +840,7 @@ export default function RegisterPage() {
     search,
     selectedCourseId,
     selectedLocation,
+    selectedSession,
     showIntro,
     step,
   ]);
@@ -872,6 +883,7 @@ export default function RegisterPage() {
     if (targetStep >= 0 && !selectedCourse) nextErrors.course = "Please select a course.";
     if (targetStep >= 2 && !selectedLocation) nextErrors.location = "Please select a centre or mode.";
     if (targetStep >= 3) {
+      if (!selectedSession) nextErrors.session = "Please choose a training session.";
       if (!details.fullName.trim()) nextErrors.fullName = "Full name is required.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) nextErrors.email = "Enter a valid email address.";
       if (!details.phone.trim()) nextErrors.phone = "Phone number is required.";
@@ -932,6 +944,8 @@ export default function RegisterPage() {
     const payload = {
       course: selectedCourse,
       location: selectedLocationData,
+      session: selectedSession,
+      trainingSession: selectedSession,
       applicant: { ...details, hostel: shouldAskHostel ? details.hostel : "No" },
       verification: answers,
       verificationAnswers,
@@ -1057,7 +1071,14 @@ export default function RegisterPage() {
                       />
                     )}
                     {step === 3 && (
-                      <DetailsStep details={details} setDetails={setDetails} errors={errors} showHostelQuestion={shouldAskHostel} />
+                      <DetailsStep
+                        details={details}
+                        setDetails={setDetails}
+                        selectedSession={selectedSession}
+                        setSelectedSession={setSelectedSession}
+                        errors={errors}
+                        showHostelQuestion={shouldAskHostel}
+                      />
                     )}
                     {step === 4 && (
                       <VerificationStep
@@ -1550,6 +1571,8 @@ function LocationStep(props: {
 function DetailsStep(props: {
   details: { fullName: string; email: string; phone: string; hostel: string };
   setDetails: (value: { fullName: string; email: string; phone: string; hostel: string }) => void;
+  selectedSession: string;
+  setSelectedSession: (value: string) => void;
   errors: Record<string, string>;
   showHostelQuestion: boolean;
 }) {
@@ -1562,6 +1585,25 @@ function DetailsStep(props: {
       <StepHeader icon={<BriefcaseBusiness />} title="Personal Details" subtitle="Enter your details so MPVTL can follow up when the next phase is connected." />
 
       <div className="mt-7 grid gap-5">
+        <div>
+          <p className="mb-3 text-sm font-bold text-navy-950">Which session are you registering for?</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {trainingSessions.map((session) => (
+              <button
+                type="button"
+                key={session}
+                onClick={() => props.setSelectedSession(session)}
+                className={`rounded-2xl border px-5 py-4 text-left font-bold transition ${
+                  props.selectedSession === session ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                {session}
+              </button>
+            ))}
+          </div>
+          {props.errors.session && <p className="mt-2 text-sm font-semibold text-brand-700">{props.errors.session}</p>}
+        </div>
+
         <TextField label="Full Name" value={props.details.fullName} onChange={(value) => update("fullName", value)} error={props.errors.fullName} />
         <TextField label="Email Address" value={props.details.email} onChange={(value) => update("email", value)} error={props.errors.email} />
         <TextField label="Phone Number" value={props.details.phone} onChange={(value) => update("phone", value)} error={props.errors.phone} />
