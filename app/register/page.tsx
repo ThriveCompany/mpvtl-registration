@@ -594,6 +594,7 @@ function formatVerificationAnswers(level: Level, courseName: string, rawAnswers:
 
 export default function RegisterPage() {
   const formRef = useRef<HTMLElement | null>(null);
+  const stepPanelRef = useRef<HTMLDivElement | null>(null);
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
@@ -639,6 +640,12 @@ export default function RegisterPage() {
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function scrollToStepTop() {
+    requestAnimationFrame(() => {
+      stepPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function selectCourse(courseId: string) {
@@ -713,12 +720,14 @@ export default function RegisterPage() {
     setStep((current) => Math.min(current + 1, activeSteps.length - 1));
     setErrors({});
     setSubmitError("");
+    scrollToStepTop();
   }
 
   function previousStep() {
     setStep((current) => Math.max(current - 1, 0));
     setErrors({});
     setSubmitError("");
+    scrollToStepTop();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -818,7 +827,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <Stepper currentStep={step} steps={activeSteps} />
 
-              <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
+              <div ref={stepPanelRef} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={step}
@@ -846,6 +855,7 @@ export default function RegisterPage() {
                     {step === 2 && (
                       <LocationStep
                         locations={availableLocations}
+                        courseName={selectedCourse?.name ?? "selected course"}
                         selectedLocation={selectedLocation}
                         setSelectedLocation={selectLocation}
                         error={errors.location}
@@ -1287,6 +1297,7 @@ function ValueStep({ course }: { course: Course }) {
 
 function LocationStep(props: {
   locations: LocationOption[];
+  courseName: string;
   selectedLocation: string;
   setSelectedLocation: (value: string) => void;
   error?: string;
@@ -1301,7 +1312,7 @@ function LocationStep(props: {
             <span className="hidden sm:inline">Choose Centre / Mode</span>
           </>
         )}
-        subtitle="Pick a training centre or online mode using MPVTL centre and facility information."
+        subtitle={`Pick a training center or online mode for training on ${props.courseName}.`}
       />
       {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
