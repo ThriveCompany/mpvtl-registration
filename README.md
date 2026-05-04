@@ -1,11 +1,12 @@
 # MPVTL Short Course Registration
 
-Next.js App Router project for the MPVTL short course registration experience, with a minimal API route that forwards submissions to Make.
+Next.js App Router project for the MPVTL short course registration experience and a simple PostgreSQL-backed registration management system.
 
 ## Local Development
 
 ```bash
 npm install
+npm run prisma:generate
 npm run dev
 ```
 
@@ -15,11 +16,51 @@ Open:
 http://localhost:3000/register
 ```
 
-Create a local `.env.local` file when you are ready to submit live registrations:
+Admin:
 
 ```bash
-MAKE_WEBHOOK_URL=your_make_webhook_url
+http://localhost:3000/admin/login
 ```
+
+## Environment
+
+Create `.env.local` locally or set these variables on the VPS:
+
+```bash
+DATABASE_URL=
+JWT_SECRET=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+SUPER_ADMIN_NAME=
+SUPER_ADMIN_EMAIL=
+SUPER_ADMIN_PASSWORD=
+```
+
+SMTP is optional. If SMTP is not configured, approval email content is logged instead of crashing.
+
+## Database Setup
+
+For a new VPS/database:
+
+```bash
+npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed
+```
+
+The seed command creates one `SUPER_ADMIN` user only when:
+
+```bash
+SUPER_ADMIN_NAME=
+SUPER_ADMIN_EMAIL=
+SUPER_ADMIN_PASSWORD=
+```
+
+are set.
 
 ## Production Deployment With PM2
 
@@ -27,25 +68,15 @@ On the VPS:
 
 ```bash
 npm install
-npm run build
-pm2 delete mpvtl-form || true
-pm2 start npm --name "mpvtl-form" -- start
-pm2 save
-curl http://localhost:3000/register
-```
-
-Recommended PM2 config:
-
-```bash
-npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed
 npm run build
 pm2 delete mpvtl-form || true
 pm2 start ecosystem.config.js
 pm2 save
 curl http://localhost:3000/register
 ```
-
-Set `MAKE_WEBHOOK_URL` on the VPS before starting PM2 so `/api/submit-registration` can forward completed forms.
 
 The production start script binds Next.js to all network interfaces on port 3000:
 
@@ -58,3 +89,13 @@ This runs:
 ```bash
 next start -H 0.0.0.0 -p 3000
 ```
+
+## Upload Storage
+
+Registration evidence files are stored on the server under:
+
+```bash
+uploads/registrations/{registrationId}/
+```
+
+The `uploads/` folder is intentionally git-ignored. Admins access files only through protected routes.

@@ -5,3 +5,4 @@ next-dev.err.log
 *.log
 .env*
 !.env.example
+uploads/

@@ -51,15 +51,15 @@ type UploadedFileData = {
   field: string;
   uploadedFileName: string;
   uploadedFileType: string;
-  uploadedFileBase64: string;
   uploadedFileSize: number;
+  file?: File;
 };
 
 const verificationAnswerKeys = [
   "priorExposure",
   "completedBasicCourse",
   "experienceDescription",
-  "availableForScreening",
+  "availableForEntryReview",
   "canReadAndWrite",
   "newToField",
   "reasonForCourse",
@@ -82,8 +82,9 @@ const supplementalAnswerKeys = {
 type SupplementalAnswerKey = (typeof supplementalAnswerKeys)[keyof typeof supplementalAnswerKeys];
 type AnswerState = VerificationAnswers & Partial<Record<SupplementalAnswerKey, string>>;
 
-const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
-const MAX_UPLOAD_SIZE_LABEL = "2MB";
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "5MB";
+const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const DRAFT_STORAGE_KEY = "mpvtlShortCourseRegistrationDraft";
 
 const categories = [
@@ -510,7 +511,7 @@ const intermediateQuestionKeys = {
   priorExposure: "priorExposure",
   completedBasicCourse: "completedBasicCourse",
   experienceBrief: "experienceDescription",
-  screeningAvailability: "availableForScreening",
+  entryReviewAvailability: "availableForEntryReview",
 } as const;
 
 const advancedQuestionKeys = {
@@ -533,7 +534,7 @@ const questions: Record<Level, VerificationAnswerKey[]> = {
     intermediateQuestionKeys.priorExposure,
     intermediateQuestionKeys.completedBasicCourse,
     intermediateQuestionKeys.experienceBrief,
-    intermediateQuestionKeys.screeningAvailability,
+    intermediateQuestionKeys.entryReviewAvailability,
   ],
   Advanced: [
     advancedQuestionKeys.priorTraining,
@@ -586,19 +587,6 @@ function getCenterWhatsAppUrl(location?: LocationOption) {
   return `https://wa.me/${sanitizeWhatsAppNumber(phoneNumber)}?text=${message}`;
 }
 
-function readFileAsBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      resolve(result.includes(",") ? result.split(",")[1] : result);
-    };
-    reader.onerror = () => reject(new Error("Could not read the selected file."));
-    reader.readAsDataURL(file);
-  });
-}
-
 function createEmptyVerificationAnswers(): VerificationAnswers {
   return Object.fromEntries(verificationAnswerKeys.map((key) => [key, ""])) as VerificationAnswers;
 }
@@ -625,7 +613,7 @@ function normalizeAnswerState(value: unknown): AnswerState {
     "Have you completed a basic course before?": "completedBasicCourse",
     "Have you completed a basic course in this field before?": "completedBasicCourse",
     "Describe your experience briefly.": "experienceDescription",
-    "Are you available for screening?": "availableForScreening",
+    "Are you available for Entry Review?": "availableForEntryReview",
     "Do you have prior training or demonstrable experience?": "priorTraining",
     "Do you have a previous certificate?": "hasPreviousCertificate",
     "Describe your practical experience.": "practicalExperience",
@@ -756,7 +744,7 @@ export default function RegisterPage() {
   const activeQuestions = questions[selectedLevel];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
   const uploadedFiles = Object.values(files).filter(Boolean) as UploadedFileData[];
-  const primaryUpload = uploadedFiles[0];
+  const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
 
   const filteredCourses = useMemo(() => {
@@ -803,7 +791,7 @@ export default function RegisterPage() {
         hostel: draft.details?.hostel ?? "",
       });
       setAnswers(normalizeAnswerState(draft.answers));
-      setFiles(draft.files ?? {});
+      setFiles({});
       setBasicDeclaration(draft.basicDeclaration ?? "");
       setReceiveUpdates(draft.receiveUpdates ?? true);
       setShowIntro(draft.showIntro ?? !draft.step);
@@ -824,7 +812,7 @@ export default function RegisterPage() {
       selectedSession,
       details,
       answers,
-      files,
+      files: {},
       basicDeclaration,
       receiveUpdates,
       showIntro,
@@ -835,7 +823,6 @@ export default function RegisterPage() {
     category,
     details,
     draftReady,
-    files,
     receiveUpdates,
     search,
     selectedCourseId,
@@ -914,7 +901,7 @@ export default function RegisterPage() {
     if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
       nextErrors.basicDeclaration = "Please write your declaration before continuing.";
     }
-    if (targetStep >= 5 && selectedLevel !== "Basic" && uploadedFiles.length === 0) {
+    if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0) {
       nextErrors.uploads = "Please upload at least one document before continuing.";
     }
 
@@ -950,41 +937,48 @@ export default function RegisterPage() {
       verification: answers,
       verificationAnswers,
       ...verificationAnswers,
-      uploads: uploadedFiles,
-      uploadedFileName: primaryUpload?.uploadedFileName || "",
-      uploadedFileType: primaryUpload?.uploadedFileType || "",
-      uploadedFileBase64: primaryUpload?.uploadedFileBase64 || "",
+      uploads: uploadedFiles.map(({ file, ...upload }) => upload),
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
       receiveUpdates,
       finalAction,
       submittedAt: new Date().toISOString(),
     };
 
-    // The server route forwards this registration to Make. Future phases can add
-    // secure file storage, email workflows, and Excel exports.
+    // Keep a local backup so applicants can edit their response after submitting.
     try {
       localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
     } catch {
-      const backupPayload = {
-        ...payload,
-        uploadedFileBase64: "",
-        uploads: uploadedFiles.map(({ uploadedFileBase64, ...file }) => file),
-      };
-
-      try {
-        localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(backupPayload));
-      } catch {
-        // Keep submission moving even if this browser blocks localStorage.
-      }
+      // Keep submission moving even if this browser blocks localStorage.
     }
     setSubmitError("");
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/submit-registration", {
+      const formData = new FormData();
+      formData.append("fullName", details.fullName);
+      formData.append("email", details.email);
+      formData.append("phone", details.phone);
+      formData.append("course", selectedCourse.name);
+      formData.append("category", selectedCourse.category);
+      formData.append("level", selectedCourse.level);
+      formData.append("center", selectedLocationData?.name || "");
+      formData.append("location", selectedLocationData?.name || "");
+      formData.append("session", selectedSession);
+      formData.append("trainingSession", selectedSession);
+      formData.append("hostel", shouldAskHostel ? details.hostel : "No");
+      formData.append("action", finalAction);
+      formData.append("receiveUpdates", String(receiveUpdates));
+      formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
+      verificationAnswerKeys.forEach((key) => {
+        formData.append(key, verificationAnswers[key]);
+      });
+      selectedEvidenceFiles.forEach((upload) => {
+        if (upload.file) formData.append("evidenceFiles", upload.file, upload.uploadedFileName);
+      });
+
+      const response = await fetch("/api/registrations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const result = await response.json().catch(() => null) as { message?: string } | null;
 
@@ -1700,7 +1694,7 @@ function VerificationStep(props: {
   if (props.level === "Intermediate") {
     return (
       <div>
-        <StepHeader icon={<ShieldCheck />} title="Intermediate Verification Questions" subtitle="These questions capture screening-ready information in a structured format." />
+        <StepHeader icon={<ShieldCheck />} title="Intermediate Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
           <SelectField
@@ -1724,11 +1718,11 @@ function VerificationStep(props: {
             error={props.errors[intermediateQuestionKeys.experienceBrief]}
           />
           <SelectField
-            label={`Are you available for ${courseName} screening?`}
-            value={props.answers[intermediateQuestionKeys.screeningAvailability] ?? ""}
-            onChange={(value) => updateAnswer(intermediateQuestionKeys.screeningAvailability, value)}
+            label={`Are you available for ${courseName} Entry Review?`}
+            value={props.answers[intermediateQuestionKeys.entryReviewAvailability] ?? ""}
+            onChange={(value) => updateAnswer(intermediateQuestionKeys.entryReviewAvailability, value)}
             options={availabilityOptions}
-            error={props.errors[intermediateQuestionKeys.screeningAvailability]}
+            error={props.errors[intermediateQuestionKeys.entryReviewAvailability]}
           />
         </div>
       </div>
@@ -1738,7 +1732,7 @@ function VerificationStep(props: {
   if (props.level === "Advanced") {
     return (
       <div>
-        <StepHeader icon={<ShieldCheck />} title="Advanced Verification Questions" subtitle="These questions capture screening-ready information in a structured format." />
+        <StepHeader icon={<ShieldCheck />} title="Advanced Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
           <SelectField
@@ -1933,31 +1927,30 @@ function EvidenceStep(props: {
 }) {
   const fields = ["ID Document", "Previous Certificate / Supporting Document"];
 
-  async function handleFileChange(field: string, file?: File) {
+  function handleFileChange(field: string, file?: File) {
     if (!file) return;
+
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      props.setUploadError(`"${file.name}" is not supported. Please upload a JPG, PNG, or PDF file.`);
+      return;
+    }
 
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
       props.setUploadError(`"${file.name}" is too large. Please upload a file under ${MAX_UPLOAD_SIZE_LABEL}.`);
       return;
     }
 
-    try {
-      const uploadedFileBase64 = await readFileAsBase64(file);
-
-      props.setFiles({
-        ...props.files,
-        [field]: {
-          field,
-          uploadedFileName: file.name,
-          uploadedFileType: file.type || "application/octet-stream",
-          uploadedFileBase64,
-          uploadedFileSize: file.size,
-        },
-      });
-      props.setUploadError("");
-    } catch {
-      props.setUploadError("We could not read that file. Please choose another document.");
-    }
+    props.setFiles({
+      ...props.files,
+      [field]: {
+        field,
+        uploadedFileName: file.name,
+        uploadedFileType: file.type || "application/octet-stream",
+        uploadedFileSize: file.size,
+        file,
+      },
+    });
+    props.setUploadError("");
   }
 
   return (
@@ -1965,7 +1958,7 @@ function EvidenceStep(props: {
       <StepHeader icon={<FileUp />} title="Upload Evidence" subtitle="Select supporting files for MPVTL review." />
 
       <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
-        Upload at least one document. File content will be sent securely with your registration, and each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
+        Upload at least one JPG, PNG, or PDF document. Each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
       </div>
       {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
@@ -1992,7 +1985,7 @@ function EvidenceStep(props: {
               )}
               <input
                 type="file"
-                accept="image/*,.pdf,.doc,.docx"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                 className="sr-only"
                 onChange={(event) => handleFileChange(field, event.target.files?.[0])}
               />
@@ -2042,6 +2035,8 @@ function SuccessScreen({
   onEditResponse: () => void;
   whatsappUrl: string;
 }) {
+  const [showPaymentNote, setShowPaymentNote] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -2068,15 +2063,30 @@ function SuccessScreen({
         >
           Edit Response
         </button>
+        <button
+          type="button"
+          onClick={() => setShowPaymentNote(true)}
+          className="inline-flex items-center justify-center rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600"
+        >
+          Pay Registration Fee
+        </button>
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center justify-center rounded-full bg-navy-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-navy-800"
         >
-          Contact Center Manager
+          Request Assistance
         </a>
       </div>
+      {showPaymentNote && (
+        <div className="mx-auto mt-7 max-w-2xl rounded-3xl border border-brand-100 bg-brand-50 p-5 text-left">
+          <p className="text-sm font-bold text-navy-950">Payment setup coming soon.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            For now, please use Request Assistance to contact the centre manager for registration fee guidance.
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }
