@@ -142,7 +142,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Future phase: attach secure upload storage and payment confirmation here.
+    // Future phase: attach secure upload storage and operational follow-up here.
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

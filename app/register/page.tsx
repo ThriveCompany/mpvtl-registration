@@ -752,7 +752,7 @@ export default function RegisterPage() {
     };
 
     // The server route forwards this registration to Make. Future phases can add
-    // secure file storage, email workflows, Excel exports, and payment checks.
+    // secure file storage, email workflows, and Excel exports.
     try {
       localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
     } catch {
@@ -1805,8 +1805,6 @@ function SuccessScreen({
   onEditResponse: () => void;
   whatsappUrl: string;
 }) {
-  const [showPayment, setShowPayment] = useState(false);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -1833,13 +1831,6 @@ function SuccessScreen({
         >
           Edit Response
         </button>
-        <button
-          type="button"
-          onClick={() => setShowPayment(true)}
-          className="inline-flex items-center justify-center rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600"
-        >
-          Pay Registration Fee
-        </button>
         <a
           href={whatsappUrl}
           target="_blank"
@@ -1849,14 +1840,6 @@ function SuccessScreen({
           Contact Center Manager
         </a>
       </div>
-      {showPayment && (
-        <div className="mx-auto mt-7 max-w-2xl rounded-3xl border border-brand-100 bg-brand-50 p-5 text-left">
-          <p className="text-sm font-bold text-navy-950">Transfer/card payment setup coming soon.</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            This section is reserved for the Flutterwave payment integration in the next phase.
-          </p>
-        </div>
-      )}
     </motion.div>
   );
 }
