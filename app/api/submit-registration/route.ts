@@ -20,10 +20,22 @@ type RegistrationPayload = {
     hostel?: string;
   };
   verification?: Record<string, string>;
-  uploads?: Record<string, string>;
+  verificationAnswers?: Record<string, string>;
+  uploads?: UploadedFilePayload[];
+  uploadedFileName?: string;
+  uploadedFileType?: string;
+  uploadedFileBase64?: string;
   basicDeclaration?: string;
   receiveUpdates?: boolean;
   finalAction?: string;
+};
+
+type UploadedFilePayload = {
+  field?: string;
+  uploadedFileName?: string;
+  uploadedFileType?: string;
+  uploadedFileBase64?: string;
+  uploadedFileSize?: number;
 };
 
 function isRegistrationPayload(value: unknown): value is RegistrationPayload {
@@ -34,7 +46,17 @@ function hasText(value: unknown) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function getPrimaryUpload(payload: RegistrationPayload): UploadedFilePayload {
+  return payload.uploads?.[0] ?? {
+    uploadedFileName: payload.uploadedFileName,
+    uploadedFileType: payload.uploadedFileType,
+    uploadedFileBase64: payload.uploadedFileBase64,
+  };
+}
+
 function validateRegistration(payload: RegistrationPayload) {
+  const verificationAnswers = payload.verificationAnswers || payload.verification;
+
   if (!hasText(payload.course?.name)) return "Course is required.";
   if (!hasText(payload.location?.name)) return "Centre or mode is required.";
   if (!hasText(payload.applicant?.fullName)) return "Full name is required.";
@@ -43,13 +65,16 @@ function validateRegistration(payload: RegistrationPayload) {
   }
   if (!hasText(payload.applicant?.phone)) return "Phone number is required.";
   if (!hasText(payload.applicant?.hostel)) return "Hostel preference is required.";
-  if (!payload.verification || Object.keys(payload.verification).length === 0) {
+  if (!verificationAnswers || Object.keys(verificationAnswers).length === 0) {
     return "Verification answers are required.";
   }
   if (payload.course?.level === "Basic" && !hasText(payload.basicDeclaration)) {
     return "Applicant declaration is required.";
   }
   if (!hasText(payload.finalAction)) return "Final action is required.";
+  if (payload.course?.level && payload.course.level !== "Basic" && !hasText(getPrimaryUpload(payload).uploadedFileBase64)) {
+    return "Supporting upload is required.";
+  }
   return "";
 }
 
@@ -83,6 +108,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const primaryUpload = getPrimaryUpload(payload);
+  const verificationAnswers = payload.verificationAnswers || payload.verification || {};
+
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
@@ -96,11 +124,14 @@ export async function POST(request: Request) {
         level: payload.course?.level || "",
         location: payload.location?.name || payload.location?.id || "",
         hostel: payload.applicant?.hostel === "Yes" ? "Yes" : "No",
-        action: payload.finalAction || "",
-        verification: payload.verification || {},
-        uploads: payload.uploads || {},
-        basicDeclaration: payload.basicDeclaration || "",
+        action: payload.finalAction || "Submit Registration",
         receiveUpdates: payload.receiveUpdates ?? true,
+        uploadedFileName: primaryUpload.uploadedFileName || "",
+        uploadedFileType: primaryUpload.uploadedFileType || "",
+        uploadedFileBase64: primaryUpload.uploadedFileBase64 || "",
+        verificationAnswers,
+        uploadedFiles: payload.uploads || [],
+        basicDeclaration: payload.basicDeclaration || "",
       }),
     });
 

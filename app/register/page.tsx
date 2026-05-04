@@ -47,6 +47,17 @@ type LocationOption = {
   wifi: string;
 };
 
+type UploadedFileData = {
+  field: string;
+  uploadedFileName: string;
+  uploadedFileType: string;
+  uploadedFileBase64: string;
+  uploadedFileSize: number;
+};
+
+const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_LABEL = "2MB";
+
 const categories = [
   "All Categories",
   "Culinary",
@@ -414,9 +425,18 @@ const locations: LocationOption[] = [
   { id: "L1002", name: "Sagamu", address: "Sagamu Express Bus Stop, Sagamu LGA, Ogun State, Nigeria", hostel: "Hostel available", wifi: "Campus WiFi available" },
   { id: "L1003", name: "Ibadan", address: "Dugbe, Ibadan LGA, Oyo State", hostel: "No hostel listed", wifi: "WiFi not listed" },
   { id: "L1004", name: "Abuja", address: "Ahmadu Bello Way, Area 11, Garki, Abuja", hostel: "No hostel listed", wifi: "WiFi not listed" },
-  { id: "L1005", name: "Beauty Therapy Centre", address: "Beauty Therapy Centre, Oyo State", hostel: "Facility details not listed", wifi: "WiFi not listed" },
+  { id: "L1005", name: "Beauty Therapy Centre", address: "No 2 Gem building adjacent Ventura Mall, Songo, Ibadan.", hostel: "No hostel listed", wifi: "WiFi not listed" },
   { id: "L2000", name: "Online", address: "Online learning mode", hostel: "Not applicable", wifi: "Stable internet required" },
 ];
+
+const centerWhatsAppNumbers: Record<string, string> = {
+  L1000: "+2349024208667",
+  L1001: "+2348036545517",
+  L1002: "+2347059558727",
+  L1003: "+2348036358220",
+  L1004: "+2348023041736",
+  L1005: "+2348067228580",
+};
 
 const courseLocationIds: Record<string, string[]> = {
   "cake-design": ["L1000"],
@@ -447,14 +467,14 @@ const courseLocationIds: Record<string, string[]> = {
 
 const basicQuestionKeys = {
   readWriteEnglish: "Can you read and write in English?",
-  newToField: "Are you new to this field?",
-  courseReason: "Why do you want to take this course?",
+  newToField: "Are you new to the selected course?",
+  courseReason: "Why do you want to take the selected course?",
   courseReasonOther: "Course interest details",
   practicalAvailability: "Are you available for practical training?",
 };
 
 const intermediateQuestionKeys = {
-  priorExposure: "Do you have basic knowledge or prior exposure to this trade?",
+  priorExposure: "Do you have basic knowledge or prior exposure to the selected course?",
   completedBasicCourse: "Have you completed a basic course in this field before?",
   experienceBrief: "Describe your experience briefly.",
   screeningAvailability: "Are you available for screening?",
@@ -490,8 +510,8 @@ const questions: Record<Level, string[]> = {
   ],
 };
 
-const standardSteps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Action"];
-const basicSteps = ["Course", "Description", "Centre", "Details", "Verify", "Confirm", "Action"];
+const standardSteps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Submit"];
+const basicSteps = ["Course", "Description", "Centre", "Details", "Verify", "Confirm", "Submit"];
 
 const yesNoOptions = ["Yes", "No"];
 const availabilityOptions = ["Yes", "No", "Maybe"];
@@ -514,6 +534,64 @@ const certificateTypeOptions = [
   "Other, please describe",
 ];
 
+function locationHasHostel(location?: LocationOption) {
+  return location?.hostel.toLowerCase() === "hostel available";
+}
+
+function sanitizeWhatsAppNumber(phoneNumber: string) {
+  return phoneNumber.replace(/\D/g, "");
+}
+
+function getCenterWhatsAppUrl(location?: LocationOption) {
+  const phoneNumber = location?.id === "L2000"
+    ? centerWhatsAppNumbers.L1000
+    : centerWhatsAppNumbers[location?.id ?? ""] || centerWhatsAppNumbers.L1000;
+  const message = encodeURIComponent(
+    "Hello MPVTL, I just submitted a short course registration and need assistance.",
+  );
+
+  return `https://wa.me/${sanitizeWhatsAppNumber(phoneNumber)}?text=${message}`;
+}
+
+function readFileAsBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(new Error("Could not read the selected file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatVerificationAnswers(level: Level, courseName: string, rawAnswers: Record<string, string>) {
+  const labels: Record<string, string> = {
+    [basicQuestionKeys.readWriteEnglish]: basicQuestionKeys.readWriteEnglish,
+    [basicQuestionKeys.newToField]: `Are you new to ${courseName}?`,
+    [basicQuestionKeys.courseReason]: `Why do you want to take ${courseName}?`,
+    [basicQuestionKeys.courseReasonOther]: `Reason for taking ${courseName}`,
+    [basicQuestionKeys.practicalAvailability]: `Are you available for practical training in ${courseName}?`,
+    [intermediateQuestionKeys.priorExposure]: `Do you have basic knowledge or prior exposure to ${courseName}?`,
+    [intermediateQuestionKeys.completedBasicCourse]: `Have you completed a basic course in ${courseName} before?`,
+    [intermediateQuestionKeys.experienceBrief]: `Describe your experience with ${courseName} briefly.`,
+    [intermediateQuestionKeys.screeningAvailability]: `Are you available for ${courseName} screening?`,
+    [advancedQuestionKeys.priorTraining]: `Do you have prior training or demonstrable experience in ${courseName}?`,
+    [advancedQuestionKeys.previousCertificate]: `Do you have a previous certificate in ${courseName}?`,
+    [advancedQuestionKeys.practicalExperience]: `Describe your practical experience in ${courseName}.`,
+    [advancedQuestionKeys.assessmentAvailability]: `Are you available for ${courseName} assessment/interview?`,
+    [advancedQuestionKeys.certificateType]: `Type of certification for ${courseName}`,
+    [advancedQuestionKeys.certificateTypeOther]: `Certification type details for ${courseName}`,
+  };
+
+  return Object.fromEntries(
+    Object.entries(rawAnswers)
+      .filter(([, value]) => value.trim().length > 0)
+      .map(([key, value]) => [labels[key] ?? `${level}: ${key}`, value]),
+  );
+}
+
 export default function RegisterPage() {
   const formRef = useRef<HTMLElement | null>(null);
   const [step, setStep] = useState(0);
@@ -528,10 +606,10 @@ export default function RegisterPage() {
     hostel: "",
   });
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [files, setFiles] = useState<Record<string, string>>({});
+  const [files, setFiles] = useState<Record<string, UploadedFileData | undefined>>({});
   const [basicDeclaration, setBasicDeclaration] = useState("");
   const [receiveUpdates, setReceiveUpdates] = useState(true);
-  const [finalAction, setFinalAction] = useState("");
+  const finalAction = "Submit Registration";
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -543,10 +621,13 @@ export default function RegisterPage() {
     ? locations.filter((location) => courseLocationIds[selectedCourse.id]?.includes(location.id))
     : [];
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
-  const isOnlineMode = selectedLocationData?.id === "L2000";
+  const shouldAskHostel = locationHasHostel(selectedLocationData);
   const selectedLevel = selectedCourse?.level ?? "Basic";
   const activeQuestions = questions[selectedLevel];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
+  const uploadedFiles = Object.values(files).filter(Boolean) as UploadedFileData[];
+  const primaryUpload = uploadedFiles[0];
+  const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -565,18 +646,20 @@ export default function RegisterPage() {
     setSelectedLocation("");
     setDetails((current) => ({ ...current, hostel: "" }));
     setAnswers({});
+    setFiles({});
     setBasicDeclaration("");
-    setFinalAction("");
     setSubmitError("");
   }
 
   function selectLocation(locationId: string) {
     const location = locations.find((item) => item.id === locationId);
+    const nextHasHostel = locationHasHostel(location);
+    const previousHasHostel = locationHasHostel(selectedLocationData);
 
     setSelectedLocation(locationId);
     setDetails((current) => ({
       ...current,
-      hostel: location?.id === "L2000" ? "No" : selectedLocationData?.id === "L2000" ? "" : current.hostel,
+      hostel: nextHasHostel ? (previousHasHostel ? current.hostel : "") : "No",
     }));
   }
 
@@ -589,7 +672,7 @@ export default function RegisterPage() {
       if (!details.fullName.trim()) nextErrors.fullName = "Full name is required.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) nextErrors.email = "Enter a valid email address.";
       if (!details.phone.trim()) nextErrors.phone = "Phone number is required.";
-      if (!isOnlineMode && !details.hostel) nextErrors.hostel = "Please choose Yes or No.";
+      if (shouldAskHostel && !details.hostel) nextErrors.hostel = "Please choose Yes or No.";
     }
     if (targetStep >= 4) {
       activeQuestions.forEach((question) => {
@@ -616,7 +699,9 @@ export default function RegisterPage() {
     if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
       nextErrors.basicDeclaration = "Please write your declaration before continuing.";
     }
-    if (targetStep >= 6 && !finalAction) nextErrors.finalAction = "Please choose a final action.";
+    if (targetStep >= 5 && selectedLevel !== "Basic" && uploadedFiles.length === 0) {
+      nextErrors.uploads = "Please upload at least one document before continuing.";
+    }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -640,12 +725,17 @@ export default function RegisterPage() {
     event.preventDefault();
     if (isSubmitting || !validateStep(6) || !selectedCourse) return;
 
+    const verificationAnswers = formatVerificationAnswers(selectedLevel, selectedCourse.name, answers);
     const payload = {
       course: selectedCourse,
       location: selectedLocationData,
-      applicant: { ...details, hostel: isOnlineMode ? "No" : details.hostel },
+      applicant: { ...details, hostel: shouldAskHostel ? details.hostel : "No" },
       verification: answers,
-      uploads: files,
+      verificationAnswers,
+      uploads: uploadedFiles,
+      uploadedFileName: primaryUpload?.uploadedFileName || "",
+      uploadedFileType: primaryUpload?.uploadedFileType || "",
+      uploadedFileBase64: primaryUpload?.uploadedFileBase64 || "",
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
       receiveUpdates,
       finalAction,
@@ -654,7 +744,21 @@ export default function RegisterPage() {
 
     // The server route forwards this registration to Make. Future phases can add
     // secure file storage, email workflows, Excel exports, and payment checks.
-    localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
+    try {
+      localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(payload));
+    } catch {
+      const backupPayload = {
+        ...payload,
+        uploadedFileBase64: "",
+        uploads: uploadedFiles.map(({ uploadedFileBase64, ...file }) => file),
+      };
+
+      try {
+        localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify(backupPayload));
+      } catch {
+        // Keep submission moving even if this browser blocks localStorage.
+      }
+    }
     setSubmitError("");
     setIsSubmitting(true);
 
@@ -703,7 +807,13 @@ export default function RegisterPage() {
           </div>
 
           {submitted ? (
-            <SuccessScreen />
+            <SuccessScreen
+              onEditResponse={() => {
+                setSubmitted(false);
+                requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+              }}
+              whatsappUrl={centerWhatsAppUrl}
+            />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
               <Stepper currentStep={step} steps={activeSteps} />
@@ -742,11 +852,12 @@ export default function RegisterPage() {
                       />
                     )}
                     {step === 3 && (
-                      <DetailsStep details={details} setDetails={setDetails} errors={errors} isOnlineMode={isOnlineMode} />
+                      <DetailsStep details={details} setDetails={setDetails} errors={errors} showHostelQuestion={shouldAskHostel} />
                     )}
                     {step === 4 && (
                       <VerificationStep
                         level={selectedLevel}
+                        courseName={selectedCourse?.name ?? "selected course"}
                         questions={activeQuestions}
                         answers={answers}
                         setAnswers={setAnswers}
@@ -762,15 +873,18 @@ export default function RegisterPage() {
                         error={errors.basicDeclaration}
                       />
                     )}
-                    {step === 5 && selectedLevel !== "Basic" && <EvidenceStep files={files} setFiles={setFiles} />}
+                    {step === 5 && selectedLevel !== "Basic" && (
+                      <EvidenceStep
+                        files={files}
+                        setFiles={setFiles}
+                        error={errors.uploads}
+                        setUploadError={(message) => setErrors((current) => ({ ...current, uploads: message }))}
+                      />
+                    )}
                     {step === 6 && (
                       <FinalStep
-                        level={selectedLevel}
-                        finalAction={finalAction}
-                        setFinalAction={setFinalAction}
                         receiveUpdates={receiveUpdates}
                         setReceiveUpdates={setReceiveUpdates}
-                        error={errors.finalAction}
                       />
                     )}
                   </motion.div>
@@ -1231,7 +1345,7 @@ function DetailsStep(props: {
   details: { fullName: string; email: string; phone: string; hostel: string };
   setDetails: (value: { fullName: string; email: string; phone: string; hostel: string }) => void;
   errors: Record<string, string>;
-  isOnlineMode: boolean;
+  showHostelQuestion: boolean;
 }) {
   const update = (key: keyof typeof props.details, value: string) => {
     props.setDetails({ ...props.details, [key]: value });
@@ -1246,7 +1360,7 @@ function DetailsStep(props: {
         <TextField label="Email Address" value={props.details.email} onChange={(value) => update("email", value)} error={props.errors.email} />
         <TextField label="Phone Number" value={props.details.phone} onChange={(value) => update("phone", value)} error={props.errors.phone} />
 
-        {!props.isOnlineMode && (
+        {props.showHostelQuestion && (
           <div>
             <p className="mb-3 text-sm font-bold text-navy-950">Need hostel?</p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1273,11 +1387,13 @@ function DetailsStep(props: {
 
 function VerificationStep(props: {
   level: Level;
+  courseName: string;
   questions: string[];
   answers: Record<string, string>;
   setAnswers: (value: Record<string, string>) => void;
   errors: Record<string, string>;
 }) {
+  const courseName = props.courseName || "selected course";
   const updateAnswer = (key: string, value: string, clearKeys: string[] = []) => {
     const nextAnswers = { ...props.answers, [key]: value };
     clearKeys.forEach((clearKey) => {
@@ -1300,14 +1416,14 @@ function VerificationStep(props: {
             error={props.errors[basicQuestionKeys.readWriteEnglish]}
           />
           <SelectField
-            label={basicQuestionKeys.newToField}
+            label={`Are you new to ${courseName}?`}
             value={props.answers[basicQuestionKeys.newToField] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.newToField, value)}
             options={yesNoOptions}
             error={props.errors[basicQuestionKeys.newToField]}
           />
           <SelectField
-            label={basicQuestionKeys.courseReason}
+            label={`Why do you want to take ${courseName}?`}
             value={props.answers[basicQuestionKeys.courseReason] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
             options={courseReasonOptions}
@@ -1322,7 +1438,7 @@ function VerificationStep(props: {
             />
           )}
           <SelectField
-            label={basicQuestionKeys.practicalAvailability}
+            label={`Are you available for practical training in ${courseName}?`}
             value={props.answers[basicQuestionKeys.practicalAvailability] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.practicalAvailability, value)}
             options={availabilityOptions}
@@ -1340,27 +1456,27 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
-            label={intermediateQuestionKeys.priorExposure}
+            label={`Do you have basic knowledge or prior exposure to ${courseName}?`}
             value={props.answers[intermediateQuestionKeys.priorExposure] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.priorExposure, value)}
             options={yesNoOptions}
             error={props.errors[intermediateQuestionKeys.priorExposure]}
           />
           <SelectField
-            label={intermediateQuestionKeys.completedBasicCourse}
+            label={`Have you completed a basic course in ${courseName} before?`}
             value={props.answers[intermediateQuestionKeys.completedBasicCourse] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.completedBasicCourse, value)}
             options={yesNoOptions}
             error={props.errors[intermediateQuestionKeys.completedBasicCourse]}
           />
           <AnswerTextArea
-            label={intermediateQuestionKeys.experienceBrief}
+            label={`Describe your experience with ${courseName} briefly.`}
             value={props.answers[intermediateQuestionKeys.experienceBrief] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.experienceBrief, value)}
             error={props.errors[intermediateQuestionKeys.experienceBrief]}
           />
           <SelectField
-            label={intermediateQuestionKeys.screeningAvailability}
+            label={`Are you available for ${courseName} screening?`}
             value={props.answers[intermediateQuestionKeys.screeningAvailability] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.screeningAvailability, value)}
             options={availabilityOptions}
@@ -1378,7 +1494,7 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
-            label={advancedQuestionKeys.priorTraining}
+            label={`Do you have prior training or demonstrable experience in ${courseName}?`}
             value={props.answers[advancedQuestionKeys.priorTraining] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.priorTraining, value)}
             options={yesNoOptions}
@@ -1386,7 +1502,7 @@ function VerificationStep(props: {
           />
 
           <SelectField
-            label={advancedQuestionKeys.previousCertificate}
+            label={`Do you have a previous certificate in ${courseName}?`}
             value={props.answers[advancedQuestionKeys.previousCertificate] ?? ""}
             onChange={(value) => updateAnswer(
               advancedQuestionKeys.previousCertificate,
@@ -1418,14 +1534,14 @@ function VerificationStep(props: {
           )}
 
           <AnswerTextArea
-            label={advancedQuestionKeys.practicalExperience}
+            label={`Describe your practical experience in ${courseName}.`}
             value={props.answers[advancedQuestionKeys.practicalExperience] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.practicalExperience, value)}
             error={props.errors[advancedQuestionKeys.practicalExperience]}
           />
 
           <SelectField
-            label={advancedQuestionKeys.assessmentAvailability}
+            label={`Are you available for ${courseName} assessment/interview?`}
             value={props.answers[advancedQuestionKeys.assessmentAvailability] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.assessmentAvailability, value)}
             options={availabilityOptions}
@@ -1524,24 +1640,35 @@ function BasicDeclarationStep(props: {
 
   return (
     <div>
-      <StepHeader icon={<GraduationCap />} title="Applicant Declaration" subtitle="For Basic courses, write a simple declaration before final submission." />
+      <StepHeader icon={<GraduationCap />} title="Your Writing" subtitle="For Basic courses, type the statement manually before final submission." />
 
       <div className="mt-7 rounded-3xl border border-brand-100 bg-brand-50 p-5">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
           Write this statement
         </p>
-        <p className="mt-3 text-base font-semibold leading-7 text-navy-950">
+        <p
+          className="mt-3 select-none text-base font-semibold leading-7 text-navy-950"
+          style={{ userSelect: "none" }}
+          onCopy={(event) => event.preventDefault()}
+          onCut={(event) => event.preventDefault()}
+        >
           {suggestedDeclaration}
         </p>
       </div>
 
       <label className="mt-5 block">
-        <span className="text-sm font-bold text-navy-950">Your declaration</span>
+        <span className="text-sm font-bold text-navy-950">Your Writing</span>
         <textarea
           value={props.declaration}
           onChange={(event) => props.setDeclaration(event.target.value)}
+          onPaste={(event) => event.preventDefault()}
+          onDrop={(event) => event.preventDefault()}
           rows={4}
-          placeholder={suggestedDeclaration}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          autoComplete="off"
+          placeholder="Type the statement exactly as shown above."
           className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
         />
         {props.error && <span className="mt-2 block text-sm font-semibold text-brand-700">{props.error}</span>}
@@ -1551,80 +1678,100 @@ function BasicDeclarationStep(props: {
 }
 
 function EvidenceStep(props: {
-  files: Record<string, string>;
-  setFiles: (value: Record<string, string>) => void;
+  files: Record<string, UploadedFileData | undefined>;
+  setFiles: (value: Record<string, UploadedFileData | undefined>) => void;
+  error?: string;
+  setUploadError: (message: string) => void;
 }) {
   const fields = ["ID Document", "Previous Certificate / Supporting Document"];
+
+  async function handleFileChange(field: string, file?: File) {
+    if (!file) return;
+
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      props.setUploadError(`"${file.name}" is too large. Please upload a file under ${MAX_UPLOAD_SIZE_LABEL}.`);
+      return;
+    }
+
+    try {
+      const uploadedFileBase64 = await readFileAsBase64(file);
+
+      props.setFiles({
+        ...props.files,
+        [field]: {
+          field,
+          uploadedFileName: file.name,
+          uploadedFileType: file.type || "application/octet-stream",
+          uploadedFileBase64,
+          uploadedFileSize: file.size,
+        },
+      });
+      props.setUploadError("");
+    } catch {
+      props.setUploadError("We could not read that file. Please choose another document.");
+    }
+  }
 
   return (
     <div>
       <StepHeader icon={<FileUp />} title="Upload Evidence" subtitle="Select supporting files for MPVTL review." />
 
       <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
-        File names are captured for now. Secure storage will be connected in the next development phase.
+        Upload at least one document. File content will be sent securely with your registration, and each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
       </div>
+      {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {fields.map((field) => (
-          <label key={field} className="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center transition hover:border-brand-600 hover:bg-white sm:min-h-52 sm:p-6">
-            <FileUp className="h-8 w-8 text-brand-700 sm:h-9 sm:w-9" />
-            <span className="mt-4 font-bold text-navy-950">{field}</span>
-            <span className="mt-2 text-sm text-slate-500">{props.files[field] || "Click to choose a file"}</span>
-            <input
-              type="file"
-              className="sr-only"
-              onChange={(event) => {
-                const fileName = event.target.files?.[0]?.name ?? "";
-                props.setFiles({ ...props.files, [field]: fileName });
-              }}
-            />
-          </label>
-        ))}
+        {fields.map((field) => {
+          const selectedFile = props.files[field];
+
+          return (
+            <label
+              key={field}
+              className={`group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed p-5 text-center transition hover:border-brand-600 hover:bg-white sm:min-h-52 sm:p-6 ${
+                selectedFile ? "border-brand-300 bg-brand-50" : "border-slate-300 bg-slate-50"
+              }`}
+            >
+              <FileUp className="h-8 w-8 text-brand-700 sm:h-9 sm:w-9" />
+              <span className="mt-4 font-bold text-navy-950">{field}</span>
+              <span className="mt-2 text-sm font-semibold text-slate-600">
+                {selectedFile?.uploadedFileName || "Click to choose a file"}
+              </span>
+              {selectedFile && (
+                <span className="mt-1 text-xs text-slate-500">
+                  {selectedFile.uploadedFileType} - {Math.ceil(selectedFile.uploadedFileSize / 1024)}KB
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                className="sr-only"
+                onChange={(event) => handleFileChange(field, event.target.files?.[0])}
+              />
+            </label>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 function FinalStep(props: {
-  level: Level;
-  finalAction: string;
-  setFinalAction: (value: string) => void;
   receiveUpdates: boolean;
   setReceiveUpdates: (value: boolean) => void;
-  error?: string;
 }) {
-  const actions = props.level === "Basic"
-    ? ["Pay Registration Fee / Transfer Option Coming Soon", "Request Assistance / Contact Centre"]
-    : ["Submit for Screening"];
-
   return (
     <div>
-      <StepHeader icon={<CheckCircle2 />} title="Final Action" subtitle="Choose how MPVTL should proceed with your registration." />
-      {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
+      <StepHeader icon={<CheckCircle2 />} title="Submit Registration" subtitle="Confirm your update preference, then submit your registration to MPVTL." />
 
-      <div className="mt-7 grid gap-4 md:grid-cols-2">
-        {actions.map((action) => {
-          const selected = props.finalAction === action;
-
-          return (
-            <button
-              type="button"
-              key={action}
-              onClick={() => props.setFinalAction(action)}
-              className={`rounded-3xl border p-6 text-left transition hover:-translate-y-1 hover:shadow-lg ${
-                selected ? "border-brand-600 bg-brand-50 shadow-redGlow" : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-navy-950 text-white sm:h-12 sm:w-12 [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
-                {props.level === "Basic" ? <Award /> : <ShieldCheck />}
-              </div>
-              <h3 className="mt-5 text-lg font-bold text-navy-950">{action}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Your choice will be submitted with your registration so MPVTL can follow up clearly.
-              </p>
-            </button>
-          );
-        })}
+      <div className="mt-7 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-navy-950 text-white [&_svg]:h-5 [&_svg]:w-5">
+          <ShieldCheck />
+        </div>
+        <h3 className="mt-5 text-lg font-bold text-navy-950">Ready to submit</h3>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+          MPVTL will receive your course, centre, applicant details, verification answers, and uploaded evidence where required.
+        </p>
       </div>
 
       <label className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
@@ -1640,7 +1787,15 @@ function FinalStep(props: {
   );
 }
 
-function SuccessScreen() {
+function SuccessScreen({
+  onEditResponse,
+  whatsappUrl,
+}: {
+  onEditResponse: () => void;
+  whatsappUrl: string;
+}) {
+  const [showPayment, setShowPayment] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -1655,10 +1810,42 @@ function SuccessScreen() {
       >
         <CheckCircle2 size={48} />
       </motion.div>
-      <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration submitted successfully.</h2>
+      <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration Submitted Successfully</h2>
       <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-600">
         Your registration has been sent to MPVTL. A backup copy is also saved on this device.
       </p>
+      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onEditResponse}
+          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-navy-900 transition hover:border-brand-500 hover:text-brand-700"
+        >
+          Edit Response
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowPayment(true)}
+          className="inline-flex items-center justify-center rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600"
+        >
+          Pay Registration Fee
+        </button>
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center rounded-full bg-navy-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-navy-800"
+        >
+          Contact Center Manager
+        </a>
+      </div>
+      {showPayment && (
+        <div className="mx-auto mt-7 max-w-2xl rounded-3xl border border-brand-100 bg-brand-50 p-5 text-left">
+          <p className="text-sm font-bold text-navy-950">Transfer/card payment setup coming soon.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            This section is reserved for the Flutterwave payment integration in the next phase.
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }
