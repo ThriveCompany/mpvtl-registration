@@ -599,6 +599,51 @@ function createEmptyAnswerState(): AnswerState {
   return createEmptyVerificationAnswers();
 }
 
+function normalizeDraftFiles(value: unknown): Record<string, UploadedFileData | undefined> {
+  if (typeof value !== "object" || value === null) return {};
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => {
+        if (typeof item !== "object" || item === null) return [key, undefined];
+
+        const upload = item as Partial<UploadedFileData>;
+        if (
+          typeof upload.field !== "string"
+          || typeof upload.uploadedFileName !== "string"
+          || typeof upload.uploadedFileType !== "string"
+          || typeof upload.uploadedFileSize !== "number"
+        ) {
+          return [key, undefined];
+        }
+
+        return [key, {
+          field: upload.field,
+          uploadedFileName: upload.uploadedFileName,
+          uploadedFileType: upload.uploadedFileType,
+          uploadedFileSize: upload.uploadedFileSize,
+        }];
+      })
+      .filter(([, item]) => Boolean(item)),
+  ) as Record<string, UploadedFileData | undefined>;
+}
+
+function serializeDraftFiles(files: Record<string, UploadedFileData | undefined>) {
+  return Object.fromEntries(
+    Object.entries(files)
+      .filter(([, upload]) => Boolean(upload))
+      .map(([key, upload]) => [
+        key,
+        {
+          field: upload?.field ?? key,
+          uploadedFileName: upload?.uploadedFileName ?? "",
+          uploadedFileType: upload?.uploadedFileType ?? "",
+          uploadedFileSize: upload?.uploadedFileSize ?? 0,
+        },
+      ]),
+  ) as Record<string, UploadedFileData | undefined>;
+}
+
 function normalizeAnswerState(value: unknown): AnswerState {
   const normalized = createEmptyAnswerState();
   if (typeof value !== "object" || value === null) return normalized;
@@ -629,6 +674,7 @@ function normalizeAnswerState(value: unknown): AnswerState {
   Object.entries(source).forEach(([key, value]) => {
     if (typeof value !== "string") return;
     const stableKey = (verificationAnswerKeys as readonly string[]).includes(key)
+      || (Object.values(supplementalAnswerKeys) as readonly string[]).includes(key)
       ? key as keyof AnswerState
       : legacyKeyMap[key];
 
@@ -776,6 +822,50 @@ export default function RegisterPage() {
     }, delay);
   }
 
+  function getStepForError(errorKey: string) {
+    if (errorKey === "course") return 0;
+    if (errorKey === "location") return 2;
+    if (["session", "fullName", "email", "phone", "hostel"].includes(errorKey)) return 3;
+    if (
+      activeQuestions.includes(errorKey as VerificationAnswerKey)
+      || Object.values(supplementalAnswerKeys).includes(errorKey as SupplementalAnswerKey)
+    ) {
+      return 4;
+    }
+    if (errorKey === "basicDeclaration" || errorKey === "uploads") return 5;
+    return step;
+  }
+
+  function scrollToErrorKey(errorKey: string, delay = 80) {
+    window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        const target = document.querySelector<HTMLElement>(`[data-error-key="${errorKey}"]`);
+        if (!target) {
+          scrollToStepTop(0);
+          return;
+        }
+
+        const top = target.getBoundingClientRect().top + window.scrollY - 96;
+        window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+        target.querySelector<HTMLElement>("input, select, textarea, button")?.focus({ preventScroll: true });
+      });
+    }, delay);
+  }
+
+  function guideToFirstError(nextErrors: Record<string, string>) {
+    const firstErrorKey = Object.keys(nextErrors)[0];
+    if (!firstErrorKey) return;
+
+    const errorStep = getStepForError(firstErrorKey);
+    if (errorStep !== step) {
+      setStep(errorStep);
+      scrollToErrorKey(firstErrorKey, 180);
+      return;
+    }
+
+    scrollToErrorKey(firstErrorKey);
+  }
+
   useEffect(() => {
     const draft = readRegistrationDraft();
 
@@ -796,7 +886,7 @@ export default function RegisterPage() {
         hostel: draft.details?.hostel ?? "",
       });
       setAnswers(normalizeAnswerState(draft.answers));
-      setFiles({});
+      setFiles(normalizeDraftFiles(draft.files));
       setBasicDeclaration(draft.basicDeclaration ?? "");
       setReceiveUpdates(draft.receiveUpdates ?? true);
       setShowIntro(draft.showIntro ?? !draft.step);
@@ -817,7 +907,7 @@ export default function RegisterPage() {
       selectedSession,
       details,
       answers,
-      files: {},
+      files: serializeDraftFiles(files),
       basicDeclaration,
       receiveUpdates,
       showIntro,
@@ -828,6 +918,7 @@ export default function RegisterPage() {
     category,
     details,
     draftReady,
+    files,
     receiveUpdates,
     search,
     selectedCourseId,
@@ -907,11 +998,18 @@ export default function RegisterPage() {
       nextErrors.basicDeclaration = "Please write your declaration before continuing.";
     }
     if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0) {
-      nextErrors.uploads = "Please upload at least one document before continuing.";
+      nextErrors.uploads = uploadedFiles.length > 0
+        ? "Please reselect the uploaded document before continuing."
+        : "Please upload at least one document before continuing.";
     }
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    if (Object.keys(nextErrors).length > 0) {
+      guideToFirstError(nextErrors);
+      return false;
+    }
+
+    return true;
   }
 
   function nextStep() {
@@ -1401,7 +1499,7 @@ function CourseStep(props: {
         </select>
       </div>
 
-      {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
+      {props.error && <p data-error-key="course" className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       {props.selectedCourse && (
         <motion.div
@@ -1539,7 +1637,7 @@ function LocationStep(props: {
         )}
         subtitle={`Pick a training center or online mode for training on ${props.courseName}.`}
       />
-      {props.error && <p className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
+      {props.error && <p data-error-key="location" className="mt-4 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
         {safeArray(locations).map((location) => {
@@ -1594,7 +1692,7 @@ function DetailsStep(props: {
       <StepHeader icon={<BriefcaseBusiness />} title="Personal Details" subtitle="Enter your details so MPVTL can follow up when the next phase is connected." />
 
       <div className="mt-7 grid gap-5">
-        <div>
+        <div data-error-key="session">
           <p className="mb-3 text-sm font-bold text-navy-950">Which session are you registering for?</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {safeArray(trainingSessions).map((session) => (
@@ -1613,12 +1711,12 @@ function DetailsStep(props: {
           {props.errors.session && <p className="mt-2 text-sm font-semibold text-brand-700">{props.errors.session}</p>}
         </div>
 
-        <TextField label="Full Name" value={props.details.fullName} onChange={(value) => update("fullName", value)} error={props.errors.fullName} />
-        <TextField label="Email Address" value={props.details.email} onChange={(value) => update("email", value)} error={props.errors.email} />
-        <TextField label="Phone Number" value={props.details.phone} onChange={(value) => update("phone", value)} error={props.errors.phone} />
+        <TextField errorKey="fullName" label="Full Name" value={props.details.fullName} onChange={(value) => update("fullName", value)} error={props.errors.fullName} />
+        <TextField errorKey="email" label="Email Address" value={props.details.email} onChange={(value) => update("email", value)} error={props.errors.email} />
+        <TextField errorKey="phone" label="Phone Number" value={props.details.phone} onChange={(value) => update("phone", value)} error={props.errors.phone} />
 
         {props.showHostelQuestion && (
-          <div>
+          <div data-error-key="hostel">
             <p className="mb-3 text-sm font-bold text-navy-950">Need hostel?</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {safeArray(["Yes", "No"]).map((option) => (
@@ -1667,6 +1765,7 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
+            errorKey={basicQuestionKeys.readWriteEnglish}
             label="Can you read and write in English?"
             value={props.answers[basicQuestionKeys.readWriteEnglish] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.readWriteEnglish, value)}
@@ -1674,6 +1773,7 @@ function VerificationStep(props: {
             error={props.errors[basicQuestionKeys.readWriteEnglish]}
           />
           <SelectField
+            errorKey={basicQuestionKeys.newToField}
             label={`Are you new to ${courseName}?`}
             value={props.answers[basicQuestionKeys.newToField] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.newToField, value)}
@@ -1681,6 +1781,7 @@ function VerificationStep(props: {
             error={props.errors[basicQuestionKeys.newToField]}
           />
           <SelectField
+            errorKey={basicQuestionKeys.courseReason}
             label={`Why do you want to take ${courseName}?`}
             value={props.answers[basicQuestionKeys.courseReason] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
@@ -1689,6 +1790,7 @@ function VerificationStep(props: {
           />
           {props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
             <AnswerTextArea
+              errorKey={basicQuestionKeys.courseReasonOther}
               label="Please describe your reason"
               value={props.answers[basicQuestionKeys.courseReasonOther] ?? ""}
               onChange={(value) => updateAnswer(basicQuestionKeys.courseReasonOther, value)}
@@ -1696,6 +1798,7 @@ function VerificationStep(props: {
             />
           )}
           <SelectField
+            errorKey={basicQuestionKeys.practicalAvailability}
             label={`Are you available for practical training in ${courseName}?`}
             value={props.answers[basicQuestionKeys.practicalAvailability] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.practicalAvailability, value)}
@@ -1714,6 +1817,7 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
+            errorKey={intermediateQuestionKeys.priorExposure}
             label={`Do you have basic knowledge or prior exposure to ${courseName}?`}
             value={props.answers[intermediateQuestionKeys.priorExposure] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.priorExposure, value)}
@@ -1721,6 +1825,7 @@ function VerificationStep(props: {
             error={props.errors[intermediateQuestionKeys.priorExposure]}
           />
           <SelectField
+            errorKey={intermediateQuestionKeys.completedBasicCourse}
             label={`Have you completed a basic course in ${courseName} before?`}
             value={props.answers[intermediateQuestionKeys.completedBasicCourse] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.completedBasicCourse, value)}
@@ -1728,12 +1833,14 @@ function VerificationStep(props: {
             error={props.errors[intermediateQuestionKeys.completedBasicCourse]}
           />
           <AnswerTextArea
+            errorKey={intermediateQuestionKeys.experienceBrief}
             label={`Describe your experience with ${courseName} briefly.`}
             value={props.answers[intermediateQuestionKeys.experienceBrief] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.experienceBrief, value)}
             error={props.errors[intermediateQuestionKeys.experienceBrief]}
           />
           <SelectField
+            errorKey={intermediateQuestionKeys.entryReviewAvailability}
             label={`Are you available for ${courseName} Entry Review?`}
             value={props.answers[intermediateQuestionKeys.entryReviewAvailability] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.entryReviewAvailability, value)}
@@ -1752,6 +1859,7 @@ function VerificationStep(props: {
 
         <div className="mt-7 grid gap-5">
           <SelectField
+            errorKey={advancedQuestionKeys.priorTraining}
             label={`Do you have prior training or demonstrable experience in ${courseName}?`}
             value={props.answers[advancedQuestionKeys.priorTraining] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.priorTraining, value)}
@@ -1760,6 +1868,7 @@ function VerificationStep(props: {
           />
 
           <SelectField
+            errorKey={advancedQuestionKeys.previousCertificate}
             label={`Do you have a previous certificate in ${courseName}?`}
             value={props.answers[advancedQuestionKeys.previousCertificate] ?? ""}
             onChange={(value) => updateAnswer(
@@ -1775,6 +1884,7 @@ function VerificationStep(props: {
           />
           {props.answers[advancedQuestionKeys.previousCertificate] === "Yes" && (
             <SelectField
+              errorKey={advancedQuestionKeys.certificateType}
               label="Type of certification"
               value={props.answers[advancedQuestionKeys.certificateType] ?? ""}
               onChange={(value) => updateAnswer(advancedQuestionKeys.certificateType, value, [advancedQuestionKeys.certificateTypeOther])}
@@ -1784,6 +1894,7 @@ function VerificationStep(props: {
           )}
           {props.answers[advancedQuestionKeys.certificateType] === "Other, please describe" && (
             <AnswerTextArea
+              errorKey={advancedQuestionKeys.certificateTypeOther}
               label="Please describe the certification type"
               value={props.answers[advancedQuestionKeys.certificateTypeOther] ?? ""}
               onChange={(value) => updateAnswer(advancedQuestionKeys.certificateTypeOther, value)}
@@ -1792,6 +1903,7 @@ function VerificationStep(props: {
           )}
 
           <AnswerTextArea
+            errorKey={advancedQuestionKeys.practicalExperience}
             label={`Describe your practical experience in ${courseName}.`}
             value={props.answers[advancedQuestionKeys.practicalExperience] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.practicalExperience, value)}
@@ -1799,6 +1911,7 @@ function VerificationStep(props: {
           />
 
           <SelectField
+            errorKey={advancedQuestionKeys.assessmentAvailability}
             label={`Are you available for ${courseName} assessment/interview?`}
             value={props.answers[advancedQuestionKeys.assessmentAvailability] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.assessmentAvailability, value)}
@@ -1817,6 +1930,7 @@ function VerificationStep(props: {
       <div className="mt-7 grid gap-5">
         {safeArray(questions).map((question) => (
           <AnswerTextArea
+            errorKey={question}
             key={question}
             label={question}
             value={props.answers[question] ?? ""}
@@ -1830,12 +1944,14 @@ function VerificationStep(props: {
 }
 
 function SelectField({
+  errorKey,
   label,
   value,
   onChange,
   options,
   error,
 }: {
+  errorKey?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -1845,7 +1961,7 @@ function SelectField({
   const optionItems = Array.isArray(options) ? options : [];
 
   return (
-    <label className="block">
+    <label data-error-key={errorKey} className="block">
       <span className="text-sm font-bold text-navy-950">{label}</span>
       <select
         value={value}
@@ -1863,18 +1979,20 @@ function SelectField({
 }
 
 function AnswerTextArea({
+  errorKey,
   label,
   value,
   onChange,
   error,
 }: {
+  errorKey?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
 }) {
   return (
-    <label className="block">
+    <label data-error-key={errorKey} className="block">
       <span className="text-sm font-bold text-navy-950">{label}</span>
       <textarea
         value={value}
@@ -1916,7 +2034,7 @@ function BasicDeclarationStep(props: {
         </p>
       </div>
 
-      <label className="mt-5 block">
+      <label data-error-key="basicDeclaration" className="mt-5 block">
         <span className="text-sm font-bold text-navy-950">Your Writing</span>
         <textarea
           value={props.declaration}
@@ -1978,7 +2096,7 @@ function EvidenceStep(props: {
       <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
         Upload at least one JPG, PNG, or PDF document. Each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
       </div>
-      {props.error && <p className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
+      {props.error && <p data-error-key="uploads" className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
         {safeArray(fields).map((field) => {
@@ -1997,9 +2115,16 @@ function EvidenceStep(props: {
                 {selectedFile?.uploadedFileName || "Click to choose a file"}
               </span>
               {selectedFile && (
-                <span className="mt-1 text-xs text-slate-500">
-                  {selectedFile.uploadedFileType} - {Math.ceil(selectedFile.uploadedFileSize / 1024)}KB
-                </span>
+                <>
+                  <span className="mt-1 text-xs text-slate-500">
+                    {selectedFile.uploadedFileType} - {Math.ceil(selectedFile.uploadedFileSize / 1024)}KB
+                  </span>
+                  {!selectedFile.file && (
+                    <span className="mt-2 text-xs font-semibold text-brand-700">
+                      Reselect this file before submitting.
+                    </span>
+                  )}
+                </>
               )}
               <input
                 type="file"
@@ -2156,18 +2281,20 @@ function InfoList({ title, items }: { title: string; items: string[] }) {
 }
 
 function TextField({
+  errorKey,
   label,
   value,
   onChange,
   error,
 }: {
+  errorKey?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
 }) {
   return (
-    <label className="block">
+    <label data-error-key={errorKey} className="block">
       <span className="text-sm font-bold text-navy-950">{label}</span>
       <input
         value={value}
