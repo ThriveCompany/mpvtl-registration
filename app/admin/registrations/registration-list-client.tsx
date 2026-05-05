@@ -13,12 +13,39 @@ type RegistrationListItem = {
   createdAt: string;
 };
 
+type NotificationItem = {
+  id?: unknown;
+  registrationId?: unknown;
+  registration?: {
+    id?: unknown;
+  };
+};
+
+function getNotificationKeys(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      const notification = item as NotificationItem;
+      const id = typeof notification.id === "string" ? notification.id : "";
+      const registrationId = typeof notification.registrationId === "string"
+        ? notification.registrationId
+        : typeof notification.registration?.id === "string"
+          ? notification.registration.id
+          : "";
+
+      return registrationId || id;
+    })
+    .filter(Boolean);
+}
+
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
   const [alert, setAlert] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const audioRef = useRef<AudioContext | null>(null);
+  const playedNotificationKeysRef = useRef<Set<string>>(new Set());
   const visibleRegistrations = Array.isArray(registrations) ? registrations : [];
 
   async function loadRegistrations() {
@@ -40,25 +67,25 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
     }
   }
 
-  function playRing() {
+  function playNotificationBeeps() {
     const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextCtor) return;
 
     const context = audioRef.current ?? new AudioContextCtor();
     audioRef.current = context;
-    const endAt = context.currentTime + 10;
 
-    for (let index = 0; index < 10; index += 1) {
+    for (let index = 0; index < 5; index += 1) {
+      const startsAt = context.currentTime + index * 0.22;
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      oscillator.frequency.value = index % 2 === 0 ? 880 : 660;
-      gain.gain.setValueAtTime(0.001, context.currentTime + index);
-      gain.gain.exponentialRampToValueAtTime(0.22, context.currentTime + index + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + index + 0.45);
+      oscillator.frequency.value = 820;
+      gain.gain.setValueAtTime(0.001, startsAt);
+      gain.gain.exponentialRampToValueAtTime(0.2, startsAt + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startsAt + 0.12);
       oscillator.connect(gain);
       gain.connect(context.destination);
-      oscillator.start(context.currentTime + index);
-      oscillator.stop(Math.min(context.currentTime + index + 0.5, endAt));
+      oscillator.start(startsAt);
+      oscillator.stop(startsAt + 0.14);
     }
   }
 
@@ -73,10 +100,15 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
         : Array.isArray(result?.notifications)
           ? result.notifications.length
           : 0;
+      const notificationKeys = getNotificationKeys(result?.notifications);
+      const newNotificationKeys = notificationKeys.filter((key) => !playedNotificationKeysRef.current.has(key));
 
       if (notificationCount > 0) {
         setAlert("New Registration");
-        playRing();
+        if (newNotificationKeys.length > 0) {
+          newNotificationKeys.forEach((key) => playedNotificationKeysRef.current.add(key));
+          playNotificationBeeps();
+        }
         await loadRegistrations();
       }
     } catch {
