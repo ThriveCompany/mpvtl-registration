@@ -177,12 +177,12 @@ export default async function RegistrationProfilePage({
         Back to registrations
       </Link>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="rounded-2xl border border-navy-800 bg-navy-950 p-6 text-white shadow-[0_24px_80px_rgba(6,19,33,0.22)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Applicant</p>
-            <h2 className="mt-1 text-2xl font-bold text-navy-950">{registration.fullName}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{registration.course}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-200">Applicant</p>
+            <h2 className="mt-1 text-2xl font-bold text-white">{registration.fullName}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{registration.course}</p>
           </div>
           <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${getRegistrationStatusClass(registration.status)}`}>
             {formatRegistrationStatus(registration.status)}
@@ -192,8 +192,8 @@ export default async function RegistrationProfilePage({
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="space-y-5">
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.09)]">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
               <h2 className="text-base font-bold text-navy-950">Registration Details</h2>
             </div>
             <dl className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
@@ -206,8 +206,8 @@ export default async function RegistrationProfilePage({
             </dl>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.09)]">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
               <h2 className="text-base font-bold text-navy-950">
                 {isBasicRegistration ? "Basic Verification Answers" : "Verification Answers"}
               </h2>
@@ -221,8 +221,8 @@ export default async function RegistrationProfilePage({
               {safeArray(verificationItems).map((item) => (
                 <div
                   key={item.key}
-                  className={`rounded-xl border border-slate-200 p-4 ${
-                    item.longAnswer ? "bg-slate-50 md:col-span-2" : "bg-white"
+                  className={`rounded-2xl border p-5 ${
+                    item.longAnswer ? "border-brand-100 bg-brand-50/40 md:col-span-2" : "border-slate-200 bg-white"
                   }`}
                 >
                   <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
@@ -236,8 +236,8 @@ export default async function RegistrationProfilePage({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.09)]">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
               <h2 className="text-base font-bold text-navy-950">Uploaded Evidence</h2>
             </div>
             <div className="grid gap-3 p-5">
@@ -257,8 +257,11 @@ export default async function RegistrationProfilePage({
           </section>
         </div>
 
-        <aside className="self-start rounded-xl border border-slate-200 bg-white p-5 lg:sticky lg:top-28">
-          <h2 className="text-base font-bold text-navy-950">Actions</h2>
+        <aside className="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(6,19,33,0.12)] lg:sticky lg:top-28">
+          <div className="rounded-xl bg-navy-950 px-4 py-3 text-white">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-200">Decision</p>
+            <h2 className="mt-1 text-base font-bold">Actions</h2>
+          </div>
           <div className="mt-4">
             <ProfileActions
               registrationId={registration.id}

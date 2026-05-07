@@ -47,9 +47,10 @@ export function isFinalRegistrationStatus(status: string) {
 }
 
 export function getRegistrationStatusClass(status: string) {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  if (status === "UNAPPROVED" || status === "REJECTED") return "bg-red-50 text-red-700 ring-red-200";
-  if (status === "NEEDS_FURTHER_REVIEW") return "bg-amber-50 text-amber-700 ring-amber-200";
-  if (status === "VIEWED") return "bg-blue-50 text-blue-700 ring-blue-200";
+  if (status === "NEW") return "bg-brand-700 text-white ring-brand-700";
+  if (status === "APPROVED") return "bg-navy-950 text-white ring-navy-950";
+  if (status === "UNAPPROVED" || status === "REJECTED") return "bg-brand-50 text-brand-800 ring-brand-200";
+  if (status === "NEEDS_FURTHER_REVIEW") return "bg-slate-100 text-navy-950 ring-slate-300";
+  if (status === "VIEWED") return "bg-white text-slate-700 ring-slate-300";
   return "bg-slate-100 text-slate-700 ring-slate-200";
 }

@@ -2,6 +2,7 @@
 
 import type { SafeAdmin } from "@/lib/auth";
 import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "../admin-shell";
 
@@ -27,6 +28,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const visibleUsers = Array.isArray(users) ? users : [];
   const activeManagerCenters = useMemo(() => {
     return new Set(
@@ -97,42 +99,58 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
       title="Admin Users"
       subtitle="Create official MPVTL admin accounts and review active access."
     >
-        <form onSubmit={createUser} className="rounded-xl border border-slate-200 bg-white p-5">
+        <form onSubmit={createUser} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_22px_70px_rgba(6,19,33,0.10)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-bold text-navy-950">Create user</h2>
               <p className="mt-1 text-sm text-slate-600">Only @moaetscandg.org.ng accounts are allowed.</p>
             </div>
-            <button type="submit" className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-800">
+            <button type="submit" className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(127,29,45,0.20)] hover:bg-brand-800">
               Create User
             </button>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-            <select className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, center: "" })}>
+            <input className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <input className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <div className="relative">
+              <input
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 pr-12 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+                placeholder="Password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-navy-950"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <select className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, center: "" })}>
               {USER_CREATABLE_ROLES.map((role) => (
                 <option key={role} value={role}>{formatRole(role)}</option>
               ))}
             </select>
             {form.role === "CENTER_MANAGER" && (
               availableCenters.length > 0 ? (
-                <select className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
+                <select className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
                   <option value="">Select center</option>
                   {availableCenters.map((center) => (
                     <option key={center.value} value={center.value}>{center.label}</option>
                   ))}
                 </select>
               ) : (
-                <div className="flex min-h-11 items-center rounded-lg border border-brand-100 bg-brand-50 px-3 text-sm font-semibold text-brand-800">
+                <div className="flex min-h-12 items-center rounded-xl border border-brand-100 bg-brand-50 px-4 text-sm font-semibold text-brand-800">
                   All centers already have active managers.
                 </div>
               )
             )}
             <select
-              className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
               value={form.active ? "active" : "inactive"}
               onChange={(event) => setForm({ ...form, active: event.target.value === "active" })}
             >
@@ -143,8 +161,8 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
           {message && <p className="mt-4 text-sm font-semibold text-brand-700">{message}</p>}
         </form>
 
-        <section className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-5 py-4">
+        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.10)]">
+          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
             <h2 className="text-base font-bold text-navy-950">Existing users</h2>
           </div>
           <div>
@@ -171,7 +189,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
                     <span className="text-slate-700">{user.center ? formatCenter(user.center) : "-"}</span>
                     <span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
-                        user.active ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"
+                        user.active ? "bg-navy-950 text-white ring-navy-950" : "bg-slate-100 text-slate-600 ring-slate-200"
                       }`}>
                         {user.active ? "Active" : "Inactive"}
                       </span>
@@ -184,14 +202,14 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
             {!loading && visibleUsers.length > 0 && (
               <div className="grid gap-3 p-4 md:hidden">
                 {(Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
-                  <div key={user.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div key={user.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_16px_45px_rgba(6,19,33,0.08)]">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-bold text-navy-950">{user.name}</p>
                         <p className="mt-1 break-words text-sm text-slate-600">{user.email}</p>
                       </div>
                       <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
-                        user.active ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"
+                        user.active ? "bg-navy-950 text-white ring-navy-950" : "bg-slate-100 text-slate-600 ring-slate-200"
                       }`}>
                         {user.active ? "Active" : "Inactive"}
                       </span>

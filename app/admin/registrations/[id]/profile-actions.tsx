@@ -116,7 +116,7 @@ export default function ProfileActions({
   return (
     <div className={isFinal ? "opacity-75" : ""}>
       {isFinal && (
-        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+        <div className="mb-4 rounded-2xl border border-brand-100 bg-brand-50/60 p-4 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Final Decision Submitted</p>
           <p className="mt-2 text-xl font-black uppercase tracking-wide text-navy-950">
             <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${getRegistrationStatusClass(status)}`}>
@@ -143,10 +143,10 @@ export default function ProfileActions({
             disabled={Boolean(loading) || isFinal}
             className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-center text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${
               decision.status === "APPROVED"
-                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                ? "bg-navy-950 text-white shadow-[0_16px_45px_rgba(6,19,33,0.18)] hover:bg-navy-900"
                 : decision.status === "NEEDS_FURTHER_REVIEW"
-                  ? "bg-amber-500 text-navy-950 hover:bg-amber-400"
-                  : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                  ? "border border-slate-300 bg-white text-navy-950 hover:bg-slate-50"
+                  : "bg-brand-700 text-white shadow-[0_16px_45px_rgba(127,29,45,0.20)] hover:bg-brand-800"
             }`}
           >
             {loading === decision.status ? "Saving..." : decision.buttonLabel}
@@ -164,7 +164,7 @@ export default function ProfileActions({
 
       {pendingDecision && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 px-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 text-slate-900 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 text-slate-900 shadow-[0_28px_90px_rgba(6,19,33,0.28)]">
             <h3 className="text-xl font-bold text-navy-950">{pendingDecision.title}</h3>
             <p className="mt-4 text-sm leading-7 text-slate-600">{pendingDecision.message}</p>
 
