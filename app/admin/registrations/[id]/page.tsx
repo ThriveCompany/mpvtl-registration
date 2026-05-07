@@ -101,7 +101,7 @@ function getVerificationDisplayItems(level: string, course: string): Verificatio
     },
     {
       key: "reasonForCourse",
-      question: `Why do you want to take ${courseName}?`,
+      question: `Why are you registering for ${courseName}?`,
       longAnswer: true,
     },
     {
@@ -111,7 +111,7 @@ function getVerificationDisplayItems(level: string, course: string): Verificatio
     {
       key: "basicWriting",
       fallbackKey: "basicDeclaration",
-      question: `Writing sample typed by applicant for ${courseName}.`,
+      question: "Writing sample typed by applicant.",
       longAnswer: true,
     },
   ];
@@ -150,6 +150,7 @@ export default async function RegistrationProfilePage({
     ? registration.verificationAnswers as Record<string, string>
     : {};
   const verificationItems = getVerificationDisplayItems(registration.level, registration.course);
+  const isBasicRegistration = normalizeLevel(registration.level) === "Basic";
   const files = Array.isArray(registration.files) ? registration.files : [];
   const detailItems = safeArray([
     ["Full name", registration.fullName],
@@ -207,13 +208,27 @@ export default async function RegistrationProfilePage({
 
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-base font-bold text-navy-950">Verification Answers</h2>
+              <h2 className="text-base font-bold text-navy-950">
+                {isBasicRegistration ? "Basic Verification Answers" : "Verification Answers"}
+              </h2>
+              {isBasicRegistration && (
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Review literacy, motivation, practical availability, and the applicant's typed writing sample.
+                </p>
+              )}
             </div>
-            <div className="grid gap-0 divide-y divide-slate-100">
+            <div className="grid gap-4 p-5 md:grid-cols-2">
               {safeArray(verificationItems).map((item) => (
-                <div key={item.key} className="px-5 py-4">
+                <div
+                  key={item.key}
+                  className={`rounded-xl border border-slate-200 p-4 ${
+                    item.longAnswer ? "bg-slate-50 md:col-span-2" : "bg-white"
+                  }`}
+                >
                   <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                  <p className={`mt-3 whitespace-pre-wrap leading-7 text-slate-800 ${
+                    item.longAnswer ? "text-base font-medium" : "text-base font-semibold"
+                  }`}>
                     {getAnswer(answers, item.key, item.fallbackKey)}
                   </p>
                 </div>

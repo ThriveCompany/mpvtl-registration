@@ -21,7 +21,6 @@ enum RegistrationStatus {
   UNAPPROVED
   NEEDS_FURTHER_REVIEW
   REJECTED
-  CONTACTED
 }
 
 model AdminUser {

@@ -1785,7 +1785,7 @@ function VerificationStep(props: {
           />
           <SelectField
             errorKey={basicQuestionKeys.courseReason}
-            label={`Why do you want to take ${courseName}?`}
+            label={`Why are you registering for ${courseName}?`}
             value={props.answers[basicQuestionKeys.courseReason] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
             options={courseReasonOptions}

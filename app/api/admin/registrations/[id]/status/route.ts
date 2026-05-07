@@ -30,6 +30,10 @@ export async function PATCH(
     return NextResponse.json({ message: "Invalid status." }, { status: 400 });
   }
 
+  if (nextStatus === "NEEDS_FURTHER_REVIEW" && !body?.note?.trim()) {
+    return NextResponse.json({ message: "Reason for further review is required." }, { status: 400 });
+  }
+
   try {
     const registration = await prisma.registration.findUnique({ where: { id } });
     if (!registration || !canViewCenter(admin, registration.center)) {

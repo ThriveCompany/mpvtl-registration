@@ -21,11 +21,15 @@ type PendingDecision = {
 };
 
 const furtherReviewReasons = [
-  "Entry requirement needs confirmation",
-  "Uploaded evidence needs verification",
-  "Applicant details need clarification",
-  "Course or centre availability needs confirmation",
-  "Director or manager review required",
+  "Incomplete information",
+  "Uploaded document unclear",
+  "Qualification requires verification",
+  "Previous experience unclear",
+  "Further conversation required",
+  "Awaiting supporting document",
+  "Course suitability uncertain",
+  "Center capacity review required",
+  "Other",
 ];
 
 export default function ProfileActions({
@@ -49,7 +53,8 @@ export default function ProfileActions({
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
   const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
-  const [reviewNote, setReviewNote] = useState("");
+  const [reviewReason, setReviewReason] = useState("");
+  const [additionalReviewNote, setAdditionalReviewNote] = useState("");
   const isFinal = isFinalRegistrationStatus(status);
 
   async function submitStatus(nextStatus: string, note = "") {
@@ -66,7 +71,8 @@ export default function ProfileActions({
 
       if (!response.ok) throw new Error(result?.message || "Could not update status.");
       setPendingDecision(null);
-      setReviewNote("");
+      setReviewReason("");
+      setAdditionalReviewNote("");
       router.refresh();
     } catch (statusError) {
       setError(statusError instanceof Error ? statusError.message : "Could not update status.");
@@ -76,7 +82,10 @@ export default function ProfileActions({
   }
 
   async function updateStatus(decision: PendingDecision) {
-    await submitStatus(decision.status, reviewNote);
+    const note = reviewReason === "Other" && additionalReviewNote.trim()
+      ? `Other: ${additionalReviewNote.trim()}`
+      : reviewReason;
+    await submitStatus(decision.status, note);
   }
 
   const decisions: PendingDecision[] = [
@@ -160,19 +169,36 @@ export default function ProfileActions({
             <p className="mt-4 text-sm leading-7 text-slate-600">{pendingDecision.message}</p>
 
             {pendingDecision.noteRequired && (
-              <label className="mt-5 block">
-                <span className="text-sm font-bold text-navy-950">Reason / review note</span>
-                <select
-                  value={reviewNote}
-                  onChange={(event) => setReviewNote(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
-                >
-                  <option value="">Select a reason</option>
-                  {furtherReviewReasons.map((reason) => (
-                    <option key={reason} value={reason}>{reason}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="mt-5 grid gap-4">
+                <label className="block">
+                  <span className="text-sm font-bold text-navy-950">Reason for Further Review</span>
+                  <select
+                    value={reviewReason}
+                    onChange={(event) => {
+                      setReviewReason(event.target.value);
+                      if (event.target.value !== "Other") setAdditionalReviewNote("");
+                    }}
+                    className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+                  >
+                    <option value="">Select a reason</option>
+                    {furtherReviewReasons.map((reason) => (
+                      <option key={reason} value={reason}>{reason}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {reviewReason === "Other" && (
+                  <label className="block">
+                    <span className="text-sm font-bold text-navy-950">Additional note</span>
+                    <input
+                      type="text"
+                      value={additionalReviewNote}
+                      onChange={(event) => setAdditionalReviewNote(event.target.value)}
+                      className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+                    />
+                  </label>
+                )}
+              </div>
             )}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -180,7 +206,8 @@ export default function ProfileActions({
                 type="button"
                 onClick={() => {
                   setPendingDecision(null);
-                  setReviewNote("");
+                  setReviewReason("");
+                  setAdditionalReviewNote("");
                 }}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-navy-950"
               >
@@ -189,7 +216,7 @@ export default function ProfileActions({
               <button
                 type="button"
                 onClick={() => updateStatus(pendingDecision)}
-                disabled={Boolean(loading) || (pendingDecision.noteRequired && !reviewNote)}
+                disabled={Boolean(loading) || (pendingDecision.noteRequired && !reviewReason)}
                 className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
               >
                 {loading ? "Submitting..." : pendingDecision.confirmLabel}
