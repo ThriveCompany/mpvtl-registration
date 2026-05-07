@@ -37,18 +37,19 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-12 text-slate-900">
-      <form onSubmit={handleSubmit} className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-premium">
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-700">MPVTL Admin</p>
-        <h1 className="mt-3 text-2xl font-semibold text-navy-950">Sign in</h1>
-        <div className="mt-7 grid gap-5">
+    <main className="grid min-h-screen place-items-center bg-slate-100 px-4 py-12 text-slate-900">
+      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-7 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">MPVTL</p>
+        <h1 className="mt-2 text-2xl font-bold text-navy-950">Admin Portal</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Sign in to manage short course registrations.</p>
+        <div className="mt-6 grid gap-5">
           <label className="block">
             <span className="text-sm font-bold text-navy-950">Email</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
             />
           </label>
           <label className="block">
@@ -57,14 +58,14 @@ export default function AdminLoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
             />
           </label>
           {error && <p className="text-sm font-semibold text-brand-700">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600 disabled:opacity-60"
+            className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

@@ -1,9 +1,10 @@
 "use client";
 
 import type { SafeAdmin } from "@/lib/auth";
-import { formatCenter, formatRegistrationStatus, formatRole } from "@/lib/admin-constants";
+import { formatCenter, formatRegistrationStatus, formatRole, getRegistrationStatusClass } from "@/lib/admin-constants";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import AdminShell from "../admin-shell";
 
 type RegistrationListItem = {
   id: string;
@@ -68,6 +69,12 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
       return matchesStatus && matchesCenter && matchesSearch;
     });
   }, [centerFilter, courseSearch, statusFilter, visibleRegistrations]);
+  const pendingCount = visibleRegistrations.filter((registration) => registration.status === "NEW").length;
+  const finalCount = visibleRegistrations.filter((registration) => (
+    registration.status === "APPROVED" ||
+    registration.status === "UNAPPROVED" ||
+    registration.status === "NEEDS_FURTHER_REVIEW"
+  )).length;
 
   async function loadRegistrations() {
     try {
@@ -154,49 +161,48 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 rounded-3xl bg-navy-950 p-6 text-white shadow-premium sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-200">MPVTL Admin</p>
-            <h1 className="mt-2 text-2xl font-semibold">Registrations</h1>
-            <p className="mt-2 text-sm text-slate-300">{admin.name} - {formatRole(admin.role)}</p>
-          </div>
-          <div className="flex gap-3">
-            {admin.role === "SUPER_ADMIN" && (
-              <Link href="/admin/users" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-navy-950">Users</Link>
-            )}
-            <button
-              type="button"
-              onClick={() => fetch("/api/admin/logout", { method: "POST" }).then(() => window.location.assign("/admin/login"))}
-              className="rounded-full border border-white/30 px-5 py-3 text-sm font-bold text-white"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
+    <AdminShell
+      admin={admin}
+      active="registrations"
+      title="Registrations"
+      subtitle={`${formatRole(admin.role)} access. Review applications, filter records, and open applicant profiles.`}
+    >
         {alert && (
           <button
             type="button"
             onClick={markSeen}
-            className="mb-5 w-full rounded-2xl border border-brand-200 bg-brand-50 p-4 text-left text-sm font-bold text-brand-800 shadow-redGlow"
+            className="mb-4 w-full rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-left text-sm font-bold text-brand-800"
           >
             {alert} - click to mark seen
           </button>
         )}
 
-        <div className="mb-5 grid gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px]">
+        <section className="mb-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Total</p>
+            <p className="mt-2 text-2xl font-bold text-navy-950">{visibleRegistrations.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">New</p>
+            <p className="mt-2 text-2xl font-bold text-brand-700">{pendingCount}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Final decisions</p>
+            <p className="mt-2 text-2xl font-bold text-navy-950">{finalCount}</p>
+          </div>
+        </section>
+
+        <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_220px_220px]">
           <input
             value={courseSearch}
             onChange={(event) => setCourseSearch(event.target.value)}
             placeholder="Search course"
-            className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>{status === "All Statuses" ? status : formatRegistrationStatus(status)}</option>
@@ -205,7 +211,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           <select
             value={centerFilter}
             onChange={(event) => setCenterFilter(event.target.value)}
-            className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           >
             {centerOptions.map((center) => (
               <option key={center} value={center}>{center === "All Centers" ? center : formatCenter(center)}</option>
@@ -213,46 +219,76 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           </select>
         </div>
 
-        <div className="grid gap-4">
-          {loading && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-              Loading registrations...
-            </div>
-          )}
+        {loading && (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+            Loading registrations...
+          </div>
+        )}
 
-          {error && !loading && (
-            <div className="rounded-3xl border border-brand-100 bg-brand-50 p-8 text-center text-sm font-semibold text-brand-800">
-              {error}
-            </div>
-          )}
+        {error && !loading && (
+          <div className="rounded-xl border border-brand-100 bg-brand-50 p-8 text-center text-sm font-semibold text-brand-800">
+            {error}
+          </div>
+        )}
 
-          {!loading && !error && (Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => (
-            <Link
-              key={registration.id}
-              href={`/admin/registrations/${registration.id}`}
-              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300 hover:shadow-premium"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-navy-950">{registration.fullName}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{registration.course}</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-700">{formatCenter(registration.center)}</p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-navy-950">{formatRegistrationStatus(registration.status)}</span>
-                  <p className="mt-3 text-sm text-slate-500">{new Date(registration.createdAt).toLocaleString()}</p>
-                </div>
+        {!loading && !error && filteredRegistrations.length > 0 && (
+          <>
+            <section className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white md:block">
+              <div className="grid grid-cols-[1.1fr_1.8fr_1fr_1fr_1.1fr] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                <span>Applicant</span>
+                <span>Course</span>
+                <span>Center</span>
+                <span>Status</span>
+                <span>Submitted</span>
               </div>
-            </Link>
-          ))}
+              {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => (
+                <Link
+                  key={registration.id}
+                  href={`/admin/registrations/${registration.id}`}
+                  className="grid grid-cols-[1.1fr_1.8fr_1fr_1fr_1.1fr] gap-4 border-b border-slate-100 px-4 py-4 text-sm transition last:border-b-0 hover:bg-slate-50"
+                >
+                  <span className="font-bold text-navy-950">{registration.fullName}</span>
+                  <span className="text-slate-700">{registration.course}</span>
+                  <span className="font-semibold text-slate-700">{formatCenter(registration.center)}</span>
+                  <span>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${getRegistrationStatusClass(registration.status)}`}>
+                      {formatRegistrationStatus(registration.status)}
+                    </span>
+                  </span>
+                  <span className="text-slate-500">{new Date(registration.createdAt).toLocaleDateString()}</span>
+                </Link>
+              ))}
+            </section>
 
-          {!loading && !error && filteredRegistrations.length === 0 && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-              No registrations match this view.
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+            <section className="grid gap-3 md:hidden">
+              {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => (
+                <Link
+                  key={registration.id}
+                  href={`/admin/registrations/${registration.id}`}
+                  className="rounded-xl border border-slate-200 bg-white p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-bold text-navy-950">{registration.fullName}</h2>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{registration.course}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${getRegistrationStatusClass(registration.status)}`}>
+                      {formatRegistrationStatus(registration.status)}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-slate-700">{formatCenter(registration.center)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{new Date(registration.createdAt).toLocaleString()}</p>
+                </Link>
+              ))}
+            </section>
+          </>
+        )}
+
+        {!loading && !error && filteredRegistrations.length === 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+            No registrations match this view.
+          </div>
+        )}
+    </AdminShell>
   );
 }

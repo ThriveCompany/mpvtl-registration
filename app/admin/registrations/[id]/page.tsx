@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { canViewCenter, getCurrentAdmin } from "@/lib/auth";
-import { formatRegistrationStatus, formatRole } from "@/lib/admin-constants";
+import { formatCenter, formatRegistrationStatus, getRegistrationStatusClass } from "@/lib/admin-constants";
 import { prisma } from "@/lib/prisma";
+import AdminShell from "../../admin-shell";
 import ProfileActions from "./profile-actions";
 
 function safeArray<T>(value: readonly T[] | null | undefined): T[] {
@@ -149,100 +150,109 @@ export default async function RegistrationProfilePage({
     ["Course", registration.course],
     ["Category", registration.category],
     ["Level", registration.level],
-    ["Center", registration.center],
+    ["Center", formatCenter(registration.center)],
     ["Session", registration.session],
     ["Hostel", registration.hostel],
     ["Action", registration.action],
     ["Receive updates", registration.receiveUpdates ? "Yes" : "No"],
-    ["Status", formatRegistrationStatus(registration.status)],
   ] as const);
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
-        <Link href="/admin/registrations" className="text-sm font-bold text-brand-700">Back to registrations</Link>
+    <AdminShell
+      admin={admin}
+      active="registrations"
+      title="Applicant Profile"
+      subtitle="Review applicant details, evidence, verification answers, and final decision."
+    >
+      <Link href="/admin/registrations" className="mb-4 inline-flex text-sm font-bold text-brand-700 hover:text-brand-800">
+        Back to registrations
+      </Link>
 
-        <div className="mt-5 rounded-3xl bg-navy-950 p-6 text-white shadow-premium">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-200">Applicant Profile</p>
-          <h1 className="mt-2 text-2xl font-semibold">{registration.fullName}</h1>
-          <p className="mt-2 text-sm text-slate-300">{registration.course}</p>
+      <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Applicant</p>
+            <h2 className="mt-1 text-2xl font-bold text-navy-950">{registration.fullName}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{registration.course}</p>
+          </div>
+          <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${getRegistrationStatusClass(registration.status)}`}>
+            {formatRegistrationStatus(registration.status)}
+          </span>
         </div>
+      </section>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-navy-950">Registration Details</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-5">
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h2 className="text-base font-bold text-navy-950">Registration Details</h2>
+            </div>
+            <dl className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               {safeArray(detailItems).map(([label, value]) => (
-                <div key={label} className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-                  <p className="mt-2 font-semibold text-navy-950">{value}</p>
+                <div key={label} className="border-b border-slate-100 px-5 py-4 last:border-b-0 sm:last:border-b">
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</dt>
+                  <dd className="mt-1.5 break-words text-sm font-semibold leading-6 text-navy-950">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h2 className="text-base font-bold text-navy-950">Verification Answers</h2>
+            </div>
+            <div className="grid gap-0 divide-y divide-slate-100">
+              {safeArray(verificationItems).map((item) => (
+                <div key={item.key} className="px-5 py-4">
+                  <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                    {getAnswer(answers, item.key, item.fallbackKey)}
+                  </p>
                 </div>
               ))}
             </div>
           </section>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-navy-950">Actions</h2>
-            <div className="mt-5">
-              <ProfileActions
-                registrationId={registration.id}
-                clientEmail={registration.email}
-                status={registration.status}
-                reviewedByName={registration.reviewedBy?.name}
-                reviewedRole={registration.reviewedRole || registration.reviewedBy?.role}
-                reviewedAt={registration.reviewedAt}
-              />
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h2 className="text-base font-bold text-navy-950">Uploaded Evidence</h2>
             </div>
-            {registration.approvedAt && !registration.reviewedAt && (
-              <p className="mt-5 text-sm leading-6 text-slate-600">
-                Approved on {registration.approvedAt.toLocaleString()} by {registration.approvedBy?.name || "MPVTL"}.
-              </p>
-            )}
-            {registration.reviewedAt && (
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                <p><span className="font-bold text-navy-950">Reviewed by:</span> {registration.reviewedBy?.name || "MPVTL"}</p>
-                <p><span className="font-bold text-navy-950">Role:</span> {formatRole(registration.reviewedRole || registration.reviewedBy?.role || "")}</p>
-                <p><span className="font-bold text-navy-950">Date:</span> {registration.reviewedAt.toLocaleString()}</p>
-              </div>
-            )}
-          </aside>
+            <div className="grid gap-3 p-5">
+              {safeArray(files).map((file) => (
+                <a
+                  key={file.id}
+                  href={`/api/admin/files/${file.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-navy-950 transition hover:border-brand-300 hover:bg-white"
+                >
+                  {file.originalName} - {Math.ceil(file.size / 1024)}KB
+                </a>
+              ))}
+              {files.length === 0 && <p className="text-sm text-slate-600">No evidence uploaded.</p>}
+            </div>
+          </section>
         </div>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-navy-950">Verification Answers</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {safeArray(verificationItems).map((item) => (
-              <div
-                key={item.key}
-                className={`rounded-2xl bg-slate-50 p-4 ${item.longAnswer ? "md:col-span-2" : ""}`}
-              >
-                <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                  {getAnswer(answers, item.key, item.fallbackKey)}
-                </p>
-              </div>
-            ))}
+        <aside className="self-start rounded-xl border border-slate-200 bg-white p-5 lg:sticky lg:top-28">
+          <h2 className="text-base font-bold text-navy-950">Actions</h2>
+          <div className="mt-4">
+            <ProfileActions
+              registrationId={registration.id}
+              clientEmail={registration.email}
+              status={registration.status}
+              reviewedByName={registration.reviewedBy?.name}
+              reviewedRole={registration.reviewedRole || registration.reviewedBy?.role}
+              reviewedAt={registration.reviewedAt}
+            />
           </div>
-        </section>
-
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-navy-950">Uploaded Evidence</h2>
-          <div className="mt-5 grid gap-3">
-            {safeArray(files).map((file) => (
-              <a
-                key={file.id}
-                href={`/api/admin/files/${file.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-navy-950 transition hover:border-brand-300"
-              >
-                {file.originalName} - {Math.ceil(file.size / 1024)}KB
-              </a>
-            ))}
-            {files.length === 0 && <p className="text-sm text-slate-600">No evidence uploaded.</p>}
-          </div>
-        </section>
+          {registration.approvedAt && !registration.reviewedAt && (
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Approved on {registration.approvedAt.toLocaleString()} by {registration.approvedBy?.name || "MPVTL"}.
+            </p>
+          )}
+        </aside>
       </div>
-    </main>
+    </AdminShell>
   );
 }

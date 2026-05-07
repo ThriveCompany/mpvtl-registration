@@ -7,5 +7,5 @@ export default async function AdminUsersPage() {
   if (!admin) redirect("/admin/login");
   if (admin.role !== "SUPER_ADMIN") redirect("/admin/registrations");
 
-  return <UsersClient />;
+  return <UsersClient admin={admin} />;
 }

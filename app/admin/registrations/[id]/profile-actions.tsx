@@ -92,12 +92,12 @@ export default function ProfileActions({
   return (
     <div className={isFinal ? "opacity-75" : ""}>
       {isFinal && (
-        <div className="mb-5 rounded-3xl border border-brand-200 bg-brand-50 p-5 text-center">
+        <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50 p-4 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Final Decision Submitted</p>
-          <p className="mt-3 text-2xl font-black uppercase tracking-wide text-navy-950">
+          <p className="mt-2 text-xl font-black uppercase tracking-wide text-navy-950">
             {formatRegistrationStatus(status)}
           </p>
-          <div className="mt-4 grid gap-2 text-sm leading-6 text-slate-700">
+          <div className="mt-3 grid gap-1 text-sm leading-6 text-slate-700">
             <p><span className="font-bold text-navy-950">Reviewed by:</span> {reviewedByName || "MPVTL"}</p>
             <p><span className="font-bold text-navy-950">Role:</span> {reviewedRole ? formatRole(reviewedRole) : "Not recorded"}</p>
             <p><span className="font-bold text-navy-950">Date:</span> {reviewedAt ? new Date(reviewedAt).toLocaleString() : "Not recorded"}</p>
@@ -110,7 +110,7 @@ export default function ProfileActions({
           type="button"
           onClick={() => submitStatus("CONTACTED")}
           disabled={Boolean(loading) || isFinal}
-          className="inline-flex w-full items-center justify-center rounded-full bg-slate-100 px-5 py-3 text-center text-sm font-bold text-navy-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading === "CONTACTED" ? "Saving..." : "Mark Contacted"}
         </button>
@@ -121,11 +121,11 @@ export default function ProfileActions({
             type="button"
             onClick={() => setPendingDecision(decision)}
             disabled={Boolean(loading) || isFinal}
-            className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-center text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-center text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${
               decision.status === "APPROVED"
-                ? "bg-brand-700 text-white shadow-redGlow"
+                ? "bg-brand-700 text-white hover:bg-brand-800"
                 : decision.status === "UNAPPROVED"
-                  ? "bg-navy-950 text-white"
+                  ? "bg-navy-950 text-white hover:bg-navy-900"
                   : "border border-slate-300 bg-white text-navy-950"
             }`}
           >
@@ -135,7 +135,7 @@ export default function ProfileActions({
       </div>
 
       {isFinal && (
-        <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-600">
+        <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">
           This applicant already has a final decision. Actions are locked.
         </p>
       )}
@@ -144,7 +144,7 @@ export default function ProfileActions({
 
       {pendingDecision && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 px-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 text-slate-900 shadow-premium">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 text-slate-900 shadow-xl">
             <h3 className="text-xl font-bold text-navy-950">{pendingDecision.title}</h3>
             <p className="mt-4 text-sm leading-7 text-slate-600">{pendingDecision.message}</p>
 
@@ -155,7 +155,7 @@ export default function ProfileActions({
                   value={reviewNote}
                   onChange={(event) => setReviewNote(event.target.value)}
                   rows={3}
-                  className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+                  className="mt-2 w-full resize-none rounded-lg border border-slate-300 bg-white p-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
                 />
               </label>
             )}
@@ -167,7 +167,7 @@ export default function ProfileActions({
                   setPendingDecision(null);
                   setReviewNote("");
                 }}
-                className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-navy-950"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-navy-950"
               >
                 Cancel
               </button>
@@ -175,7 +175,7 @@ export default function ProfileActions({
                 type="button"
                 onClick={() => updateStatus(pendingDecision)}
                 disabled={Boolean(loading)}
-                className="rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white shadow-redGlow disabled:opacity-60"
+                className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
               >
                 {loading ? "Submitting..." : pendingDecision.confirmLabel}
               </button>

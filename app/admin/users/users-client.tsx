@@ -1,8 +1,9 @@
 "use client";
 
+import type { SafeAdmin } from "@/lib/auth";
 import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import AdminShell from "../admin-shell";
 
 type AdminUserRow = {
   id: string;
@@ -14,7 +15,7 @@ type AdminUserRow = {
   createdAt: string;
 };
 
-export default function UsersClient() {
+export default function UsersClient({ admin }: { admin: SafeAdmin }) {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [form, setForm] = useState({
     name: "",
@@ -90,41 +91,48 @@ export default function UsersClient() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <Link href="/admin/registrations" className="text-sm font-bold text-brand-700">Back to registrations</Link>
-        <div className="mt-5 rounded-3xl bg-navy-950 p-6 text-white shadow-premium">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-200">Super Admin</p>
-          <h1 className="mt-2 text-2xl font-semibold">Admin Users</h1>
-        </div>
+    <AdminShell
+      admin={admin}
+      active="users"
+      title="Admin Users"
+      subtitle="Create official MPVTL admin accounts and review active access."
+    >
+        <form onSubmit={createUser} className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-bold text-navy-950">Create user</h2>
+              <p className="mt-1 text-sm text-slate-600">Only @moaetscandg.org.ng accounts are allowed.</p>
+            </div>
+            <button type="submit" className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-800">
+              Create User
+            </button>
+          </div>
 
-        <form onSubmit={createUser} className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-navy-950">Create user</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-            <select className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, center: "" })}>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <input className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+            <select className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, center: "" })}>
               {USER_CREATABLE_ROLES.map((role) => (
                 <option key={role} value={role}>{formatRole(role)}</option>
               ))}
             </select>
             {form.role === "CENTER_MANAGER" && (
               availableCenters.length > 0 ? (
-                <select className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
+                <select className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
                   <option value="">Select center</option>
                   {availableCenters.map((center) => (
                     <option key={center.value} value={center.value}>{center.label}</option>
                   ))}
                 </select>
               ) : (
-                <div className="flex min-h-14 items-center rounded-2xl border border-brand-100 bg-brand-50 px-4 text-sm font-semibold text-brand-800">
+                <div className="flex min-h-11 items-center rounded-lg border border-brand-100 bg-brand-50 px-3 text-sm font-semibold text-brand-800">
                   All centers already have active managers.
                 </div>
               )
             )}
             <select
-              className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4"
+              className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
               value={form.active ? "active" : "inactive"}
               onChange={(event) => setForm({ ...form, active: event.target.value === "active" })}
             >
@@ -133,36 +141,75 @@ export default function UsersClient() {
             </select>
           </div>
           {message && <p className="mt-4 text-sm font-semibold text-brand-700">{message}</p>}
-          <button type="submit" className="mt-5 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow">
-            Create User
-          </button>
         </form>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-navy-950">Existing users</h2>
-          <div className="mt-5 grid gap-3">
+        <section className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h2 className="text-base font-bold text-navy-950">Existing users</h2>
+          </div>
+          <div>
             {loading && (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+              <div className="p-5 text-sm text-slate-600">
                 Loading users...
               </div>
             )}
-            {!loading && (Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
-              <div key={user.id} className="rounded-2xl bg-slate-50 p-4">
-                <p className="font-bold text-navy-950">{user.name}</p>
-                <p className="mt-1 text-sm text-slate-600">{user.email}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                  {formatRole(user.role)}{user.center ? ` - ${formatCenter(user.center)}` : ""} - {user.active ? "Active" : "Inactive"}
-                </p>
+
+            {!loading && visibleUsers.length > 0 && (
+              <div className="hidden md:block">
+                <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_.7fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                  <span>Name</span>
+                  <span>Email</span>
+                  <span>Role</span>
+                  <span>Center</span>
+                  <span>Status</span>
+                </div>
+                {(Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
+                  <div key={user.id} className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_.7fr] gap-4 border-b border-slate-100 px-5 py-4 text-sm last:border-b-0">
+                    <span className="font-bold text-navy-950">{user.name}</span>
+                    <span className="break-words text-slate-700">{user.email}</span>
+                    <span className="text-slate-700">{formatRole(user.role)}</span>
+                    <span className="text-slate-700">{user.center ? formatCenter(user.center) : "-"}</span>
+                    <span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
+                        user.active ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"
+                      }`}>
+                        {user.active ? "Active" : "Inactive"}
+                      </span>
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            {!loading && visibleUsers.length > 0 && (
+              <div className="grid gap-3 p-4 md:hidden">
+                {(Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
+                  <div key={user.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-navy-950">{user.name}</p>
+                        <p className="mt-1 break-words text-sm text-slate-600">{user.email}</p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
+                        user.active ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"
+                      }`}>
+                        {user.active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">{formatRole(user.role)}</p>
+                    {user.center && <p className="mt-1 text-sm text-slate-600">{formatCenter(user.center)}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {!loading && visibleUsers.length === 0 && (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+              <div className="p-5 text-sm text-slate-600">
                 No admin users found.
               </div>
             )}
           </div>
         </section>
-      </div>
-    </main>
+    </AdminShell>
   );
 }
