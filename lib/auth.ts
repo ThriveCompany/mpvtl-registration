@@ -53,7 +53,7 @@ export async function getCurrentAdmin(): Promise<SafeAdmin | null> {
 }
 
 export function canViewCenter(admin: SafeAdmin, center: string) {
-  if (admin.role === "SUPER_ADMIN" || admin.role === "MARKETING_OFFICIAL") return true;
+  if (admin.role === "SUPER_ADMIN" || admin.role === "DIRECTOR" || admin.role === "ADMISSION_OFFICIAL") return true;
   return admin.role === "CENTER_MANAGER" && admin.center === center;
 }
 

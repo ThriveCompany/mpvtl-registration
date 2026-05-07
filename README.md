@@ -29,17 +29,18 @@ Create `.env.local` locally or set these variables on the VPS:
 ```bash
 DATABASE_URL=
 JWT_SECRET=
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
+NEXT_PUBLIC_APP_URL=https://register.mpvtl.cloud
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=info@moaetscandg.org.ng
 SMTP_PASS=
-SMTP_FROM=
+SMTP_FROM="MPVTL Registrations <info@moaetscandg.org.ng>"
 SUPER_ADMIN_NAME=
 SUPER_ADMIN_EMAIL=
 SUPER_ADMIN_PASSWORD=
 ```
 
-SMTP is optional. If SMTP is not configured, approval email content is logged instead of crashing.
+SMTP is optional. If SMTP is not configured, registration and approval email content is logged instead of crashing.
 
 ## Database Setup
 
@@ -52,7 +53,13 @@ npm run prisma:migrate
 npm run seed
 ```
 
-The seed command creates one `SUPER_ADMIN` user only when:
+The seed command creates or updates the MPVTL admin users:
+
+- `DIRECTOR`
+- `ADMISSION_OFFICIAL`
+- `CENTER_MANAGER`
+
+The existing `SUPER_ADMIN` password is not changed. A `SUPER_ADMIN` is created only when:
 
 ```bash
 SUPER_ADMIN_NAME=
@@ -61,6 +68,8 @@ SUPER_ADMIN_PASSWORD=
 ```
 
 are set.
+
+Seeded admin accounts must use `@moaetscandg.org.ng` email addresses.
 
 ## Production Deployment With PM2
 
@@ -76,6 +85,7 @@ pm2 delete mpvtl-form || true
 pm2 start ecosystem.config.js
 pm2 save
 curl http://localhost:3000/register
+curl http://localhost:3000/admin/login
 ```
 
 The production start script binds Next.js to all network interfaces on port 3000:

@@ -29,6 +29,9 @@ export async function GET(
         approvedBy: {
           select: { id: true, name: true, email: true },
         },
+        reviewedBy: {
+          select: { id: true, name: true, email: true, role: true },
+        },
       },
     });
 

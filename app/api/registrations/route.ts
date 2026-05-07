@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  sendApplicantRegistrationReceivedEmail,
+  sendInternalRegistrationEmail,
+} from "@/lib/email";
 import { storeEvidenceFile, validateEvidenceFile } from "@/lib/uploads";
 
 export const runtime = "nodejs";
@@ -143,12 +147,14 @@ export async function POST(request: Request) {
         verificationAnswers,
         notifications: {
           create: [
-            { targetRole: "MARKETING_OFFICIAL" },
+            { targetRole: "SUPER_ADMIN" },
+            { targetRole: "DIRECTOR" },
+            { targetRole: "ADMISSION_OFFICIAL" },
             { targetRole: "CENTER_MANAGER", targetCenter: center },
           ],
         },
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     for (const file of files) {
@@ -159,6 +165,52 @@ export async function POST(request: Request) {
           ...storedFile,
         },
       });
+    }
+
+    try {
+      const internalRecipients = await prisma.adminUser.findMany({
+        where: {
+          active: true,
+          OR: [
+            { role: "DIRECTOR" },
+            { role: "ADMISSION_OFFICIAL" },
+            { role: "CENTER_MANAGER", center },
+          ],
+        },
+        select: {
+          name: true,
+          email: true,
+        },
+      });
+
+      const emailResults = await Promise.allSettled([
+        ...internalRecipients.map((recipient) => sendInternalRegistrationEmail({
+          to: recipient.email,
+          recipientName: recipient.name,
+          registrationId: registration.id,
+          fullName,
+          phone,
+          email,
+          course,
+          category,
+          level,
+          center,
+          status: registration.status,
+        })),
+        sendApplicantRegistrationReceivedEmail({
+          to: email,
+          fullName,
+          course,
+        }),
+      ]);
+
+      emailResults.forEach((result) => {
+        if (result.status === "rejected") {
+          console.error("Registration notification email failed", result.reason);
+        }
+      });
+    } catch (emailError) {
+      console.error("Registration notification email setup failed", emailError);
     }
 
     return NextResponse.json({ success: true, id: registration.id });

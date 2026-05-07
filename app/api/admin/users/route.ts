@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import type { AdminRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { getCurrentAdmin } from "@/lib/auth";
+import { CENTER_OPTIONS, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
 import { prisma } from "@/lib/prisma";
 
-const roles: AdminRole[] = ["SUPER_ADMIN", "MARKETING_OFFICIAL", "CENTER_MANAGER"];
+const roles: AdminRole[] = [...USER_CREATABLE_ROLES];
 
 export async function GET() {
   const admin = await getCurrentAdmin();
@@ -61,11 +62,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Name, email, password, and role are required." }, { status: 400 });
   }
 
+  if (!isOfficialEmail(email)) {
+    return NextResponse.json(
+      { message: "Official accounts must use an @moaetscandg.org.ng email address." },
+      { status: 400 },
+    );
+  }
+
   if (role === "CENTER_MANAGER" && !center) {
     return NextResponse.json({ message: "Center is required for center managers." }, { status: 400 });
   }
 
+  if (role === "CENTER_MANAGER" && !CENTER_OPTIONS.some((option) => option.value === center)) {
+    return NextResponse.json({ message: "Please choose a valid centre." }, { status: 400 });
+  }
+
   try {
+    if (role === "CENTER_MANAGER") {
+      const existingManager = await prisma.adminUser.findFirst({
+        where: {
+          role: "CENTER_MANAGER",
+          center,
+          active: true,
+        },
+        select: { id: true },
+      });
+
+      if (existingManager) {
+        return NextResponse.json(
+          { message: "This center already has an active center manager." },
+          { status: 400 },
+        );
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.adminUser.create({
       data: {

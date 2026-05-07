@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { canViewCenter, getCurrentAdmin } from "@/lib/auth";
+import { formatRegistrationStatus, formatRole } from "@/lib/admin-constants";
 import { prisma } from "@/lib/prisma";
 import ProfileActions from "./profile-actions";
 
@@ -130,6 +131,7 @@ export default async function RegistrationProfilePage({
     include: {
       files: { orderBy: { createdAt: "asc" } },
       approvedBy: { select: { name: true, email: true } },
+      reviewedBy: { select: { name: true, email: true, role: true } },
     },
   });
 
@@ -152,7 +154,7 @@ export default async function RegistrationProfilePage({
     ["Hostel", registration.hostel],
     ["Action", registration.action],
     ["Receive updates", registration.receiveUpdates ? "Yes" : "No"],
-    ["Status", registration.status],
+    ["Status", formatRegistrationStatus(registration.status)],
   ] as const);
 
   return (
@@ -182,12 +184,26 @@ export default async function RegistrationProfilePage({
           <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-navy-950">Actions</h2>
             <div className="mt-5">
-              <ProfileActions registrationId={registration.id} />
+              <ProfileActions
+                registrationId={registration.id}
+                clientEmail={registration.email}
+                status={registration.status}
+                reviewedByName={registration.reviewedBy?.name}
+                reviewedRole={registration.reviewedRole || registration.reviewedBy?.role}
+                reviewedAt={registration.reviewedAt}
+              />
             </div>
-            {registration.approvedAt && (
+            {registration.approvedAt && !registration.reviewedAt && (
               <p className="mt-5 text-sm leading-6 text-slate-600">
                 Approved on {registration.approvedAt.toLocaleString()} by {registration.approvedBy?.name || "MPVTL"}.
               </p>
+            )}
+            {registration.reviewedAt && (
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                <p><span className="font-bold text-navy-950">Reviewed by:</span> {registration.reviewedBy?.name || "MPVTL"}</p>
+                <p><span className="font-bold text-navy-950">Role:</span> {formatRole(registration.reviewedRole || registration.reviewedBy?.role || "")}</p>
+                <p><span className="font-bold text-navy-950">Date:</span> {registration.reviewedAt.toLocaleString()}</p>
+              </div>
             )}
           </aside>
         </div>

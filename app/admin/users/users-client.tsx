@@ -1,7 +1,8 @@
 "use client";
 
+import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type AdminUserRow = {
   id: string;
@@ -19,13 +20,21 @@ export default function UsersClient() {
     name: "",
     email: "",
     password: "",
-    role: "MARKETING_OFFICIAL",
+    role: "DIRECTOR",
     center: "",
     active: true,
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const visibleUsers = Array.isArray(users) ? users : [];
+  const activeManagerCenters = useMemo(() => {
+    return new Set(
+      visibleUsers
+        .filter((user) => user.role === "CENTER_MANAGER" && user.active && user.center)
+        .map((user) => user.center as string),
+    );
+  }, [visibleUsers]);
+  const availableCenters = CENTER_OPTIONS.filter((center) => !activeManagerCenters.has(center.value));
 
   async function loadUsers() {
     try {
@@ -49,6 +58,16 @@ export default function UsersClient() {
     event.preventDefault();
     setMessage("");
 
+    if (!isOfficialEmail(form.email)) {
+      setMessage("Official accounts must use an @moaetscandg.org.ng email address.");
+      return;
+    }
+
+    if (form.role === "CENTER_MANAGER" && !form.center) {
+      setMessage("Center is required for center managers.");
+      return;
+    }
+
     const response = await fetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,7 +81,7 @@ export default function UsersClient() {
     }
 
     setMessage("User created.");
-    setForm({ name: "", email: "", password: "", role: "MARKETING_OFFICIAL", center: "", active: true });
+    setForm({ name: "", email: "", password: "", role: "DIRECTOR", center: "", active: true });
     await loadUsers();
   }
 
@@ -82,19 +101,36 @@ export default function UsersClient() {
         <form onSubmit={createUser} className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-navy-950">Create user</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
             <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
             <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-            <select className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
-              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-              <option value="MARKETING_OFFICIAL">MARKETING_OFFICIAL</option>
-              <option value="CENTER_MANAGER">CENTER_MANAGER</option>
+            <select className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, center: "" })}>
+              {USER_CREATABLE_ROLES.map((role) => (
+                <option key={role} value={role}>{formatRole(role)}</option>
+              ))}
             </select>
-            <input className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" placeholder="Center for center manager" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })} />
-            <label className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold">
-              <input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} />
-              Active
-            </label>
+            {form.role === "CENTER_MANAGER" && (
+              availableCenters.length > 0 ? (
+                <select className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
+                  <option value="">Select center</option>
+                  {availableCenters.map((center) => (
+                    <option key={center.value} value={center.value}>{center.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex min-h-14 items-center rounded-2xl border border-brand-100 bg-brand-50 px-4 text-sm font-semibold text-brand-800">
+                  All centers already have active managers.
+                </div>
+              )
+            )}
+            <select
+              className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4"
+              value={form.active ? "active" : "inactive"}
+              onChange={(event) => setForm({ ...form, active: event.target.value === "active" })}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
           {message && <p className="mt-4 text-sm font-semibold text-brand-700">{message}</p>}
           <button type="submit" className="mt-5 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow">
@@ -115,7 +151,7 @@ export default function UsersClient() {
                 <p className="font-bold text-navy-950">{user.name}</p>
                 <p className="mt-1 text-sm text-slate-600">{user.email}</p>
                 <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                  {user.role}{user.center ? ` - ${user.center}` : ""} - {user.active ? "Active" : "Inactive"}
+                  {formatRole(user.role)}{user.center ? ` - ${formatCenter(user.center)}` : ""} - {user.active ? "Active" : "Inactive"}
                 </p>
               </div>
             ))}

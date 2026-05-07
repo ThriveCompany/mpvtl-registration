@@ -4,11 +4,15 @@ import { prisma } from "@/lib/prisma";
 
 function notificationWhere(admin: NonNullable<Awaited<ReturnType<typeof getCurrentAdmin>>>) {
   if (admin.role === "SUPER_ADMIN") {
-    return { seen: false };
+    return { seen: false, targetRole: "SUPER_ADMIN" as const };
   }
 
-  if (admin.role === "MARKETING_OFFICIAL") {
-    return { seen: false, targetRole: "MARKETING_OFFICIAL" as const };
+  if (admin.role === "DIRECTOR") {
+    return { seen: false, targetRole: "DIRECTOR" as const };
+  }
+
+  if (admin.role === "ADMISSION_OFFICIAL") {
+    return { seen: false, targetRole: "ADMISSION_OFFICIAL" as const };
   }
 
   return {

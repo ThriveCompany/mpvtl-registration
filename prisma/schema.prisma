@@ -9,7 +9,8 @@ datasource db {
 
 enum AdminRole {
   SUPER_ADMIN
-  MARKETING_OFFICIAL
+  DIRECTOR
+  ADMISSION_OFFICIAL
   CENTER_MANAGER
 }
 
@@ -17,6 +18,8 @@ enum RegistrationStatus {
   NEW
   VIEWED
   APPROVED
+  UNAPPROVED
+  NEEDS_FURTHER_REVIEW
   REJECTED
   CONTACTED
 }
@@ -32,6 +35,7 @@ model AdminUser {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   approvals    Registration[] @relation("RegistrationApprover")
+  reviews      Registration[] @relation("RegistrationReviewer")
 }
 
 model Registration {
@@ -54,6 +58,10 @@ model Registration {
   approvedAt          DateTime?
   approvedById        String?
   approvedBy          AdminUser?                 @relation("RegistrationApprover", fields: [approvedById], references: [id])
+  reviewedAt          DateTime?
+  reviewedById        String?
+  reviewedBy          AdminUser?                 @relation("RegistrationReviewer", fields: [reviewedById], references: [id])
+  reviewedRole        String?
   files               RegistrationFile[]
   notifications       RegistrationNotification[]
 
