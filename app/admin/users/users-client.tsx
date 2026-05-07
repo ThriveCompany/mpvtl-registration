@@ -173,8 +173,8 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
             )}
 
             {!loading && visibleUsers.length > 0 && (
-              <div className="hidden md:block">
-                <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_.7fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+              <div className="hidden xl:block">
+                <div className="grid grid-cols-[1.1fr_1.7fr_1fr_1fr_.7fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                   <span>Name</span>
                   <span>Email</span>
                   <span>Role</span>
@@ -182,7 +182,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
                   <span>Status</span>
                 </div>
                 {(Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
-                  <div key={user.id} className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_.7fr] gap-4 border-b border-slate-100 px-5 py-4 text-sm last:border-b-0">
+                  <div key={user.id} className="grid grid-cols-[1.1fr_1.7fr_1fr_1fr_.7fr] gap-4 border-b border-slate-100 px-5 py-4 text-sm last:border-b-0">
                     <span className="font-bold text-navy-950">{user.name}</span>
                     <span className="break-words text-slate-700">{user.email}</span>
                     <span className="text-slate-700">{formatRole(user.role)}</span>
@@ -200,7 +200,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
             )}
 
             {!loading && visibleUsers.length > 0 && (
-              <div className="grid gap-3 p-4 md:hidden">
+              <div className="grid gap-3 p-4 md:grid-cols-2 xl:hidden">
                 {(Array.isArray(visibleUsers) ? visibleUsers : []).map((user) => (
                   <div key={user.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_16px_45px_rgba(6,19,33,0.08)]">
                     <div className="flex items-start justify-between gap-3">

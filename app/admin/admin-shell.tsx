@@ -41,7 +41,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
 
   return (
     <main className="min-h-screen bg-[#f3f5f8] text-slate-900">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-navy-800 bg-navy-950 text-white shadow-[18px_0_60px_rgba(6,19,33,0.22)] lg:block">
+      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-navy-800 bg-navy-950 text-white shadow-[18px_0_60px_rgba(6,19,33,0.22)] xl:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 px-5 py-5">
             <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
@@ -89,10 +89,10 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
         </div>
       </aside>
 
-      <div className="lg:pl-64">
+      <div className="xl:pl-72">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-[0_16px_45px_rgba(6,19,33,0.08)] backdrop-blur">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between gap-4 lg:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between gap-3 xl:hidden">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">MPVTL</p>
                 <p className="text-base font-bold text-navy-950">Admin Portal</p>
@@ -100,19 +100,19 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
               <button
                 type="button"
                 onClick={logout}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
               >
                 <LogOut size={16} />
                 Logout
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div className="border-l-4 border-brand-700 pl-4">
-                <h1 className="text-2xl font-bold tracking-tight text-navy-950">{title}</h1>
-                {subtitle && <p className="mt-1 text-sm leading-6 text-slate-600">{subtitle}</p>}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="border-l-4 border-brand-700 pl-3 sm:pl-4">
+                <h1 className="text-[1.35rem] font-bold leading-tight tracking-tight text-navy-950 sm:text-2xl">{title}</h1>
+                {subtitle && <p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{subtitle}</p>}
               </div>
-              <div className="flex flex-wrap gap-2 lg:hidden">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:hidden">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const selected = active === item.section;
@@ -121,7 +121,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
                         selected ? "bg-brand-700 text-white shadow-[0_14px_35px_rgba(127,29,45,0.22)]" : "border border-slate-300 bg-white text-slate-700"
                       }`}
                     >
@@ -135,7 +135,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           {children}
         </div>
       </div>

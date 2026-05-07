@@ -49,7 +49,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [centerFilter, setCenterFilter] = useState("All Centers");
   const [courseSearch, setCourseSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
   const audioRef = useRef<AudioContext | null>(null);
   const playedNotificationKeysRef = useRef<Set<string>>(new Set());
   const visibleRegistrations = Array.isArray(registrations) ? registrations : [];
@@ -155,6 +155,10 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   }
 
   useEffect(() => {
+    if (window.matchMedia("(min-width: 1280px)").matches) {
+      setViewMode("table");
+    }
+
     loadRegistrations();
     checkNotifications();
     const interval = window.setInterval(checkNotifications, 10000);
@@ -196,32 +200,32 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           </button>
         )}
 
-        <section className="mb-5 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-navy-800 bg-navy-950 p-5 text-white shadow-[0_20px_60px_rgba(6,19,33,0.16)]">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-100">Total</p>
-            <p className="mt-2 text-3xl font-bold">{visibleRegistrations.length}</p>
+        <section className="mb-4 grid grid-cols-3 gap-2 sm:mb-5 sm:gap-4">
+          <div className="rounded-2xl border border-navy-800 bg-navy-950 p-3 text-white shadow-[0_20px_60px_rgba(6,19,33,0.16)] sm:p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-100 sm:text-xs sm:tracking-[0.14em]">Total</p>
+            <p className="mt-1 text-2xl font-bold sm:mt-2 sm:text-3xl">{visibleRegistrations.length}</p>
           </div>
-          <div className="rounded-2xl border border-brand-200 bg-white p-5 shadow-[0_20px_60px_rgba(127,29,45,0.10)]">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">New</p>
-            <p className="mt-2 text-3xl font-bold text-brand-700">{pendingCount}</p>
+          <div className="rounded-2xl border border-brand-200 bg-white p-3 shadow-[0_20px_60px_rgba(127,29,45,0.10)] sm:p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700 sm:text-xs sm:tracking-[0.14em]">New</p>
+            <p className="mt-1 text-2xl font-bold text-brand-700 sm:mt-2 sm:text-3xl">{pendingCount}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(6,19,33,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Final decisions</p>
-            <p className="mt-2 text-3xl font-bold text-navy-950">{finalCount}</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_20px_60px_rgba(6,19,33,0.08)] sm:p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">Final</p>
+            <p className="mt-1 text-2xl font-bold text-navy-950 sm:mt-2 sm:text-3xl">{finalCount}</p>
           </div>
         </section>
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_55px_rgba(6,19,33,0.08)] lg:grid-cols-[1fr_220px_220px_auto]">
+        <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_55px_rgba(6,19,33,0.08)] sm:grid-cols-2 sm:p-4 xl:grid-cols-[1fr_190px_190px_auto]">
           <input
             value={courseSearch}
             onChange={(event) => setCourseSearch(event.target.value)}
             placeholder="Search course"
-            className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:col-span-2 xl:col-span-1"
           />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>{status === "All Statuses" ? status : formatRegistrationStatus(status)}</option>
@@ -230,13 +234,13 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           <select
             value={centerFilter}
             onChange={(event) => setCenterFilter(event.target.value)}
-            className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           >
             {centerOptions.map((center) => (
               <option key={center} value={center}>{center === "All Centers" ? center : formatCenter(center)}</option>
             ))}
           </select>
-          <div className="grid grid-cols-2 rounded-xl border border-slate-300 bg-slate-50 p-1">
+          <div className="grid grid-cols-2 rounded-xl border border-slate-300 bg-slate-50 p-1 sm:col-span-2 xl:col-span-1">
             <button
               type="button"
               onClick={() => setViewMode("table")}
@@ -272,8 +276,8 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
 
         {!loading && !error && filteredRegistrations.length > 0 && (
           <>
-            <section className={`${viewMode === "table" ? "hidden md:block" : "hidden"} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(6,19,33,0.10)]`}>
-              <div className="grid grid-cols-[1.1fr_1.8fr_1fr_1fr_1.1fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+            <section className={`${viewMode === "table" ? "hidden xl:block" : "hidden"} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(6,19,33,0.10)]`}>
+              <div className="grid grid-cols-[minmax(130px,1.1fr)_minmax(250px,1.8fr)_minmax(100px,.8fr)_minmax(160px,1fr)_minmax(110px,.9fr)] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                 <span>Applicant</span>
                 <span>Course</span>
                 <span>Center</span>
@@ -288,7 +292,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`grid grid-cols-[1.1fr_1.8fr_1fr_1fr_1.1fr] gap-4 border-b border-slate-100 px-5 py-4 text-sm transition last:border-b-0 hover:bg-slate-50 ${
+                    className={`grid grid-cols-[minmax(130px,1.1fr)_minmax(250px,1.8fr)_minmax(100px,.8fr)_minmax(160px,1fr)_minmax(110px,.9fr)] gap-4 border-b border-slate-100 px-5 py-4 text-sm transition last:border-b-0 hover:bg-slate-50 ${
                       isNew ? "bg-brand-50/35" : "bg-white"
                     }`}
                   >
@@ -298,7 +302,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                     <span>
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ring-1 ${
                         isNew ? "font-bold" : "font-semibold"
-                      } ${getRegistrationStatusClass(registration.status)}`}>
+                      } whitespace-nowrap ${getRegistrationStatusClass(registration.status)}`}>
                         {formatRegistrationStatus(registration.status)}
                       </span>
                     </span>
@@ -308,7 +312,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               })}
             </section>
 
-            <section className={`${viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "grid md:hidden"} gap-3`}>
+            <section className={`${viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "grid xl:hidden md:grid-cols-2"} gap-3`}>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
                 const titleClass = isNew ? "font-bold text-navy-950" : "font-normal text-navy-950";
@@ -318,7 +322,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`rounded-2xl border p-5 shadow-[0_18px_50px_rgba(6,19,33,0.08)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] ${
+                    className={`rounded-2xl border p-4 shadow-[0_18px_50px_rgba(6,19,33,0.08)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] sm:p-5 ${
                       isNew ? "border-brand-200 bg-brand-50/40" : "border-slate-200 bg-white"
                     }`}
                   >
@@ -327,7 +331,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                         <h2 className={titleClass}>{registration.fullName}</h2>
                         <p className={`mt-1 text-sm leading-6 ${textClass}`}>{registration.course}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ring-1 ${
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] ring-1 sm:text-xs ${
                         isNew ? "font-bold" : "font-semibold"
                       } ${getRegistrationStatusClass(registration.status)}`}>
                         {formatRegistrationStatus(registration.status)}
