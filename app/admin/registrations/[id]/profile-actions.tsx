@@ -1,6 +1,11 @@
 "use client";
 
-import { formatRegistrationStatus, formatRole, isFinalRegistrationStatus } from "@/lib/admin-constants";
+import {
+  formatRegistrationStatus,
+  formatRole,
+  getRegistrationStatusClass,
+  isFinalRegistrationStatus,
+} from "@/lib/admin-constants";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -15,6 +20,14 @@ type PendingDecision = {
   noteRequired?: boolean;
 };
 
+const furtherReviewReasons = [
+  "Entry requirement needs confirmation",
+  "Uploaded evidence needs verification",
+  "Applicant details need clarification",
+  "Course or centre availability needs confirmation",
+  "Director or manager review required",
+];
+
 export default function ProfileActions({
   registrationId,
   clientEmail,
@@ -22,6 +35,7 @@ export default function ProfileActions({
   reviewedByName,
   reviewedRole,
   reviewedAt,
+  submittedReviewNote,
 }: {
   registrationId: string;
   clientEmail: string;
@@ -29,6 +43,7 @@ export default function ProfileActions({
   reviewedByName?: string | null;
   reviewedRole?: string | null;
   reviewedAt?: string | Date | null;
+  submittedReviewNote?: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
@@ -73,48 +88,44 @@ export default function ProfileActions({
       confirmLabel: "Send Approval Email",
     },
     {
+      status: "NEEDS_FURTHER_REVIEW",
+      buttonLabel: "Needs Further Review",
+      title: "Confirm Further Review",
+      message: "This will permanently mark this applicant as needing further review. Select the reason before submitting.",
+      confirmLabel: "Submit Review Decision",
+      noteRequired: true,
+    },
+    {
       status: "UNAPPROVED",
       buttonLabel: "Unapprove",
       title: "Confirm Unapproval",
       message: "This will permanently mark this applicant as unapproved. Do you want to proceed?",
       confirmLabel: "Submit Unapproval",
     },
-    {
-      status: "NEEDS_FURTHER_REVIEW",
-      buttonLabel: "Needs Further Review",
-      title: "Confirm Further Review",
-      message: "This will permanently mark this applicant as needing further review. Do you want to proceed?",
-      confirmLabel: "Submit Review Decision",
-      noteRequired: true,
-    },
   ];
 
   return (
     <div className={isFinal ? "opacity-75" : ""}>
       {isFinal && (
-        <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50 p-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Final Decision Submitted</p>
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Final Decision Submitted</p>
           <p className="mt-2 text-xl font-black uppercase tracking-wide text-navy-950">
-            {formatRegistrationStatus(status)}
+            <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${getRegistrationStatusClass(status)}`}>
+              {formatRegistrationStatus(status)}
+            </span>
           </p>
           <div className="mt-3 grid gap-1 text-sm leading-6 text-slate-700">
             <p><span className="font-bold text-navy-950">Reviewed by:</span> {reviewedByName || "MPVTL"}</p>
             <p><span className="font-bold text-navy-950">Role:</span> {reviewedRole ? formatRole(reviewedRole) : "Not recorded"}</p>
             <p><span className="font-bold text-navy-950">Date:</span> {reviewedAt ? new Date(reviewedAt).toLocaleString() : "Not recorded"}</p>
+            {submittedReviewNote && (
+              <p><span className="font-bold text-navy-950">Reason:</span> {submittedReviewNote}</p>
+            )}
           </div>
         </div>
       )}
 
       <div className="grid gap-3">
-        <button
-          type="button"
-          onClick={() => submitStatus("CONTACTED")}
-          disabled={Boolean(loading) || isFinal}
-          className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading === "CONTACTED" ? "Saving..." : "Mark Contacted"}
-        </button>
-
         {decisions.map((decision) => (
           <button
             key={decision.status}
@@ -123,10 +134,10 @@ export default function ProfileActions({
             disabled={Boolean(loading) || isFinal}
             className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-center text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${
               decision.status === "APPROVED"
-                ? "bg-brand-700 text-white hover:bg-brand-800"
-                : decision.status === "UNAPPROVED"
-                  ? "bg-navy-950 text-white hover:bg-navy-900"
-                  : "border border-slate-300 bg-white text-navy-950"
+                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                : decision.status === "NEEDS_FURTHER_REVIEW"
+                  ? "bg-amber-500 text-navy-950 hover:bg-amber-400"
+                  : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
             }`}
           >
             {loading === decision.status ? "Saving..." : decision.buttonLabel}
@@ -151,12 +162,16 @@ export default function ProfileActions({
             {pendingDecision.noteRequired && (
               <label className="mt-5 block">
                 <span className="text-sm font-bold text-navy-950">Reason / review note</span>
-                <textarea
+                <select
                   value={reviewNote}
                   onChange={(event) => setReviewNote(event.target.value)}
-                  rows={3}
-                  className="mt-2 w-full resize-none rounded-lg border border-slate-300 bg-white p-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
-                />
+                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+                >
+                  <option value="">Select a reason</option>
+                  {furtherReviewReasons.map((reason) => (
+                    <option key={reason} value={reason}>{reason}</option>
+                  ))}
+                </select>
               </label>
             )}
 
@@ -174,7 +189,7 @@ export default function ProfileActions({
               <button
                 type="button"
                 onClick={() => updateStatus(pendingDecision)}
-                disabled={Boolean(loading)}
+                disabled={Boolean(loading) || (pendingDecision.noteRequired && !reviewNote)}
                 className="rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
               >
                 {loading ? "Submitting..." : pendingDecision.confirmLabel}

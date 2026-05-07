@@ -64,6 +64,7 @@ const verificationAnswerKeys = [
   "newToField",
   "reasonForCourse",
   "availableForPracticalTraining",
+  "basicWriting",
   "priorTraining",
   "hasPreviousCertificate",
   "practicalExperience",
@@ -995,7 +996,7 @@ export default function RegisterPage() {
       }
     }
     if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
-      nextErrors.basicDeclaration = "Please write your declaration before continuing.";
+      nextErrors.basicDeclaration = "Please complete your writing sample before continuing.";
     }
     if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0) {
       nextErrors.uploads = uploadedFiles.length > 0
@@ -1031,6 +1032,7 @@ export default function RegisterPage() {
     if (isSubmitting || !validateStep(6) || !selectedCourse) return;
 
     const verificationAnswers = buildVerificationAnswers(answers);
+    verificationAnswers.basicWriting = selectedLevel === "Basic" ? basicDeclaration.trim() : "";
     const payload = {
       course: selectedCourse,
       location: selectedLocationData,
@@ -1072,6 +1074,7 @@ export default function RegisterPage() {
       formData.append("action", finalAction);
       formData.append("receiveUpdates", String(receiveUpdates));
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
+      formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
         formData.append(key, verificationAnswers[key]);
       });
@@ -2013,8 +2016,8 @@ function BasicDeclarationStep(props: {
   error?: string;
 }) {
   const suggestedDeclaration = props.fullName && props.courseName
-    ? `I am ${props.fullName}, and I am interested in ${props.courseName}.`
-    : "I am [Full Name], and I am interested in [Selected Course].";
+    ? `I am ${props.fullName}, and I am registering for ${props.courseName}.`
+    : "I am [Full Name], and I am registering for [Selected Course].";
 
   return (
     <div>

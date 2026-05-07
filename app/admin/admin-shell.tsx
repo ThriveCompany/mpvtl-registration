@@ -40,12 +40,14 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef3f8_100%)] text-slate-900">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white shadow-sm lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-slate-200 px-5 py-5">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">MPVTL</p>
-            <p className="mt-1 text-lg font-bold text-navy-950">Admin Portal</p>
+            <div className="rounded-2xl bg-navy-950 px-4 py-4 text-white">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-200">MPVTL</p>
+              <p className="mt-1 text-lg font-bold">Admin Portal</p>
+            </div>
           </div>
 
           <nav className="flex-1 space-y-1 px-3 py-4">
@@ -60,7 +62,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
                     selected
                       ? "bg-brand-50 text-brand-800"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-navy-950"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-navy-950"
                   }`}
                 >
                   <Icon size={18} />
@@ -70,7 +72,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
             })}
           </nav>
 
-          <div className="border-t border-slate-200 p-4">
+          <div className="border-t border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-bold text-navy-950">{admin.name}</p>
             <p className="mt-1 text-xs font-semibold text-slate-500">{formatRole(admin.role)}</p>
             {admin.center && <p className="mt-1 text-xs text-slate-500">{formatCenter(admin.center)}</p>}
@@ -87,7 +89,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between gap-4 lg:hidden">
               <div>

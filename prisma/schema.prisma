@@ -62,6 +62,7 @@ model Registration {
   reviewedById        String?
   reviewedBy          AdminUser?                 @relation("RegistrationReviewer", fields: [reviewedById], references: [id])
   reviewedRole        String?
+  reviewNote          String?
   files               RegistrationFile[]
   notifications       RegistrationNotification[]
 

@@ -11,7 +11,6 @@ const allowedStatuses: RegistrationStatus[] = [
   "UNAPPROVED",
   "NEEDS_FURTHER_REVIEW",
   "REJECTED",
-  "CONTACTED",
 ];
 
 export async function PATCH(
@@ -55,6 +54,11 @@ export async function PATCH(
         reviewedAt: isFinalDecision ? now : registration.reviewedAt,
         reviewedById: isFinalDecision ? admin.id : registration.reviewedById,
         reviewedRole: isFinalDecision ? admin.role : registration.reviewedRole,
+        reviewNote: isFinalDecision
+          ? nextStatus === "NEEDS_FURTHER_REVIEW"
+            ? body?.note?.trim() || null
+            : null
+          : registration.reviewNote,
       },
     });
 
@@ -69,14 +73,6 @@ export async function PATCH(
       } catch (emailError) {
         console.error("Approval email failed", emailError);
       }
-    }
-
-    if (nextStatus === "NEEDS_FURTHER_REVIEW" && body?.note?.trim()) {
-      console.log("Further review note:", {
-        registrationId: id,
-        reviewedById: admin.id,
-        note: body.note.trim(),
-      });
     }
 
     return NextResponse.json({ registration: updated });

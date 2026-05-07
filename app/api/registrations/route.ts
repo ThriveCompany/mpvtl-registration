@@ -17,11 +17,15 @@ const verificationAnswerKeys = [
   "newToField",
   "reasonForCourse",
   "availableForPracticalTraining",
+  "basicWriting",
   "priorTraining",
   "hasPreviousCertificate",
   "practicalExperience",
   "availableForAssessment",
 ] as const;
+
+type VerificationAnswerKey = (typeof verificationAnswerKeys)[number];
+type VerificationAnswers = Record<VerificationAnswerKey, string>;
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -39,7 +43,7 @@ function safeArray<T>(value: readonly T[] | null | undefined): T[] {
 function getVerificationAnswers(formData: FormData) {
   return Object.fromEntries(
     safeArray(verificationAnswerKeys).map((key) => [key, readText(formData, key)]),
-  );
+  ) as VerificationAnswers;
 }
 
 function validateRequired(input: Record<string, string>) {
@@ -67,7 +71,10 @@ export async function POST(request: Request) {
   const hostel = readText(formData, "hostel") || "No";
   const action = readText(formData, "action") || "Submit Registration";
   const receiveUpdates = readBoolean(formData, "receiveUpdates");
-  const verificationAnswers = getVerificationAnswers(formData);
+  const verificationAnswers = {
+    ...getVerificationAnswers(formData),
+    basicWriting: readText(formData, "basicWriting") || readText(formData, "basicDeclaration"),
+  };
 
   const validationError = validateRequired({
     fullName,
@@ -96,6 +103,7 @@ export async function POST(request: Request) {
       verificationAnswers.newToField,
       verificationAnswers.reasonForCourse,
       verificationAnswers.availableForPracticalTraining,
+      verificationAnswers.basicWriting,
     ]
     : level === "Intermediate"
       ? [

@@ -22,6 +22,8 @@ type VerificationAnswerKey =
   | "newToField"
   | "reasonForCourse"
   | "availableForPracticalTraining"
+  | "basicWriting"
+  | "basicDeclaration"
   | "priorTraining"
   | "hasPreviousCertificate"
   | "practicalExperience"
@@ -105,6 +107,12 @@ function getVerificationDisplayItems(level: string, course: string): Verificatio
     {
       key: "availableForPracticalTraining",
       question: "Are you available for practical training?",
+    },
+    {
+      key: "basicWriting",
+      fallbackKey: "basicDeclaration",
+      question: `Writing sample typed by applicant for ${courseName}.`,
+      longAnswer: true,
     },
   ];
 }
@@ -244,6 +252,7 @@ export default async function RegistrationProfilePage({
               reviewedByName={registration.reviewedBy?.name}
               reviewedRole={registration.reviewedRole || registration.reviewedBy?.role}
               reviewedAt={registration.reviewedAt}
+              submittedReviewNote={registration.reviewNote}
             />
           </div>
           {registration.approvedAt && !registration.reviewedAt && (
