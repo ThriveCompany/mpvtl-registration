@@ -85,7 +85,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
     });
   }, [centerFilter, courseSearch, statusFilter, visibleRegistrations]);
   const finalCount = visibleRegistrations.filter((registration) => finalDecisionStatuses.has(registration.status)).length;
-  const newCount = visibleRegistrations.filter((registration) => registration.status === "NEW").length;
+  const needsReviewCount = visibleRegistrations.length - finalCount;
 
   async function loadRegistrations() {
     try {
@@ -212,8 +212,9 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             <p className="mt-0.5 text-xl font-bold leading-none lg:mt-2 lg:text-3xl">{visibleRegistrations.length}</p>
           </div>
           <div className="rounded-xl border border-brand-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(127,29,45,0.08)] lg:rounded-2xl lg:p-5 lg:shadow-[0_20px_60px_rgba(127,29,45,0.10)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-brand-700 lg:text-xs lg:tracking-[0.14em]">New</p>
-            <p className="mt-0.5 text-xl font-bold leading-none text-brand-700 lg:mt-2 lg:text-3xl">{newCount}</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-brand-700 lg:hidden">New</p>
+            <p className="hidden text-xs font-bold uppercase tracking-[0.14em] text-brand-700 lg:block">Needs Review</p>
+            <p className="mt-0.5 text-xl font-bold leading-none text-brand-700 lg:mt-2 lg:text-3xl">{needsReviewCount}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(6,19,33,0.07)] lg:rounded-2xl lg:p-5 lg:shadow-[0_20px_60px_rgba(6,19,33,0.08)]">
             <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 lg:text-xs lg:tracking-[0.14em]">Final Decisions</p>
