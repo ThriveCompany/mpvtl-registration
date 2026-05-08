@@ -88,12 +88,15 @@ export default function ProfileActions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus, reason, reasonOther }),
       });
-      const result = await response.json().catch(() => null) as { message?: string } | null;
+      const result = await response.json().catch(() => null) as { emailWarning?: boolean; message?: string } | null;
 
       if (!response.ok) throw new Error(result?.message || "Could not update status.");
       setPendingDecision(null);
       setReviewReason("");
       setAdditionalReviewNote("");
+      if (result?.emailWarning) {
+        setError("Decision saved, but email could not be sent.");
+      }
       router.refresh();
     } catch (statusError) {
       setError(statusError instanceof Error ? statusError.message : "Could not update status.");
@@ -134,7 +137,7 @@ export default function ProfileActions({
       status: "APPROVED",
       buttonLabel: "Approve",
       title: "Confirm Approval",
-      message: `This action will mark this registration as APPROVED. Do you want to proceed? An approval email will be sent to ${clientEmail}.`,
+      message: `This action will mark this registration as APPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
       confirmLabel: "Send Approval Email",
       reasons: approveReasons,
     },
@@ -142,7 +145,7 @@ export default function ProfileActions({
       status: "UNAPPROVED",
       buttonLabel: "Unapprove",
       title: "Confirm Unapproval",
-      message: "This action will mark this registration as UNAPPROVED. Do you want to proceed?",
+      message: `This action will mark this registration as UNAPPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
       confirmLabel: "Submit Unapproval",
       reasons: unapproveReasons,
     },
@@ -150,7 +153,7 @@ export default function ProfileActions({
       status: "NEEDS_FURTHER_REVIEW",
       buttonLabel: "Needs Further Review",
       title: "Confirm Further Review",
-      message: "This action will mark this registration as NEEDS FURTHER REVIEW. Do you want to proceed?",
+      message: `This action will mark this registration as NEEDS FURTHER REVIEW. This will send an email to ${clientEmail}. Do you want to proceed?`,
       confirmLabel: "Submit Review Decision",
       reasons: furtherReviewReasons,
     },

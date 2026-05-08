@@ -98,3 +98,16 @@ model RegistrationNotification {
   @@index([targetRole, seen])
   @@index([targetCenter, seen])
 }
+
+model EmailVerificationCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}

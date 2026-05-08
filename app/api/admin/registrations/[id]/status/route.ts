@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { RegistrationStatus } from "@prisma/client";
 import { canViewCenter, getCurrentAdmin } from "@/lib/auth";
 import { FINAL_REGISTRATION_STATUSES, isFinalRegistrationStatus } from "@/lib/admin-constants";
-import { sendApprovalEmail } from "@/lib/email";
+import { sendApprovalEmail, sendFurtherReviewEmail, sendUnapprovalEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses: RegistrationStatus[] = [
@@ -79,20 +79,49 @@ export async function PATCH(
       },
     });
 
-    if (nextStatus === "APPROVED") {
-      try {
+    let emailWarning = false;
+
+    try {
+      if (nextStatus === "APPROVED") {
         await sendApprovalEmail({
           to: updated.email,
           fullName: updated.fullName,
           course: updated.course,
           center: updated.center,
         });
-      } catch (emailError) {
-        console.error("Approval email failed", emailError);
       }
+
+      if (nextStatus === "UNAPPROVED") {
+        await sendUnapprovalEmail({
+          to: updated.email,
+          fullName: updated.fullName,
+          course: updated.course,
+          center: updated.center,
+          reviewReason: reason,
+          reviewReasonOther: reasonOther || null,
+        });
+      }
+
+      if (nextStatus === "NEEDS_FURTHER_REVIEW") {
+        await sendFurtherReviewEmail({
+          to: updated.email,
+          fullName: updated.fullName,
+          course: updated.course,
+          center: updated.center,
+          reviewReason: reason,
+          reviewReasonOther: reasonOther || null,
+        });
+      }
+    } catch (emailError) {
+      emailWarning = true;
+      console.error("Decision email failed", emailError);
     }
 
-    return NextResponse.json({ registration: updated });
+    return NextResponse.json({
+      registration: updated,
+      emailWarning,
+      message: emailWarning ? "Decision saved, but email could not be sent." : "Decision saved.",
+    });
   } catch (error) {
     console.error("Could not update registration status", error);
     return NextResponse.json(

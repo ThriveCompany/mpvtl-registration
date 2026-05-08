@@ -55,6 +55,13 @@ type UploadedFileData = {
   file?: File;
 };
 
+type EmailVerificationState = {
+  email: string;
+  verificationId: string;
+  verified: boolean;
+  codeSent: boolean;
+};
+
 const verificationAnswerKeys = [
   "priorExposure",
   "completedBasicCourse",
@@ -724,6 +731,7 @@ function readRegistrationDraft() {
       basicDeclaration?: string;
       receiveUpdates?: boolean;
       showIntro?: boolean;
+      emailVerification?: Partial<EmailVerificationState>;
     } | null;
   } catch {
     return null;
@@ -743,6 +751,7 @@ function writeRegistrationDraft(draft: {
   basicDeclaration: string;
   receiveUpdates: boolean;
   showIntro: boolean;
+  emailVerification: EmailVerificationState;
 }) {
   if (typeof window === "undefined") return;
 
@@ -778,6 +787,15 @@ export default function RegisterPage() {
   const [basicDeclaration, setBasicDeclaration] = useState("");
   const [receiveUpdates, setReceiveUpdates] = useState(true);
   const finalAction = "Submit Registration";
+  const [emailVerification, setEmailVerification] = useState<EmailVerificationState>({
+    email: "",
+    verificationId: "",
+    verified: false,
+    codeSent: false,
+  });
+  const [emailVerificationCode, setEmailVerificationCode] = useState("");
+  const [emailVerificationLoading, setEmailVerificationLoading] = useState<"" | "send" | "verify">("");
+  const [emailVerificationMessage, setEmailVerificationMessage] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -798,6 +816,12 @@ export default function RegisterPage() {
   const uploadedFiles = Object.values(files ?? {}).filter(Boolean) as UploadedFileData[];
   const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
+  const normalizedApplicantEmail = details.email.trim().toLowerCase();
+  const emailIsVerified = Boolean(
+    emailVerification.verified &&
+      emailVerification.verificationId &&
+      emailVerification.email === normalizedApplicantEmail,
+  );
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -834,6 +858,7 @@ export default function RegisterPage() {
       return 4;
     }
     if (errorKey === "basicDeclaration" || errorKey === "uploads") return 5;
+    if (errorKey === "emailVerification") return 6;
     return step;
   }
 
@@ -890,6 +915,12 @@ export default function RegisterPage() {
       setFiles(normalizeDraftFiles(draft.files));
       setBasicDeclaration(draft.basicDeclaration ?? "");
       setReceiveUpdates(draft.receiveUpdates ?? true);
+      setEmailVerification({
+        email: draft.emailVerification?.email ?? "",
+        verificationId: draft.emailVerification?.verificationId ?? "",
+        verified: Boolean(draft.emailVerification?.verified),
+        codeSent: Boolean(draft.emailVerification?.codeSent),
+      });
       setShowIntro(draft.showIntro ?? !draft.step);
     }
 
@@ -912,6 +943,7 @@ export default function RegisterPage() {
       basicDeclaration,
       receiveUpdates,
       showIntro,
+      emailVerification,
     });
   }, [
     answers,
@@ -919,6 +951,7 @@ export default function RegisterPage() {
     category,
     details,
     draftReady,
+    emailVerification,
     files,
     receiveUpdates,
     search,
@@ -938,6 +971,20 @@ export default function RegisterPage() {
     if (previousStep === step) return;
     scrollToStepTop(previousStep === 0 && step === 1 ? 340 : 45);
   }, [draftReady, step]);
+
+  useEffect(() => {
+    if (!draftReady || !emailVerification.verified) return;
+    if (emailVerification.email === normalizedApplicantEmail) return;
+
+    setEmailVerification({
+      email: "",
+      verificationId: "",
+      verified: false,
+      codeSent: false,
+    });
+    setEmailVerificationCode("");
+    setEmailVerificationMessage("");
+  }, [draftReady, emailVerification.email, emailVerification.verified, normalizedApplicantEmail]);
 
   function selectCourse(courseId: string) {
     setSelectedCourseId(courseId);
@@ -1003,6 +1050,9 @@ export default function RegisterPage() {
         ? "Please reselect the uploaded document before continuing."
         : "Please upload at least one document before continuing.";
     }
+    if (targetStep >= 6 && !emailIsVerified) {
+      nextErrors.emailVerification = "Please verify your email address before submitting.";
+    }
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -1027,6 +1077,122 @@ export default function RegisterPage() {
     setSubmitError("");
   }
 
+  async function sendEmailVerificationCode() {
+    setEmailVerificationMessage("");
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.emailVerification;
+      return next;
+    });
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) {
+      setErrors((current) => ({ ...current, emailVerification: "Enter a valid email address before requesting a code." }));
+      scrollToErrorKey("emailVerification");
+      return;
+    }
+
+    setEmailVerificationLoading("send");
+
+    try {
+      const response = await fetch("/api/email-verification/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: details.email }),
+      });
+      const result = await response.json().catch(() => null) as { message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error(result?.message || "We could not send a verification code right now.");
+      }
+
+      setEmailVerification({
+        email: normalizedApplicantEmail,
+        verificationId: "",
+        verified: false,
+        codeSent: true,
+      });
+      setEmailVerificationCode("");
+      setEmailVerificationMessage(result?.message || "A verification code has been sent to your email.");
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        emailVerification: error instanceof Error ? error.message : "We could not send a verification code right now.",
+      }));
+      scrollToErrorKey("emailVerification");
+    } finally {
+      setEmailVerificationLoading("");
+    }
+  }
+
+  async function verifyEmailCode() {
+    setEmailVerificationMessage("");
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.emailVerification;
+      return next;
+    });
+
+    if (!/^\d{6}$/.test(emailVerificationCode.trim())) {
+      setErrors((current) => ({ ...current, emailVerification: "Enter the 6-digit verification code sent to your email." }));
+      scrollToErrorKey("emailVerification");
+      return;
+    }
+
+    setEmailVerificationLoading("verify");
+
+    try {
+      const response = await fetch("/api/email-verification/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: details.email, code: emailVerificationCode }),
+      });
+      const result = await response.json().catch(() => null) as {
+        email?: string;
+        message?: string;
+        verificationId?: string;
+      } | null;
+
+      if (!response.ok || !result?.verificationId) {
+        throw new Error(result?.message || "We could not verify that code.");
+      }
+
+      setEmailVerification({
+        email: result.email || normalizedApplicantEmail,
+        verificationId: result.verificationId,
+        verified: true,
+        codeSent: true,
+      });
+      setEmailVerificationCode("");
+      setEmailVerificationMessage("Email verified.");
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.emailVerification;
+        return next;
+      });
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        emailVerification: error instanceof Error ? error.message : "We could not verify that code.",
+      }));
+      scrollToErrorKey("emailVerification");
+    } finally {
+      setEmailVerificationLoading("");
+    }
+  }
+
+  function useAnotherEmail() {
+    setEmailVerification({
+      email: "",
+      verificationId: "",
+      verified: false,
+      codeSent: false,
+    });
+    setEmailVerificationCode("");
+    setEmailVerificationMessage("");
+    setStep(3);
+    window.setTimeout(() => scrollToErrorKey("email"), 160);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting || !validateStep(6) || !selectedCourse) return;
@@ -1046,6 +1212,10 @@ export default function RegisterPage() {
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
       receiveUpdates,
       finalAction,
+      emailVerification: {
+        email: emailVerification.email,
+        verified: emailIsVerified,
+      },
       submittedAt: new Date().toISOString(),
     };
 
@@ -1073,6 +1243,7 @@ export default function RegisterPage() {
       formData.append("hostel", shouldAskHostel ? details.hostel : "No");
       formData.append("action", finalAction);
       formData.append("receiveUpdates", String(receiveUpdates));
+      formData.append("emailVerificationId", emailVerification.verificationId);
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
       formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
@@ -1211,6 +1382,17 @@ export default function RegisterPage() {
                       <FinalStep
                         receiveUpdates={receiveUpdates}
                         setReceiveUpdates={setReceiveUpdates}
+                        applicantEmail={details.email}
+                        code={emailVerificationCode}
+                        setCode={setEmailVerificationCode}
+                        codeSent={emailVerification.codeSent && emailVerification.email === normalizedApplicantEmail}
+                        emailVerified={emailIsVerified}
+                        loading={emailVerificationLoading}
+                        message={emailVerificationMessage}
+                        error={errors.emailVerification}
+                        onSendCode={sendEmailVerificationCode}
+                        onVerifyCode={verifyEmailCode}
+                        onUseAnotherEmail={useAnotherEmail}
                       />
                     )}
                   </motion.div>
@@ -1245,7 +1427,7 @@ export default function RegisterPage() {
                   ) : (
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !emailIsVerified}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {isSubmitting ? "Submitting..." : "Submit Registration"}
@@ -2146,6 +2328,17 @@ function EvidenceStep(props: {
 function FinalStep(props: {
   receiveUpdates: boolean;
   setReceiveUpdates: (value: boolean) => void;
+  applicantEmail: string;
+  code: string;
+  setCode: (value: string) => void;
+  codeSent: boolean;
+  emailVerified: boolean;
+  loading: "" | "send" | "verify";
+  message: string;
+  error?: string;
+  onSendCode: () => void;
+  onVerifyCode: () => void;
+  onUseAnotherEmail: () => void;
 }) {
   return (
     <div>
@@ -2159,6 +2352,71 @@ function FinalStep(props: {
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
           MPVTL will receive your course, centre, applicant details, verification answers, and uploaded evidence where required.
         </p>
+      </div>
+
+      <div data-error-key="emailVerification" className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_rgba(6,19,33,0.07)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-navy-950">Verify your email address</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              We will send a 6-digit code to <span className="font-bold text-navy-950">{props.applicantEmail || "your email address"}</span>.
+            </p>
+          </div>
+          {props.emailVerified && (
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-navy-950 px-3 py-1.5 text-xs font-bold text-white">
+              <Check size={14} />
+              Email verified
+            </span>
+          )}
+        </div>
+
+        {!props.emailVerified && (
+          <div className="mt-5 grid gap-3">
+            <button
+              type="button"
+              onClick={props.onSendCode}
+              disabled={props.loading === "send"}
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-navy-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
+            >
+              {props.loading === "send" ? "Sending..." : props.codeSent ? "Send New Code" : "Send Verification Code"}
+            </button>
+
+            {props.codeSent && (
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <input
+                  value={props.code}
+                  onChange={(event) => props.setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="Enter 6-digit code"
+                  className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold tracking-[0.18em] outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
+                />
+                <button
+                  type="button"
+                  onClick={props.onVerifyCode}
+                  disabled={props.loading === "verify"}
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-700 px-5 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {props.loading === "verify" ? "Verifying..." : "Verify Code"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {props.message && <p className="text-sm font-semibold text-navy-950">{props.message}</p>}
+            {props.error && <p className="text-sm font-semibold text-brand-700">{props.error}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={props.onUseAnotherEmail}
+            className="text-left text-sm font-bold text-brand-700 hover:text-brand-800 sm:text-right"
+          >
+            Use another email
+          </button>
+        </div>
       </div>
 
       <label className="mt-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">

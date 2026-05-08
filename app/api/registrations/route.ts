@@ -71,6 +71,7 @@ export async function POST(request: Request) {
   const hostel = readText(formData, "hostel") || "No";
   const action = readText(formData, "action") || "Submit Registration";
   const receiveUpdates = readBoolean(formData, "receiveUpdates");
+  const emailVerificationId = readText(formData, "emailVerificationId");
   const verificationAnswers = {
     ...getVerificationAnswers(formData),
     basicWriting: readText(formData, "basicWriting") || readText(formData, "basicDeclaration"),
@@ -95,6 +96,24 @@ export async function POST(request: Request) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ message: "A valid email address is required." }, { status: 400 });
+  }
+
+  if (!emailVerificationId) {
+    return NextResponse.json({ message: "Please verify your email address before submitting." }, { status: 400 });
+  }
+
+  const verifiedEmail = await prisma.emailVerificationCode.findFirst({
+    where: {
+      id: emailVerificationId,
+      email: email.toLowerCase(),
+      verifiedAt: { not: null },
+      expiresAt: { gt: new Date() },
+    },
+    select: { id: true },
+  });
+
+  if (!verifiedEmail) {
+    return NextResponse.json({ message: "Please verify your email address before submitting." }, { status: 400 });
   }
 
   const requiredVerificationValues = level === "Basic"
@@ -209,6 +228,8 @@ export async function POST(request: Request) {
           to: email,
           fullName,
           course,
+          center,
+          level,
         }),
       ]);
 
