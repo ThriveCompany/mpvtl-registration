@@ -23,15 +23,26 @@ export async function PATCH(
   }
 
   const { id } = await context.params;
-  const body = await request.json().catch(() => null) as { status?: RegistrationStatus; note?: string } | null;
+  const body = await request.json().catch(() => null) as {
+    status?: RegistrationStatus;
+    note?: string;
+    reason?: string;
+    reasonOther?: string;
+  } | null;
   const nextStatus = body?.status;
+  const reason = body?.reason?.trim() || "";
+  const reasonOther = body?.reasonOther?.trim() || "";
 
   if (!nextStatus || !allowedStatuses.includes(nextStatus)) {
     return NextResponse.json({ message: "Invalid status." }, { status: 400 });
   }
 
-  if (nextStatus === "NEEDS_FURTHER_REVIEW" && !body?.note?.trim()) {
-    return NextResponse.json({ message: "Reason for further review is required." }, { status: 400 });
+  if ((FINAL_REGISTRATION_STATUSES as readonly RegistrationStatus[]).includes(nextStatus) && !reason) {
+    return NextResponse.json({ message: "Reason is required." }, { status: 400 });
+  }
+
+  if (reason === "Other" && !reasonOther) {
+    return NextResponse.json({ message: "Additional reason is required when Other is selected." }, { status: 400 });
   }
 
   try {
@@ -58,10 +69,12 @@ export async function PATCH(
         reviewedAt: isFinalDecision ? now : registration.reviewedAt,
         reviewedById: isFinalDecision ? admin.id : registration.reviewedById,
         reviewedRole: isFinalDecision ? admin.role : registration.reviewedRole,
+        reviewReason: isFinalDecision ? reason : registration.reviewReason,
+        reviewReasonOther: isFinalDecision ? reasonOther || null : registration.reviewReasonOther,
         reviewNote: isFinalDecision
-          ? nextStatus === "NEEDS_FURTHER_REVIEW"
-            ? body?.note?.trim() || null
-            : null
+          ? reason === "Other"
+            ? reasonOther || reason
+            : reason
           : registration.reviewNote,
       },
     });

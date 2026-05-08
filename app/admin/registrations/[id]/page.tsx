@@ -271,6 +271,8 @@ export default async function RegistrationProfilePage({
               reviewedRole={registration.reviewedRole || registration.reviewedBy?.role}
               reviewedAt={registration.reviewedAt}
               submittedReviewNote={registration.reviewNote}
+              submittedReviewReason={registration.reviewReason}
+              submittedReviewReasonOther={registration.reviewReasonOther}
             />
           </div>
           {registration.approvedAt && !registration.reviewedAt && (

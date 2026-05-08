@@ -41,6 +41,9 @@ function getNotificationKeys(value: unknown) {
     .filter(Boolean);
 }
 
+const finalDecisionStatuses = new Set(["APPROVED", "UNAPPROVED", "NEEDS_FURTHER_REVIEW", "REJECTED"]);
+const unreviewedStatuses = new Set(["NEW", "VIEWED"]);
+
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
   const [alert, setAlert] = useState("");
@@ -70,12 +73,8 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
       return matchesStatus && matchesCenter && matchesSearch;
     });
   }, [centerFilter, courseSearch, statusFilter, visibleRegistrations]);
-  const pendingCount = visibleRegistrations.filter((registration) => registration.status === "NEW").length;
-  const finalCount = visibleRegistrations.filter((registration) => (
-    registration.status === "APPROVED" ||
-    registration.status === "UNAPPROVED" ||
-    registration.status === "NEEDS_FURTHER_REVIEW"
-  )).length;
+  const finalCount = visibleRegistrations.filter((registration) => finalDecisionStatuses.has(registration.status)).length;
+  const needsReviewCount = visibleRegistrations.filter((registration) => unreviewedStatuses.has(registration.status)).length;
 
   async function loadRegistrations() {
     try {
@@ -166,6 +165,12 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   }, []);
 
   useEffect(() => {
+    if (!loading && needsReviewCount !== visibleRegistrations.length - finalCount) {
+      console.warn("Registration metric mismatch: total - finalDecisions does not equal unreviewed count.");
+    }
+  }, [finalCount, loading, needsReviewCount, visibleRegistrations.length]);
+
+  useEffect(() => {
     function refreshWhenVisible() {
       if (document.visibilityState === "visible") {
         void loadRegistrations();
@@ -206,11 +211,11 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             <p className="mt-1 text-2xl font-bold sm:mt-2 sm:text-3xl">{visibleRegistrations.length}</p>
           </div>
           <div className="rounded-2xl border border-brand-200 bg-white p-3 shadow-[0_20px_60px_rgba(127,29,45,0.10)] sm:p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700 sm:text-xs sm:tracking-[0.14em]">New</p>
-            <p className="mt-1 text-2xl font-bold text-brand-700 sm:mt-2 sm:text-3xl">{pendingCount}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700 sm:text-xs sm:tracking-[0.14em]">Needs Review</p>
+            <p className="mt-1 text-2xl font-bold text-brand-700 sm:mt-2 sm:text-3xl">{needsReviewCount}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_20px_60px_rgba(6,19,33,0.08)] sm:p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">Final</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">Final Decisions</p>
             <p className="mt-1 text-2xl font-bold text-navy-950 sm:mt-2 sm:text-3xl">{finalCount}</p>
           </div>
         </section>
@@ -286,14 +291,20 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               </div>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
-                const textClass = isNew ? "font-bold text-navy-950" : "font-normal text-slate-700";
+                const needsAttention = unreviewedStatuses.has(registration.status);
+                const textClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-700";
+                const rowClass = isNew
+                  ? "border-l-4 border-l-brand-700 bg-brand-50/45"
+                  : needsAttention
+                    ? "border-l-4 border-l-navy-900 bg-slate-50/80"
+                    : "border-l-4 border-l-transparent bg-white";
 
                 return (
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
                     className={`grid grid-cols-[minmax(130px,1.1fr)_minmax(250px,1.8fr)_minmax(100px,.8fr)_minmax(160px,1fr)_minmax(110px,.9fr)] gap-4 border-b border-slate-100 px-5 py-4 text-sm transition last:border-b-0 hover:bg-slate-50 ${
-                      isNew ? "bg-brand-50/35" : "bg-white"
+                      rowClass
                     }`}
                   >
                     <span className={textClass}>{registration.fullName}</span>
@@ -306,7 +317,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                         {formatRegistrationStatus(registration.status)}
                       </span>
                     </span>
-                    <span className={isNew ? "font-bold text-navy-950" : "font-normal text-slate-500"}>{new Date(registration.createdAt).toLocaleDateString()}</span>
+                    <span className={needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}>{new Date(registration.createdAt).toLocaleDateString()}</span>
                   </Link>
                 );
               })}
@@ -315,16 +326,20 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             <section className={`${viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "grid xl:hidden md:grid-cols-2"} gap-3`}>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
-                const titleClass = isNew ? "font-bold text-navy-950" : "font-normal text-navy-950";
-                const textClass = isNew ? "font-bold text-slate-800" : "font-normal text-slate-600";
+                const needsAttention = unreviewedStatuses.has(registration.status);
+                const titleClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-navy-950";
+                const textClass = needsAttention ? "font-bold text-slate-800" : "font-normal text-slate-600";
+                const cardClass = isNew
+                  ? "border-brand-200 border-l-brand-700 bg-brand-50/45"
+                  : needsAttention
+                    ? "border-slate-200 border-l-navy-900 bg-slate-50/80"
+                    : "border-slate-200 border-l-transparent bg-white";
 
                 return (
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`rounded-2xl border p-4 shadow-[0_18px_50px_rgba(6,19,33,0.08)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] sm:p-5 ${
-                      isNew ? "border-brand-200 bg-brand-50/40" : "border-slate-200 bg-white"
-                    }`}
+                    className={`rounded-2xl border border-l-4 p-4 shadow-[0_18px_50px_rgba(6,19,33,0.08)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] sm:p-5 ${cardClass}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -338,7 +353,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       </span>
                     </div>
                     <p className={`mt-3 text-sm ${textClass}`}>{formatCenter(registration.center)}</p>
-                    <p className={`mt-1 text-xs ${isNew ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
+                    <p className={`mt-1 text-xs ${needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
                       {new Date(registration.createdAt).toLocaleString()}
                     </p>
                   </Link>

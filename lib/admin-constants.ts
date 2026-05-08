@@ -21,6 +21,7 @@ export const FINAL_REGISTRATION_STATUSES = [
   "APPROVED",
   "UNAPPROVED",
   "NEEDS_FURTHER_REVIEW",
+  "REJECTED",
 ] as const satisfies readonly RegistrationStatus[];
 
 export function isOfficialEmail(email: string) {
