@@ -183,24 +183,20 @@ export default function ProfileActions({
         </div>
       )}
 
-      <div className="grid gap-3">
-        {decisions.map((decision) => (
-          <button
-            key={decision.status}
-            type="button"
-            onClick={() => openDecision(decision)}
-            disabled={Boolean(loading) || isFinal}
-            className={`inline-flex min-h-12 w-full items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${getDecisionButtonClass(decision.status)}`}
-          >
-            {loading === decision.status ? "Saving..." : decision.buttonLabel}
-          </button>
-        ))}
-      </div>
-
-      {isFinal && (
-        <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">
-          This applicant already has a final decision. Actions are locked.
-        </p>
+      {!isFinal && (
+        <div className="grid gap-3">
+          {decisions.map((decision) => (
+            <button
+              key={decision.status}
+              type="button"
+              onClick={() => openDecision(decision)}
+              disabled={Boolean(loading)}
+              className={`inline-flex min-h-12 w-full items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${getDecisionButtonClass(decision.status)}`}
+            >
+              {loading === decision.status ? "Saving..." : decision.buttonLabel}
+            </button>
+          ))}
+        </div>
       )}
 
       {error && <p className="mt-3 text-sm font-semibold text-brand-700">{error}</p>}
