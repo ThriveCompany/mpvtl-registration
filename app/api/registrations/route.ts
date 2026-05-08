@@ -107,7 +107,6 @@ export async function POST(request: Request) {
       id: emailVerificationId,
       email: email.toLowerCase(),
       verifiedAt: { not: null },
-      expiresAt: { gt: new Date() },
     },
     select: { id: true },
   });

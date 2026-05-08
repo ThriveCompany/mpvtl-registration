@@ -817,11 +817,13 @@ export default function RegisterPage() {
   const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
   const normalizedApplicantEmail = details.email.trim().toLowerCase();
-  const emailIsVerified = Boolean(
+  const verifiedEmail = emailVerification.email.trim().toLowerCase();
+  const emailVerified = Boolean(
     emailVerification.verified &&
       emailVerification.verificationId &&
-      emailVerification.email === normalizedApplicantEmail,
+      verifiedEmail === normalizedApplicantEmail,
   );
+  const verifiedEmailVerificationId = emailVerified ? emailVerification.verificationId : "";
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -890,6 +892,26 @@ export default function RegisterPage() {
     }
 
     scrollToErrorKey(firstErrorKey);
+  }
+
+  function persistEmailVerificationState(nextEmailVerification: EmailVerificationState) {
+    if (!draftReady) return;
+
+    writeRegistrationDraft({
+      step,
+      search,
+      category,
+      selectedCourseId,
+      selectedLocation,
+      selectedSession,
+      details,
+      answers,
+      files: serializeDraftFiles(files),
+      basicDeclaration,
+      receiveUpdates,
+      showIntro,
+      emailVerification: nextEmailVerification,
+    });
   }
 
   useEffect(() => {
@@ -973,8 +995,9 @@ export default function RegisterPage() {
   }, [draftReady, step]);
 
   useEffect(() => {
-    if (!draftReady || !emailVerification.verified) return;
-    if (emailVerification.email === normalizedApplicantEmail) return;
+    if (!draftReady) return;
+    if (!emailVerification.email && !emailVerification.verified && !emailVerification.verificationId && !emailVerification.codeSent) return;
+    if (verifiedEmail === normalizedApplicantEmail) return;
 
     setEmailVerification({
       email: "",
@@ -984,7 +1007,27 @@ export default function RegisterPage() {
     });
     setEmailVerificationCode("");
     setEmailVerificationMessage("");
-  }, [draftReady, emailVerification.email, emailVerification.verified, normalizedApplicantEmail]);
+  }, [
+    draftReady,
+    emailVerification.codeSent,
+    emailVerification.email,
+    emailVerification.verificationId,
+    emailVerification.verified,
+    normalizedApplicantEmail,
+    verifiedEmail,
+  ]);
+
+  useEffect(() => {
+    if (emailVerified !== true) return;
+
+    setEmailVerificationMessage((current) => current || "Email verified.");
+    setErrors((current) => {
+      if (!current.emailVerification) return current;
+      const next = { ...current };
+      delete next.emailVerification;
+      return next;
+    });
+  }, [emailVerified]);
 
   function selectCourse(courseId: string) {
     setSelectedCourseId(courseId);
@@ -1050,7 +1093,7 @@ export default function RegisterPage() {
         ? "Please reselect the uploaded document before continuing."
         : "Please upload at least one document before continuing.";
     }
-    if (targetStep >= 6 && !emailIsVerified) {
+    if (targetStep >= 6 && emailVerified !== true) {
       nextErrors.emailVerification = "Please verify your email address before submitting.";
     }
 
@@ -1091,13 +1134,14 @@ export default function RegisterPage() {
       return;
     }
 
+    const emailToVerify = normalizedApplicantEmail;
     setEmailVerificationLoading("send");
 
     try {
       const response = await fetch("/api/email-verification/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: details.email }),
+        body: JSON.stringify({ email: emailToVerify }),
       });
       const result = await response.json().catch(() => null) as { message?: string } | null;
 
@@ -1106,7 +1150,7 @@ export default function RegisterPage() {
       }
 
       setEmailVerification({
-        email: normalizedApplicantEmail,
+        email: emailToVerify,
         verificationId: "",
         verified: false,
         codeSent: true,
@@ -1138,13 +1182,14 @@ export default function RegisterPage() {
       return;
     }
 
+    const emailToVerify = normalizedApplicantEmail;
     setEmailVerificationLoading("verify");
 
     try {
       const response = await fetch("/api/email-verification/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: details.email, code: emailVerificationCode }),
+        body: JSON.stringify({ email: emailToVerify, code: emailVerificationCode }),
       });
       const result = await response.json().catch(() => null) as {
         email?: string;
@@ -1156,12 +1201,15 @@ export default function RegisterPage() {
         throw new Error(result?.message || "We could not verify that code.");
       }
 
-      setEmailVerification({
-        email: result.email || normalizedApplicantEmail,
+      const nextEmailVerification = {
+        email: (result.email || emailToVerify).trim().toLowerCase(),
         verificationId: result.verificationId,
         verified: true,
         codeSent: true,
-      });
+      } satisfies EmailVerificationState;
+
+      setEmailVerification(nextEmailVerification);
+      persistEmailVerificationState(nextEmailVerification);
       setEmailVerificationCode("");
       setEmailVerificationMessage("Email verified.");
       setErrors((current) => {
@@ -1196,6 +1244,11 @@ export default function RegisterPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting || !validateStep(6) || !selectedCourse) return;
+    if (emailVerified !== true || !verifiedEmailVerificationId) {
+      setErrors((current) => ({ ...current, emailVerification: "Please verify your email address before submitting." }));
+      scrollToErrorKey("emailVerification");
+      return;
+    }
 
     const verificationAnswers = buildVerificationAnswers(answers);
     verificationAnswers.basicWriting = selectedLevel === "Basic" ? basicDeclaration.trim() : "";
@@ -1214,7 +1267,7 @@ export default function RegisterPage() {
       finalAction,
       emailVerification: {
         email: emailVerification.email,
-        verified: emailIsVerified,
+        verified: emailVerified,
       },
       submittedAt: new Date().toISOString(),
     };
@@ -1243,7 +1296,7 @@ export default function RegisterPage() {
       formData.append("hostel", shouldAskHostel ? details.hostel : "No");
       formData.append("action", finalAction);
       formData.append("receiveUpdates", String(receiveUpdates));
-      formData.append("emailVerificationId", emailVerification.verificationId);
+      formData.append("emailVerificationId", verifiedEmailVerificationId);
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
       formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
@@ -1386,7 +1439,7 @@ export default function RegisterPage() {
                         code={emailVerificationCode}
                         setCode={setEmailVerificationCode}
                         codeSent={emailVerification.codeSent && emailVerification.email === normalizedApplicantEmail}
-                        emailVerified={emailIsVerified}
+                        emailVerified={emailVerified}
                         loading={emailVerificationLoading}
                         message={emailVerificationMessage}
                         error={errors.emailVerification}
@@ -1427,7 +1480,7 @@ export default function RegisterPage() {
                   ) : (
                     <button
                       type="submit"
-                      disabled={isSubmitting || !emailIsVerified}
+                      disabled={isSubmitting || emailVerified !== true}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white shadow-redGlow transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {isSubmitting ? "Submitting..." : "Submit Registration"}
