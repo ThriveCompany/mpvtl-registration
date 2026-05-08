@@ -408,33 +408,35 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
                 const needsAttention = unreviewedStatuses.has(registration.status);
-                const titleClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-navy-950";
-                const metaClass = needsAttention ? "font-semibold text-slate-800" : "font-normal text-slate-600";
+                const titleClass = isNew ? "text-[15px] font-black text-navy-950" : "text-sm font-normal text-slate-800";
+                const metaClass = isNew ? "text-[12.5px] font-bold text-navy-950" : "text-xs font-normal text-slate-600";
+                const dateClass = isNew ? "text-[11px] font-bold text-navy-950" : "text-[10px] font-normal text-slate-500";
                 const cardClass = isNew
                   ? "border-brand-200 border-l-brand-700 bg-brand-50/45"
                   : needsAttention
                     ? "border-slate-200 border-l-navy-900 bg-slate-50/80"
                     : "border-slate-200 border-l-transparent bg-white";
+                const cardSpacing = isNew ? "px-3 py-2.5" : "px-2.5 py-2";
 
                 return (
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`block overflow-hidden rounded-lg border border-l-4 px-2.5 py-1.5 shadow-[0_8px_22px_rgba(6,19,33,0.05)] transition hover:border-brand-300 ${cardClass}`}
+                    className={`block overflow-hidden rounded-lg border border-l-4 shadow-[0_8px_22px_rgba(6,19,33,0.05)] transition hover:border-brand-300 ${cardSpacing} ${cardClass}`}
                   >
-                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-2">
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-2.5">
                       <div className="min-w-0">
-                        <h2 className={`text-sm leading-5 ${titleClass}`}>{registration.fullName}</h2>
+                        <h2 className={`leading-5 ${titleClass}`}>{registration.fullName}</h2>
                       </div>
-                      <span className={`inline-flex items-center justify-center self-start justify-self-end whitespace-nowrap rounded-full px-1.5 py-0.5 text-center text-[8px] font-bold leading-3 ring-1 ${getRegistrationStatusClass(registration.status)}`}>
+                      <span className={`inline-flex items-center justify-center self-start justify-self-end whitespace-nowrap rounded-full px-1.5 py-0.5 text-center text-[7.5px] font-bold leading-3 ring-1 ${getRegistrationStatusClass(registration.status)}`}>
                         {formatMobileStatus(registration.status)}
                       </span>
-                      <p className={`col-span-2 mt-0.5 flex min-w-0 max-w-full items-center overflow-hidden text-xs leading-4 ${metaClass}`}>
+                      <p className={`col-span-2 mt-1 flex min-w-0 max-w-full items-center overflow-hidden leading-4 ${metaClass}`}>
                         <span className="min-w-0 flex-1 truncate">{registration.course}</span>
                         <span className="mx-1 shrink-0 text-slate-400">·</span>
                         <span className="shrink-0">{formatCenter(registration.center)}</span>
                       </p>
-                      <p className={needsAttention ? "col-span-2 mt-0.5 text-[10px] font-bold leading-4 text-navy-950" : "col-span-2 mt-0.5 text-[10px] font-normal leading-4 text-slate-500"}>
+                      <p className={`col-span-2 mt-1 leading-4 ${dateClass}`}>
                         {formatMobileDate(registration.createdAt)}
                       </p>
                     </div>
