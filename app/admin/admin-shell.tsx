@@ -91,25 +91,25 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
 
       <div className="xl:pl-72">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-[0_16px_45px_rgba(6,19,33,0.08)] backdrop-blur">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3 lg:px-8">
             <div className="flex items-center justify-between gap-3 xl:hidden">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">MPVTL</p>
-                <p className="text-base font-bold text-navy-950">Admin Portal</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700 sm:text-xs sm:tracking-[0.18em]">MPVTL</p>
+                <p className="text-sm font-bold text-navy-950 sm:text-base">Admin Portal</p>
               </div>
               <button
                 type="button"
                 onClick={logout}
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
                 Logout
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
               <div className="border-l-4 border-brand-700 pl-3 sm:pl-4">
-                <h1 className="text-[1.35rem] font-bold leading-tight tracking-tight text-navy-950 sm:text-2xl">{title}</h1>
+                <h1 className="text-xl font-bold leading-tight tracking-tight text-navy-950 sm:text-2xl">{title}</h1>
                 {subtitle && <p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{subtitle}</p>}
               </div>
               <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:hidden">
@@ -121,11 +121,11 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm ${
                         selected ? "bg-brand-700 text-white shadow-[0_14px_35px_rgba(127,29,45,0.22)]" : "border border-slate-300 bg-white text-slate-700"
                       }`}
                     >
-                      <Icon size={16} />
+                      <Icon size={14} />
                       {item.label}
                     </Link>
                   );
@@ -135,7 +135,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
           {children}
         </div>
       </div>

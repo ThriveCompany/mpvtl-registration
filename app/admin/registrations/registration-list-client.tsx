@@ -52,7 +52,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [centerFilter, setCenterFilter] = useState("All Centers");
   const [courseSearch, setCourseSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const audioRef = useRef<AudioContext | null>(null);
   const playedNotificationKeysRef = useRef<Set<string>>(new Set());
   const visibleRegistrations = Array.isArray(registrations) ? registrations : [];
@@ -154,10 +154,6 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   }
 
   useEffect(() => {
-    if (window.matchMedia("(min-width: 1280px)").matches) {
-      setViewMode("table");
-    }
-
     loadRegistrations();
     checkNotifications();
     const interval = window.setInterval(checkNotifications, 10000);
@@ -205,32 +201,32 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           </button>
         )}
 
-        <section className="mb-4 grid grid-cols-3 gap-2 sm:mb-5 sm:gap-4">
-          <div className="rounded-2xl border border-navy-800 bg-navy-950 p-3 text-white shadow-[0_20px_60px_rgba(6,19,33,0.16)] sm:p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-100 sm:text-xs sm:tracking-[0.14em]">Total</p>
-            <p className="mt-1 text-2xl font-bold sm:mt-2 sm:text-3xl">{visibleRegistrations.length}</p>
+        <section className="mb-3 grid grid-cols-3 gap-1.5 sm:mb-5 sm:gap-4">
+          <div className="rounded-xl border border-navy-800 bg-navy-950 p-2.5 text-white shadow-[0_14px_38px_rgba(6,19,33,0.14)] sm:rounded-2xl sm:p-5 sm:shadow-[0_20px_60px_rgba(6,19,33,0.16)]">
+            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-brand-100 sm:text-xs sm:tracking-[0.14em]">Total</p>
+            <p className="mt-0.5 text-xl font-bold leading-none sm:mt-2 sm:text-3xl">{visibleRegistrations.length}</p>
           </div>
-          <div className="rounded-2xl border border-brand-200 bg-white p-3 shadow-[0_20px_60px_rgba(127,29,45,0.10)] sm:p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700 sm:text-xs sm:tracking-[0.14em]">Needs Review</p>
-            <p className="mt-1 text-2xl font-bold text-brand-700 sm:mt-2 sm:text-3xl">{needsReviewCount}</p>
+          <div className="rounded-xl border border-brand-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(127,29,45,0.08)] sm:rounded-2xl sm:p-5 sm:shadow-[0_20px_60px_rgba(127,29,45,0.10)]">
+            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-brand-700 sm:text-xs sm:tracking-[0.14em]">Needs Review</p>
+            <p className="mt-0.5 text-xl font-bold leading-none text-brand-700 sm:mt-2 sm:text-3xl">{needsReviewCount}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_20px_60px_rgba(6,19,33,0.08)] sm:p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">Final Decisions</p>
-            <p className="mt-1 text-2xl font-bold text-navy-950 sm:mt-2 sm:text-3xl">{finalCount}</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_14px_38px_rgba(6,19,33,0.07)] sm:rounded-2xl sm:p-5 sm:shadow-[0_20px_60px_rgba(6,19,33,0.08)]">
+            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">Final Decisions</p>
+            <p className="mt-0.5 text-xl font-bold leading-none text-navy-950 sm:mt-2 sm:text-3xl">{finalCount}</p>
           </div>
         </section>
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_55px_rgba(6,19,33,0.08)] sm:grid-cols-2 sm:p-4 xl:grid-cols-[1fr_190px_190px_auto]">
+        <div className="mb-3 grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_14px_42px_rgba(6,19,33,0.06)] sm:mb-5 sm:gap-3 sm:p-4 md:grid-cols-2 xl:grid-cols-[1fr_190px_190px_auto]">
           <input
             value={courseSearch}
             onChange={(event) => setCourseSearch(event.target.value)}
             placeholder="Search course"
-            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:col-span-2 xl:col-span-1"
+            className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11 sm:px-4 md:col-span-2 xl:col-span-1"
           />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11 sm:px-4"
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>{status === "All Statuses" ? status : formatRegistrationStatus(status)}</option>
@@ -239,27 +235,29 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
           <select
             value={centerFilter}
             onChange={(event) => setCenterFilter(event.target.value)}
-            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+            className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11 sm:px-4"
           >
             {centerOptions.map((center) => (
               <option key={center} value={center}>{center === "All Centers" ? center : formatCenter(center)}</option>
             ))}
           </select>
-          <div className="grid grid-cols-2 rounded-xl border border-slate-300 bg-slate-50 p-1 sm:col-span-2 xl:col-span-1">
+          <div className="grid grid-cols-2 rounded-xl border border-slate-300 bg-slate-50 p-1 md:col-span-2 xl:col-span-1">
             <button
               type="button"
-              onClick={() => setViewMode("table")}
-              className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
-                viewMode === "table" ? "bg-navy-950 text-white shadow-[0_10px_25px_rgba(6,19,33,0.18)]" : "text-slate-600"
+              aria-pressed={viewMode === "list"}
+              onClick={() => setViewMode("list")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition sm:px-4 sm:py-2 sm:text-sm ${
+                viewMode === "list" ? "bg-navy-950 text-white shadow-[0_10px_25px_rgba(6,19,33,0.18)]" : "text-slate-600 hover:text-navy-950"
               }`}
             >
               List
             </button>
             <button
               type="button"
+              aria-pressed={viewMode === "grid"}
               onClick={() => setViewMode("grid")}
-              className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
-                viewMode === "grid" ? "bg-navy-950 text-white shadow-[0_10px_25px_rgba(6,19,33,0.18)]" : "text-slate-600"
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition sm:px-4 sm:py-2 sm:text-sm ${
+                viewMode === "grid" ? "bg-navy-950 text-white shadow-[0_10px_25px_rgba(6,19,33,0.18)]" : "text-slate-600 hover:text-navy-950"
               }`}
             >
               Grid
@@ -281,7 +279,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
 
         {!loading && !error && filteredRegistrations.length > 0 && (
           <>
-            <section className={`${viewMode === "table" ? "hidden xl:block" : "hidden"} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(6,19,33,0.10)]`}>
+            <section className={`${viewMode === "list" ? "hidden xl:block" : "hidden"} overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(6,19,33,0.10)]`}>
               <div className="grid grid-cols-[minmax(130px,1.1fr)_minmax(250px,1.8fr)_minmax(100px,.8fr)_minmax(160px,1fr)_minmax(110px,.9fr)] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                 <span>Applicant</span>
                 <span>Course</span>
@@ -323,7 +321,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               })}
             </section>
 
-            <section className={`${viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "grid xl:hidden md:grid-cols-2"} gap-3`}>
+            <section className={`${viewMode === "list" ? "grid xl:hidden" : "hidden"} gap-2`}>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
                 const needsAttention = unreviewedStatuses.has(registration.status);
@@ -339,23 +337,65 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`rounded-2xl border border-l-4 p-4 shadow-[0_18px_50px_rgba(6,19,33,0.08)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] sm:p-5 ${cardClass}`}
+                    className={`block rounded-xl border border-l-4 px-3 py-3 shadow-[0_10px_30px_rgba(6,19,33,0.06)] transition hover:border-brand-300 ${cardClass}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className={titleClass}>{registration.fullName}</h2>
-                        <p className={`mt-1 text-sm leading-6 ${textClass}`}>{registration.course}</p>
+                      <div className="min-w-0 flex-1">
+                        <h2 className={`text-sm leading-5 ${titleClass}`}>{registration.fullName}</h2>
+                        <p className={`mt-1 break-words text-xs leading-5 ${textClass}`}>{registration.course}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] ring-1 sm:text-xs ${
+                      <span className={`max-w-[7.5rem] shrink-0 whitespace-normal rounded-full px-2 py-0.5 text-center text-[9px] leading-4 ring-1 ${
                         isNew ? "font-bold" : "font-semibold"
                       } ${getRegistrationStatusClass(registration.status)}`}>
                         {formatRegistrationStatus(registration.status)}
                       </span>
                     </div>
-                    <p className={`mt-3 text-sm ${textClass}`}>{formatCenter(registration.center)}</p>
-                    <p className={`mt-1 text-xs ${needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
-                      {new Date(registration.createdAt).toLocaleString()}
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+                      <span className={textClass}>{formatCenter(registration.center)}</span>
+                      <span className={needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}>
+                        {new Date(registration.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </section>
+
+            <section className={`${viewMode === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "hidden"} gap-2.5 sm:gap-3`}>
+              {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
+                const isNew = registration.status === "NEW";
+                const needsAttention = unreviewedStatuses.has(registration.status);
+                const titleClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-navy-950";
+                const textClass = needsAttention ? "font-bold text-slate-800" : "font-normal text-slate-600";
+                const cardClass = isNew
+                  ? "border-brand-200 border-l-brand-700 bg-brand-50/45"
+                  : needsAttention
+                    ? "border-slate-200 border-l-navy-900 bg-slate-50/80"
+                    : "border-slate-200 border-l-transparent bg-white";
+
+                return (
+                  <Link
+                    key={registration.id}
+                    href={`/admin/registrations/${registration.id}`}
+                    className={`rounded-2xl border border-l-4 p-3.5 shadow-[0_14px_42px_rgba(6,19,33,0.07)] transition hover:border-brand-300 hover:shadow-[0_22px_65px_rgba(6,19,33,0.12)] sm:p-5 ${cardClass}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h2 className={`text-sm leading-5 sm:text-base ${titleClass}`}>{registration.fullName}</h2>
+                        <p className={`mt-1 break-words text-xs leading-5 sm:text-sm sm:leading-6 ${textClass}`}>{registration.course}</p>
+                      </div>
+                      <span className={`max-w-[8rem] shrink-0 whitespace-normal rounded-full px-2 py-0.5 text-center text-[9px] leading-4 ring-1 sm:px-2.5 sm:py-1 sm:text-xs ${
+                        isNew ? "font-bold" : "font-semibold"
+                      } ${getRegistrationStatusClass(registration.status)}`}>
+                        {formatRegistrationStatus(registration.status)}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <p className={`text-xs sm:text-sm ${textClass}`}>{formatCenter(registration.center)}</p>
+                      <p className={`text-xs ${needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
+                        {new Date(registration.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </Link>
                 );
               })}
