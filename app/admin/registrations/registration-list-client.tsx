@@ -426,25 +426,23 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   <Link
                     key={registration.id}
                     href={`/admin/registrations/${registration.id}`}
-                    className={`block rounded-lg border border-l-4 px-2.5 py-1.5 shadow-[0_8px_22px_rgba(6,19,33,0.05)] transition hover:border-brand-300 ${cardClass}`}
+                    className={`block overflow-hidden rounded-lg border border-l-4 px-2.5 py-1.5 shadow-[0_8px_22px_rgba(6,19,33,0.05)] transition hover:border-brand-300 ${cardClass}`}
                   >
-                    <div className="flex min-w-0 items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1 pr-1">
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-2">
+                      <div className="min-w-0">
                         <h2 className={`text-sm leading-5 ${titleClass}`}>{registration.fullName}</h2>
-                        <p className={`mt-0.5 flex min-w-0 items-center gap-1 text-xs leading-4 ${metaClass}`}>
-                          <span className="min-w-0 truncate">{registration.course}</span>
-                          <span className="shrink-0 text-slate-400">·</span>
-                          <span className="shrink-0">{formatCenter(registration.center)}</span>
-                        </p>
-                        <p className={needsAttention ? "mt-0.5 text-[10px] font-bold leading-4 text-navy-950" : "mt-0.5 text-[10px] font-normal leading-4 text-slate-500"}>
-                          {formatMobileDate(registration.createdAt)}
-                        </p>
                       </div>
-                      <div className="shrink-0 pt-0.5">
-                        <span className={`inline-flex max-w-[4.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-center text-[8px] font-bold leading-3 ring-1 ${getRegistrationStatusClass(registration.status)}`}>
-                          {formatMobileStatus(registration.status)}
-                        </span>
-                      </div>
+                      <span className={`inline-flex items-center justify-center self-start justify-self-end whitespace-nowrap rounded-full px-1.5 py-0.5 text-center text-[8px] font-bold leading-3 ring-1 ${getRegistrationStatusClass(registration.status)}`}>
+                        {formatMobileStatus(registration.status)}
+                      </span>
+                      <p className={`col-span-2 mt-0.5 flex min-w-0 max-w-full items-center overflow-hidden text-xs leading-4 ${metaClass}`}>
+                        <span className="min-w-0 flex-1 truncate">{registration.course}</span>
+                        <span className="mx-1 shrink-0 text-slate-400">·</span>
+                        <span className="shrink-0">{formatCenter(registration.center)}</span>
+                      </p>
+                      <p className={needsAttention ? "col-span-2 mt-0.5 text-[10px] font-bold leading-4 text-navy-950" : "col-span-2 mt-0.5 text-[10px] font-normal leading-4 text-slate-500"}>
+                        {formatMobileDate(registration.createdAt)}
+                      </p>
                     </div>
                   </Link>
                 );
