@@ -2,7 +2,7 @@
 
 import type { SafeAdmin } from "@/lib/auth";
 import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "../admin-shell";
 
@@ -228,8 +228,8 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
           {message && <p className="mt-4 text-sm font-semibold text-brand-700">{message}</p>}
         </form>
 
-        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.10)]">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+        <section className="mt-5 rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.10)]">
+          <div className="rounded-t-2xl border-b border-slate-200 bg-slate-50 px-5 py-4">
             <h2 className="text-base font-bold text-navy-950">Existing users</h2>
           </div>
           <div>
@@ -286,11 +286,14 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
                         <p className="font-bold text-navy-950">{user.name}</p>
                         <p className="mt-1 break-words text-sm text-slate-600">{user.email}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
-                        user.active ? "bg-navy-950 text-white ring-navy-950" : "bg-slate-100 text-slate-600 ring-slate-200"
-                      }`}>
-                        {user.active ? "Active" : "Inactive"}
-                      </span>
+                      <div className="flex shrink-0 items-start gap-2">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${
+                          user.active ? "bg-navy-950 text-white ring-navy-950" : "bg-slate-100 text-slate-600 ring-slate-200"
+                        }`}>
+                          {user.active ? "Active" : "Inactive"}
+                        </span>
+                        <UserActions user={user} openAction={openAction} currentAdminId={admin.id} />
+                      </div>
                     </div>
                     <p className="mt-2 text-sm font-semibold text-slate-700">{formatRole(user.role)}</p>
                     {user.center && <p className="mt-1 text-sm text-slate-600">{formatCenter(user.center)}</p>}
@@ -300,9 +303,6 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
                       <span className="col-span-2 font-semibold text-navy-950">
                         Password: {user.forcePasswordChange ? "Change required" : "Set"}
                       </span>
-                    </div>
-                    <div className="mt-4">
-                      <UserActions user={user} openAction={openAction} currentAdminId={admin.id} />
                     </div>
                   </div>
                 ))}
@@ -413,19 +413,50 @@ function UserActions({
   openAction: (action: PendingAction) => void;
   currentAdminId: string;
 }) {
-  const actionButtonClass = "rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-navy-950 transition hover:border-brand-300 hover:text-brand-700";
+  const [open, setOpen] = useState(false);
+
+  function selectAction(action: PendingAction) {
+    setOpen(false);
+    openAction(action);
+  }
+
+  const menuItemClass = "w-full rounded-lg px-3 py-2 text-left text-sm font-bold text-navy-950 transition hover:bg-brand-50 hover:text-brand-700";
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <button type="button" className={actionButtonClass} onClick={() => openAction({ type: "generate-password", user })}>Generate Temp</button>
-      <button type="button" className={actionButtonClass} onClick={() => openAction({ type: "set-password", user })}>Set Password</button>
-      {user.role !== "SUPER_ADMIN" && (
-        <button type="button" className={actionButtonClass} onClick={() => openAction({ type: "update-role", user })}>Change Role</button>
-      )}
-      {user.id !== currentAdminId && (
-        <button type="button" className={actionButtonClass} onClick={() => openAction({ type: "set-active", user, active: !user.active })}>
-          {user.active ? "Disable" : "Activate"}
-        </button>
+    <div className="relative flex justify-end">
+      <button
+        type="button"
+        aria-label={`Open actions for ${user.name}`}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="grid size-9 place-items-center rounded-full border border-slate-200 bg-white text-navy-950 shadow-[0_10px_28px_rgba(6,19,33,0.08)] transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+      >
+        <MoreHorizontal size={18} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 z-30 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_70px_rgba(6,19,33,0.18)]">
+          <button type="button" className={menuItemClass} onClick={() => selectAction({ type: "generate-password", user })}>
+            Generate Temp
+          </button>
+          <button type="button" className={menuItemClass} onClick={() => selectAction({ type: "set-password", user })}>
+            Set Password
+          </button>
+          {user.role !== "SUPER_ADMIN" && (
+            <button type="button" className={menuItemClass} onClick={() => selectAction({ type: "update-role", user })}>
+              Change Role
+            </button>
+          )}
+          {user.id !== currentAdminId && (
+            <button
+              type="button"
+              className={`${menuItemClass} ${user.active ? "text-brand-700" : "text-navy-950"}`}
+              onClick={() => selectAction({ type: "set-active", user, active: !user.active })}
+            >
+              {user.active ? "Disable" : "Activate"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
