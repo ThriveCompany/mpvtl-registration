@@ -24,17 +24,21 @@ enum RegistrationStatus {
 }
 
 model AdminUser {
-  id           String         @id @default(cuid())
-  name         String
-  email        String         @unique
-  passwordHash String
-  role         AdminRole
-  center       String?
-  active       Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  approvals    Registration[] @relation("RegistrationApprover")
-  reviews      Registration[] @relation("RegistrationReviewer")
+  id                  String          @id @default(cuid())
+  name                String
+  email               String          @unique
+  passwordHash        String
+  role                AdminRole
+  center              String?
+  active              Boolean         @default(true)
+  forcePasswordChange Boolean         @default(false)
+  lastLoginAt         DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  approvals           Registration[]  @relation("RegistrationApprover")
+  reviews             Registration[]  @relation("RegistrationReviewer")
+  auditActions        AdminAuditLog[] @relation("AuditActor")
+  auditTargets        AdminAuditLog[] @relation("AuditTarget")
 }
 
 model Registration {
@@ -110,4 +114,20 @@ model EmailVerificationCode {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+model AdminAuditLog {
+  id           String     @id @default(cuid())
+  actorId      String?
+  actor        AdminUser? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action       String
+  targetUserId String?
+  targetUser   AdminUser? @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  ipAddress    String?
+  createdAt    DateTime   @default(now())
+
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
 }

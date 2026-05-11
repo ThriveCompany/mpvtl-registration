@@ -34,6 +34,16 @@ export type ApplicantRegistrationEmailInput = {
   level: string;
 };
 
+export type AdminAccessEmailInput = {
+  to: string;
+  name: string;
+  email: string;
+  temporaryPassword: string;
+  role: string;
+  center?: string | null;
+  loginUrl: string;
+};
+
 type RenderedEmail = {
   subject: string;
   html: string;
@@ -180,6 +190,98 @@ ${code}
 This code expires in 10 minutes.
 
 If you did not request this, please ignore this email.
+
+MPVTL Registration Team`;
+
+  return { subject, html, text };
+}
+
+export function renderAdminOnboardingEmail(input: AdminAccessEmailInput): RenderedEmail {
+  const subject = "Your MPVTL Admin Account";
+  const html = renderBaseEmailTemplate({
+    title: "Admin Account Created",
+    body: `
+      <p style="margin:0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Dear ${escapeHtml(input.name)},
+      </p>
+      <p style="margin:12px 0 0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Your MPVTL admin account has been created. Use the temporary password below to sign in, then change your password immediately.
+      </p>
+      ${highlightBox(`
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          ${renderInfoRows([
+            ["Email", input.email],
+            ["Temporary password", input.temporaryPassword],
+            ["Role", input.role],
+            ["Centre", input.center || "Not assigned"],
+          ])}
+        </table>
+      `)}
+      ${renderButton("Sign In to MPVTL Admin", input.loginUrl)}
+      <p style="margin:20px 0 0;color:${brand.muted};font-size:13px;line-height:22px;">
+        For security, this password must be changed after your first login.
+      </p>
+    `,
+  });
+  const text = `Dear ${input.name},
+
+Your MPVTL admin account has been created.
+
+Email: ${input.email}
+Temporary password: ${input.temporaryPassword}
+Role: ${input.role}
+Centre: ${input.center || "Not assigned"}
+
+Login URL:
+${input.loginUrl}
+
+Please change your password immediately after signing in.
+
+MPVTL Registration Team`;
+
+  return { subject, html, text };
+}
+
+export function renderAdminPasswordResetEmail(input: AdminAccessEmailInput): RenderedEmail {
+  const subject = "MPVTL Admin Password Reset";
+  const html = renderBaseEmailTemplate({
+    title: "Admin Password Reset",
+    body: `
+      <p style="margin:0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Dear ${escapeHtml(input.name)},
+      </p>
+      <p style="margin:12px 0 0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Your MPVTL admin password has been reset. Use this temporary password to sign in, then create a new password immediately.
+      </p>
+      ${highlightBox(`
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          ${renderInfoRows([
+            ["Email", input.email],
+            ["Temporary password", input.temporaryPassword],
+            ["Role", input.role],
+            ["Centre", input.center || "Not assigned"],
+          ])}
+        </table>
+      `)}
+      ${renderButton("Sign In to MPVTL Admin", input.loginUrl)}
+      <p style="margin:20px 0 0;color:${brand.muted};font-size:13px;line-height:22px;">
+        If you did not expect this reset, contact the MPVTL system administrator immediately.
+      </p>
+    `,
+  });
+  const text = `Dear ${input.name},
+
+Your MPVTL admin password has been reset.
+
+Email: ${input.email}
+Temporary password: ${input.temporaryPassword}
+Role: ${input.role}
+Centre: ${input.center || "Not assigned"}
+
+Login URL:
+${input.loginUrl}
+
+Please change your password immediately after signing in.
 
 MPVTL Registration Team`;
 
@@ -408,6 +510,20 @@ export async function sendVerificationEmail(to: string, code: string) {
   await sendMail({
     to,
     ...renderVerificationEmail(code),
+  });
+}
+
+export async function sendAdminOnboardingEmail(input: AdminAccessEmailInput) {
+  await sendMail({
+    to: input.to,
+    ...renderAdminOnboardingEmail(input),
+  });
+}
+
+export async function sendAdminPasswordResetEmail(input: AdminAccessEmailInput) {
+  await sendMail({
+    to: input.to,
+    ...renderAdminPasswordResetEmail(input),
   });
 }
 

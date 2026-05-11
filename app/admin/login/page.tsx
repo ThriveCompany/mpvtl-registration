@@ -23,13 +23,16 @@ export default function AdminLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const result = await response.json().catch(() => null) as { message?: string } | null;
+      const result = await response.json().catch(() => null) as {
+        admin?: { forcePasswordChange?: boolean };
+        message?: string;
+      } | null;
 
       if (!response.ok) {
         throw new Error(result?.message || "Login failed.");
       }
 
-      router.push("/admin/registrations");
+      router.push(result?.admin?.forcePasswordChange ? "/admin/change-password" : "/admin/registrations");
       router.refresh();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login failed.");

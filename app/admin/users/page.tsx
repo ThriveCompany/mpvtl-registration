@@ -5,6 +5,7 @@ import UsersClient from "./users-client";
 export default async function AdminUsersPage() {
   const admin = await getCurrentAdmin();
   if (!admin) redirect("/admin/login");
+  if (admin.forcePasswordChange) redirect("/admin/change-password");
   if (admin.role !== "SUPER_ADMIN") redirect("/admin/registrations");
 
   return <UsersClient admin={admin} />;

@@ -17,9 +17,18 @@ export async function POST(request: Request) {
   try {
     const admin = await prisma.adminUser.findUnique({ where: { email } });
 
-    if (!admin?.active || !(await bcrypt.compare(password, admin.passwordHash))) {
+    if (admin && !admin.active) {
+      return NextResponse.json({ message: "Your account has been disabled." }, { status: 403 });
+    }
+
+    if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
       return NextResponse.json({ message: "Invalid login details." }, { status: 401 });
     }
+
+    await prisma.adminUser.update({
+      where: { id: admin.id },
+      data: { lastLoginAt: new Date() },
+    });
 
     const response = NextResponse.json({
       admin: {
@@ -28,6 +37,7 @@ export async function POST(request: Request) {
         email: admin.email,
         role: admin.role,
         center: admin.center,
+        forcePasswordChange: admin.forcePasswordChange,
       },
     });
 

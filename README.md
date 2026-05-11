@@ -71,6 +71,27 @@ are set.
 
 Seeded admin accounts must use `@moaetscandg.org.ng` email addresses.
 
+Seeded staff accounts are marked for password change after login. Existing `SUPER_ADMIN` accounts are not forced unless their password is reset.
+
+## Admin Password Management
+
+Admin onboarding and password management routes:
+
+- `/admin/change-password`
+- `POST /api/admin/change-password`
+- `PATCH /api/admin/users/[id]`
+
+When a `SUPER_ADMIN` creates or resets a user account, the system generates or stores a bcrypt-hashed temporary password, emails the user, and sets `forcePasswordChange = true`. Existing passwords and password hashes are never shown in the admin UI.
+
+Sensitive user actions require SUPER_ADMIN password confirmation:
+
+- reset password
+- generate temporary password
+- disable or activate account
+- change role or centre assignment
+
+Audit logs are stored in `AdminAuditLog` for account creation, password resets, role changes, account activation/disable actions, and password changes.
+
 ## Production Deployment With PM2
 
 On the VPS:

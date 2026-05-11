@@ -106,6 +106,7 @@ async function seedSuperAdmin() {
         name,
         role: "SUPER_ADMIN",
         active: true,
+        forcePasswordChange: false,
       },
     });
     console.log(`Super admin exists; password unchanged: ${email}`);
@@ -124,6 +125,7 @@ async function seedSuperAdmin() {
       passwordHash: await bcrypt.hash(password, 12),
       role: "SUPER_ADMIN",
       active: true,
+      forcePasswordChange: true,
     },
   });
 
@@ -142,6 +144,7 @@ async function seedUser(user) {
       role: user.role,
       center: user.role === "CENTER_MANAGER" ? user.center : null,
       active: true,
+      forcePasswordChange: true,
     },
     create: {
       name: user.name,
@@ -150,6 +153,7 @@ async function seedUser(user) {
       role: user.role,
       center: user.role === "CENTER_MANAGER" ? user.center : null,
       active: true,
+      forcePasswordChange: true,
     },
   });
 

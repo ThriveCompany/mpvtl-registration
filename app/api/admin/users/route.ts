@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import type { AdminRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { getCurrentAdmin } from "@/lib/auth";
-import { CENTER_OPTIONS, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
+import { createAdminAuditLog, getRequestIp } from "@/lib/admin-audit";
+import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
+import { sendAdminOnboardingEmail } from "@/lib/email";
+import { generateTemporaryPassword } from "@/lib/passwords";
 import { prisma } from "@/lib/prisma";
 
 const roles: AdminRole[] = [...USER_CREATABLE_ROLES];
@@ -11,6 +14,9 @@ export async function GET() {
   const admin = await getCurrentAdmin();
   if (!admin || admin.role !== "SUPER_ADMIN") {
     return NextResponse.json({ message: "Forbidden", users: [] }, { status: 403 });
+  }
+  if (admin.forcePasswordChange) {
+    return NextResponse.json({ message: "Please change your password before continuing.", users: [] }, { status: 403 });
   }
 
   try {
@@ -23,6 +29,8 @@ export async function GET() {
         role: true,
         center: true,
         active: true,
+        forcePasswordChange: true,
+        lastLoginAt: true,
         createdAt: true,
       },
     });
@@ -42,11 +50,13 @@ export async function POST(request: Request) {
   if (!admin || admin.role !== "SUPER_ADMIN") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+  if (admin.forcePasswordChange) {
+    return NextResponse.json({ message: "Please change your password before continuing." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null) as {
     name?: string;
     email?: string;
-    password?: string;
     role?: AdminRole;
     center?: string;
     active?: boolean;
@@ -54,12 +64,11 @@ export async function POST(request: Request) {
 
   const name = body?.name?.trim() || "";
   const email = body?.email?.trim().toLowerCase() || "";
-  const password = body?.password || "";
   const role = body?.role;
   const center = body?.center?.trim() || null;
 
-  if (!name || !email || !password || !role || !roles.includes(role)) {
-    return NextResponse.json({ message: "Name, email, password, and role are required." }, { status: 400 });
+  if (!name || !email || !role || !roles.includes(role)) {
+    return NextResponse.json({ message: "Name, email, and role are required." }, { status: 400 });
   }
 
   if (!isOfficialEmail(email)) {
@@ -96,7 +105,8 @@ export async function POST(request: Request) {
       }
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const temporaryPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
     const user = await prisma.adminUser.create({
       data: {
         name,
@@ -105,6 +115,7 @@ export async function POST(request: Request) {
         role,
         center: role === "CENTER_MANAGER" ? center : null,
         active: body?.active ?? true,
+        forcePasswordChange: true,
       },
       select: {
         id: true,
@@ -113,11 +124,36 @@ export async function POST(request: Request) {
         role: true,
         center: true,
         active: true,
+        forcePasswordChange: true,
+        lastLoginAt: true,
         createdAt: true,
       },
     });
 
-    return NextResponse.json({ user });
+    await createAdminAuditLog({
+      actorId: admin.id,
+      action: "ACCOUNT_CREATED",
+      targetUserId: user.id,
+      ipAddress: await getRequestIp(),
+    });
+
+    let emailWarning = false;
+    try {
+      await sendAdminOnboardingEmail({
+        to: user.email,
+        name: user.name,
+        email: user.email,
+        temporaryPassword,
+        role: formatRole(user.role),
+        center: user.center ? formatCenter(user.center) : null,
+        loginUrl: `${(process.env.NEXT_PUBLIC_APP_URL || "https://register.mpvtl.cloud").replace(/\/$/, "")}/admin/login`,
+      });
+    } catch (error) {
+      emailWarning = true;
+      console.error("Could not send admin onboarding email", error);
+    }
+
+    return NextResponse.json({ user, emailWarning });
   } catch {
     return NextResponse.json({ message: "Could not create user. The email may already exist." }, { status: 400 });
   }

@@ -133,6 +133,7 @@ export default async function RegistrationProfilePage({
 }) {
   const admin = await getCurrentAdmin();
   if (!admin) redirect("/admin/login");
+  if (admin.forcePasswordChange) redirect("/admin/change-password");
 
   const { id } = await params;
   const registration = await prisma.registration.findUnique({

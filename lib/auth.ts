@@ -9,7 +9,7 @@ type AdminSessionPayload = {
   adminId: string;
 };
 
-export type SafeAdmin = Pick<AdminUser, "id" | "name" | "email" | "role" | "center" | "active">;
+export type SafeAdmin = Pick<AdminUser, "id" | "name" | "email" | "role" | "center" | "active" | "forcePasswordChange">;
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -42,6 +42,7 @@ export async function getCurrentAdmin(): Promise<SafeAdmin | null> {
         role: true,
         center: true,
         active: true,
+        forcePasswordChange: true,
       },
     });
 
