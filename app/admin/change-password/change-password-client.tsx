@@ -4,7 +4,13 @@ import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function ChangePasswordClient({ forced }: { forced: boolean }) {
+export default function ChangePasswordClient({
+  forced,
+  embedded = false,
+}: {
+  forced: boolean;
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     currentPassword: "",
@@ -30,6 +36,14 @@ export default function ChangePasswordClient({ forced }: { forced: boolean }) {
 
       if (!response.ok) {
         throw new Error(result?.message || "Could not update password.");
+      }
+
+      if (embedded) {
+        setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        setVisible({});
+        setMessage("Password updated successfully.");
+        router.refresh();
+        return;
       }
 
       router.push("/admin/registrations");
@@ -67,9 +81,9 @@ export default function ChangePasswordClient({ forced }: { forced: boolean }) {
     );
   }
 
-  return (
-    <main className="grid min-h-screen place-items-center bg-[#f3f5f8] px-4 py-12 text-slate-900">
-      <form onSubmit={submit} className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_90px_rgba(6,19,33,0.18)]">
+  const formContent = (
+    <form onSubmit={submit} className={embedded ? "rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_22px_70px_rgba(6,19,33,0.10)]" : "w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_90px_rgba(6,19,33,0.18)]"}>
+      {!embedded && (
         <div className="bg-navy-950 px-7 py-7 text-white">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-brand-100">
             <ShieldCheck size={22} />
@@ -80,25 +94,46 @@ export default function ChangePasswordClient({ forced }: { forced: boolean }) {
             {forced ? "Create a new password before continuing to the admin portal." : "Update your admin password securely."}
           </p>
         </div>
-        <div className="grid gap-5 p-7">
-          {passwordField("currentPassword", "Current password")}
-          {passwordField("newPassword", "New password")}
-          {passwordField("confirmPassword", "Confirm new password")}
+      )}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-            Use at least 8 characters with uppercase, lowercase, and a number.
+      {embedded && (
+        <div className="flex items-start gap-3">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+            <ShieldCheck size={19} />
           </div>
-
-          {message && <p className="text-sm font-semibold text-brand-700">{message}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(127,29,45,0.22)] transition hover:bg-brand-800 disabled:opacity-60"
-          >
-            {loading ? "Updating..." : "Update Password"}
-          </button>
+          <div>
+            <h2 className="text-base font-bold text-navy-950">Change password</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Update your own admin password securely.</p>
+          </div>
         </div>
-      </form>
+      )}
+
+      <div className={embedded ? "mt-5 grid gap-5" : "grid gap-5 p-7"}>
+        {passwordField("currentPassword", "Current password")}
+        {passwordField("newPassword", "New password")}
+        {passwordField("confirmPassword", "Confirm new password")}
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600">
+          Use at least 8 characters with uppercase, lowercase, and a number.
+        </div>
+
+        {message && <p className={`text-sm font-semibold ${message.includes("successfully") ? "text-navy-950" : "text-brand-700"}`}>{message}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(127,29,45,0.22)] transition hover:bg-brand-800 disabled:opacity-60"
+        >
+          {loading ? "Updating..." : "Update Password"}
+        </button>
+      </div>
+    </form>
+  );
+
+  if (embedded) return formContent;
+
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#f3f5f8] px-4 py-12 text-slate-900">
+      {formContent}
     </main>
   );
 }

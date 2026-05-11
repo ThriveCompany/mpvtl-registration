@@ -2,11 +2,11 @@
 
 import type { SafeAdmin } from "@/lib/auth";
 import { formatCenter, formatRole } from "@/lib/admin-constants";
-import { ClipboardList, LogOut, Users } from "lucide-react";
+import { ClipboardList, LogOut, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AdminSection = "registrations" | "users";
+type AdminSection = "registrations" | "users" | "settings";
 
 type AdminShellProps = {
   admin: SafeAdmin;
@@ -31,6 +31,13 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       icon: Users,
       section: "users" as const,
       visible: admin.role === "SUPER_ADMIN",
+    },
+    {
+      href: "/admin/settings",
+      label: "Settings",
+      icon: Settings,
+      section: "settings" as const,
+      visible: true,
     },
   ].filter((item) => item.visible);
 
