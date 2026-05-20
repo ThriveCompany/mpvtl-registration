@@ -176,6 +176,8 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
     loadUsers();
   }, []);
 
+  const isSuccessMessage = message === "User created and onboarding email sent.";
+
   return (
     <AdminShell
       admin={admin}
@@ -225,7 +227,15 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          {message && <p className="mt-4 text-sm font-semibold text-brand-700">{message}</p>}
+          {message && (
+            <p className={`mt-4 rounded-xl px-3 py-2 text-sm font-semibold ${
+              isSuccessMessage
+                ? "border border-green-200 bg-green-50 text-green-700"
+                : "text-brand-700"
+            }`}>
+              {message}
+            </p>
+          )}
         </form>
 
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.10)]">
