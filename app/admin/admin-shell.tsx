@@ -2,11 +2,11 @@
 
 import type { SafeAdmin } from "@/lib/auth";
 import { formatCenter, formatRole } from "@/lib/admin-constants";
-import { BarChart3, ClipboardList, LogOut, Settings, Users } from "lucide-react";
+import { BarChart3, BookOpenCheck, ClipboardList, Database, HelpCircle, LogOut, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AdminSection = "registrations" | "analytics" | "users" | "settings";
+type AdminSection = "registrations" | "analytics" | "users" | "settings" | "courses" | "questions" | "data-cleanup";
 
 type AdminShellProps = {
   admin: SafeAdmin;
@@ -37,6 +37,27 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       label: "Users",
       icon: Users,
       section: "users" as const,
+      visible: admin.role === "SUPER_ADMIN",
+    },
+    {
+      href: "/admin/courses",
+      label: "Courses",
+      icon: BookOpenCheck,
+      section: "courses" as const,
+      visible: admin.role === "SUPER_ADMIN",
+    },
+    {
+      href: "/admin/questions",
+      label: "Questions",
+      icon: HelpCircle,
+      section: "questions" as const,
+      visible: admin.role === "SUPER_ADMIN",
+    },
+    {
+      href: "/admin/data-cleanup",
+      label: "Data Cleanup",
+      icon: Database,
+      section: "data-cleanup" as const,
       visible: admin.role === "SUPER_ADMIN",
     },
     {
@@ -126,10 +147,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                 <h1 className="text-lg font-semibold leading-tight tracking-tight text-navy-950 sm:text-xl">{title}</h1>
                 {subtitle && <p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{subtitle}</p>}
               </div>
-              <div
-                className="grid gap-1.5 pb-1 xl:hidden"
-                style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
-              >
+              <div className="flex gap-1.5 overflow-x-auto pb-1 xl:hidden">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const selected = active === item.section;
@@ -138,7 +156,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-semibold sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm ${
+                      className={`inline-flex min-w-[6.75rem] items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-semibold sm:min-w-0 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm ${
                         selected ? "bg-brand-700 text-white shadow-[0_14px_35px_rgba(127,29,45,0.22)]" : "border border-slate-300 bg-white text-slate-700"
                       }`}
                     >

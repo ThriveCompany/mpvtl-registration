@@ -12,6 +12,7 @@ export const CENTER_OPTIONS = [
 ] as const;
 
 export const USER_CREATABLE_ROLES = [
+  "SUPER_ADMIN",
   "DIRECTOR",
   "ADMISSION_OFFICIAL",
   "CENTER_MANAGER",

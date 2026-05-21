@@ -53,6 +53,17 @@ function validateRequired(input: Record<string, string>) {
   return missing ? `${missing[0]} is required.` : "";
 }
 
+function readJsonObject(formData: FormData, key: string) {
+  const value = readText(formData, key);
+  if (!value) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return typeof parsed === "object" && parsed !== null ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizeDuplicateValue(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -83,6 +94,7 @@ export async function POST(request: Request) {
     ...getVerificationAnswers(formData),
     basicWriting: readText(formData, "basicWriting") || readText(formData, "basicDeclaration"),
   };
+  const verificationQuestionSnapshot = readJsonObject(formData, "verificationQuestionSnapshot");
 
   const validationError = validateRequired({
     fullName,
@@ -203,7 +215,10 @@ export async function POST(request: Request) {
       normalizeDuplicateValue(registration.fullName) === normalizedFullName
       && normalizeDuplicateValue(registration.course) === normalizedCourse
     ));
-    const existingRegistration = directEditRegistration || duplicateRegistration;
+    const safeDirectEditRegistration = directEditRegistration && normalizeDuplicateValue(directEditRegistration.email) === normalizedEmail
+      ? directEditRegistration
+      : null;
+    const existingRegistration = safeDirectEditRegistration || duplicateRegistration;
     const isEditingExisting = Boolean(existingRegistration);
     const existingHasEvidence = (existingRegistration?._count.files ?? 0) > 0;
 
@@ -228,6 +243,7 @@ export async function POST(request: Request) {
           action,
           receiveUpdates,
           verificationAnswers,
+          verificationQuestionSnapshot,
           wasEdited: true,
           editCount: { increment: 1 },
           editedAt: now,
@@ -235,6 +251,7 @@ export async function POST(request: Request) {
           editedAfterDecision: finalDecisionStatuses.has(existingRegistration.status)
             ? true
             : existingRegistration.editedAfterDecision,
+          needsAdminAttention: true,
         },
         select: {
           id: true,
@@ -259,6 +276,7 @@ export async function POST(request: Request) {
           action,
           receiveUpdates,
           verificationAnswers,
+          verificationQuestionSnapshot,
           originalSubmittedAt: now,
           notifications: {
             create: [

@@ -17,6 +17,8 @@ type RegistrationListItem = {
   wasEdited?: boolean;
   editedAt?: string | null;
   editedAfterDecision?: boolean;
+  needsAdminAttention?: boolean;
+  archivedAsDuplicate?: boolean;
 };
 
 type NotificationItem = {
@@ -65,11 +67,6 @@ function formatMobileDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function formatEditedDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
   const [alert, setAlert] = useState<NotificationAlert | null>(null);
@@ -81,6 +78,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [showArchived, setShowArchived] = useState(false);
   const audioRef = useRef<AudioContext | null>(null);
   const playedNotificationKeysRef = useRef<Set<string>>(new Set());
   const visibleRegistrations = Array.isArray(registrations) ? registrations : [];
@@ -102,12 +100,16 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
     });
   }, [centerFilter, courseSearch, statusFilter, visibleRegistrations]);
   const finalCount = visibleRegistrations.filter((registration) => finalDecisionStatuses.has(registration.status)).length;
-  const needsReviewCount = visibleRegistrations.length - finalCount;
+  const needsReviewCount = visibleRegistrations.filter((registration) => (
+    unreviewedStatuses.has(registration.status) || registration.needsAdminAttention
+  )).length;
 
   async function loadRegistrations() {
     try {
       setError("");
-      const response = await fetch("/api/admin/registrations", { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (showArchived) params.set("includeArchived", "true");
+      const response = await fetch(`/api/admin/registrations${params.size ? `?${params.toString()}` : ""}`, { cache: "no-store" });
       const result = await response.json().catch(() => null) as { registrations?: unknown; message?: string } | null;
 
       if (!response.ok) {
@@ -196,7 +198,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
     checkNotifications();
     const interval = window.setInterval(checkNotifications, 10000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => {
     function refreshWhenVisible() {
@@ -342,6 +344,17 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   ))}
                 </select>
               </label>
+              {admin.role === "SUPER_ADMIN" && (
+                <label className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-navy-950">
+                  <input
+                    type="checkbox"
+                    checked={showArchived}
+                    onChange={(event) => setShowArchived(event.target.checked)}
+                    className="h-4 w-4 accent-brand-700"
+                  />
+                  Show archived duplicates
+                </label>
+              )}
             </div>
           )}
         </div>
@@ -393,6 +406,17 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               Grid
             </button>
           </div>
+          {admin.role === "SUPER_ADMIN" && (
+            <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-navy-950 lg:col-span-2 xl:col-span-4">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(event) => setShowArchived(event.target.checked)}
+                className="h-4 w-4 accent-brand-700"
+              />
+              Show archived duplicates
+            </label>
+          )}
         </div>
 
         {loading && (
@@ -419,12 +443,16 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
               </div>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
-                const needsAttention = unreviewedStatuses.has(registration.status);
+                const needsAttention = unreviewedStatuses.has(registration.status) || Boolean(registration.needsAdminAttention);
                 const textClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-700";
                 const rowClass = isNew
                   ? "border-l-4 border-l-brand-700 bg-brand-50/45"
+                  : registration.needsAdminAttention
+                    ? "border-l-4 border-l-sky-500 bg-sky-50/45"
                   : needsAttention
                     ? "border-l-4 border-l-navy-900 bg-slate-50/80"
+                    : registration.archivedAsDuplicate
+                      ? "border-l-4 border-l-slate-300 bg-slate-50 opacity-75"
                     : "border-l-4 border-l-transparent bg-white";
 
                 return (
@@ -438,18 +466,18 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                     <span className={textClass}>
                       <span className="block">{registration.fullName}</span>
                       {registration.wasEdited && (
-                        <span className="mt-1 inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100">
+                        <span className="mt-1 inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
                           Response Edited
                         </span>
                       )}
                       {registration.editedAfterDecision && (
-                        <span className="ml-1 mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-navy-900 ring-1 ring-slate-200">
+                        <span className="ml-1 mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
                           Edited After Decision
                         </span>
                       )}
-                      {registration.wasEdited && registration.editedAt && (
-                        <span className="block pt-1 text-xs font-semibold text-slate-500">
-                          Last edited: {formatEditedDate(registration.editedAt)}
+                      {registration.archivedAsDuplicate && (
+                        <span className="ml-1 mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
+                          Archived Duplicate
                         </span>
                       )}
                     </span>
@@ -471,14 +499,18 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             <section className="grid gap-1.5 lg:hidden">
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
-                const needsAttention = unreviewedStatuses.has(registration.status);
+                const needsAttention = unreviewedStatuses.has(registration.status) || Boolean(registration.needsAdminAttention);
                 const titleClass = isNew ? "text-[15px] font-black text-navy-950" : "text-sm font-normal text-slate-800";
                 const metaClass = isNew ? "text-[12.5px] font-bold text-navy-950" : "text-xs font-normal text-slate-600";
                 const dateClass = isNew ? "text-[11px] font-bold text-navy-950" : "text-[10px] font-normal text-slate-500";
                 const cardClass = isNew
                   ? "border-brand-200 border-l-brand-700 bg-brand-50/45"
+                  : registration.needsAdminAttention
+                    ? "border-sky-200 border-l-sky-500 bg-sky-50/50"
                   : needsAttention
                     ? "border-slate-200 border-l-navy-900 bg-slate-50/80"
+                    : registration.archivedAsDuplicate
+                      ? "border-slate-200 border-l-slate-300 bg-slate-50 opacity-75"
                     : "border-slate-200 border-l-transparent bg-white";
                 const cardSpacing = isNew ? "px-3 py-2.5" : "px-2.5 py-2";
 
@@ -505,17 +537,12 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       </p>
                       {registration.wasEdited && (
                         <div className="col-span-2 mt-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold text-brand-700 ring-1 ring-brand-100">
+                          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[9px] font-bold text-sky-700 ring-1 ring-sky-200">
                             Response Edited
                           </span>
                           {registration.editedAfterDecision && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-navy-900 ring-1 ring-slate-200">
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-800 ring-1 ring-amber-200">
                               Edited After Decision
-                            </span>
-                          )}
-                          {registration.editedAt && (
-                            <span className="text-[10px] font-semibold text-slate-500">
-                              Last edited: {formatEditedDate(registration.editedAt)}
                             </span>
                           )}
                         </div>
@@ -529,13 +556,17 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
             <section className={`${viewMode === "grid" ? "hidden lg:grid lg:grid-cols-2 xl:grid-cols-3" : "hidden"} gap-3`}>
               {(Array.isArray(filteredRegistrations) ? filteredRegistrations : []).map((registration) => {
                 const isNew = registration.status === "NEW";
-                const needsAttention = unreviewedStatuses.has(registration.status);
+                const needsAttention = unreviewedStatuses.has(registration.status) || Boolean(registration.needsAdminAttention);
                 const titleClass = needsAttention ? "font-bold text-navy-950" : "font-normal text-navy-950";
                 const textClass = needsAttention ? "font-bold text-slate-800" : "font-normal text-slate-600";
                 const cardClass = isNew
                   ? "border-brand-200 border-l-brand-700 bg-brand-50/45"
+                  : registration.needsAdminAttention
+                    ? "border-sky-200 border-l-sky-500 bg-sky-50/50"
                   : needsAttention
                     ? "border-slate-200 border-l-navy-900 bg-slate-50/80"
+                    : registration.archivedAsDuplicate
+                      ? "border-slate-200 border-l-slate-300 bg-slate-50 opacity-75"
                     : "border-slate-200 border-l-transparent bg-white";
 
                 return (
@@ -550,11 +581,11 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                         <p className={`mt-1 break-words text-xs leading-5 sm:text-sm sm:leading-6 ${textClass}`}>{registration.course}</p>
                         {registration.wasEdited && (
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100">
+                            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
                               Response Edited
                             </span>
                             {registration.editedAfterDecision && (
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-navy-900 ring-1 ring-slate-200">
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
                                 Edited After Decision
                               </span>
                             )}
@@ -572,11 +603,6 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <p className={`text-xs ${needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
                         {new Date(registration.createdAt).toLocaleDateString()}
                       </p>
-                      {registration.wasEdited && registration.editedAt && (
-                        <p className="w-full text-xs font-semibold text-slate-500">
-                          Last edited: {formatEditedDate(registration.editedAt)}
-                        </p>
-                      )}
                     </div>
                   </Link>
                 );

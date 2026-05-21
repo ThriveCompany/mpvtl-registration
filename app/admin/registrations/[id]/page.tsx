@@ -147,8 +147,18 @@ export default async function RegistrationProfilePage({
 
   if (!registration || !canViewCenter(admin, registration.center)) notFound();
 
+  if (registration.needsAdminAttention) {
+    await prisma.registration.update({
+      where: { id: registration.id },
+      data: { needsAdminAttention: false },
+    });
+  }
+
   const answers = typeof registration.verificationAnswers === "object" && registration.verificationAnswers !== null
     ? registration.verificationAnswers as Record<string, string>
+    : {};
+  const questionSnapshot = typeof registration.verificationQuestionSnapshot === "object" && registration.verificationQuestionSnapshot !== null
+    ? registration.verificationQuestionSnapshot as Record<string, string>
     : {};
   const verificationItems = getVerificationDisplayItems(registration.level, registration.course);
   const isBasicRegistration = normalizeLevel(registration.level) === "Basic";
@@ -264,7 +274,7 @@ export default async function RegistrationProfilePage({
                     item.longAnswer ? "border-brand-100 bg-brand-50/40 md:col-span-2" : "border-slate-200 bg-white"
                   }`}
                 >
-                  <p className="text-sm font-bold leading-6 text-navy-950">{item.question}</p>
+                  <p className="text-sm font-bold leading-6 text-navy-950">{questionSnapshot[item.key] || item.question}</p>
                   <p className={`mt-3 whitespace-pre-wrap leading-7 text-slate-800 ${
                     item.longAnswer ? "text-base font-medium" : "text-base font-semibold"
                   }`}>

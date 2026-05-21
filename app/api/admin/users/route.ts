@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { getCurrentAdmin } from "@/lib/auth";
 import { createAdminAuditLog, getRequestIp } from "@/lib/admin-audit";
 import { CENTER_OPTIONS, formatCenter, formatRole, isOfficialEmail, USER_CREATABLE_ROLES } from "@/lib/admin-constants";
+import { verifySuperAdminPassword } from "@/lib/admin-security";
 import { sendAdminOnboardingEmail } from "@/lib/email";
 import { generateTemporaryPassword } from "@/lib/passwords";
 import { prisma } from "@/lib/prisma";
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
     role?: AdminRole;
     center?: string;
     active?: boolean;
+    superAdminPassword?: string;
   } | null;
 
   const name = body?.name?.trim() || "";
@@ -84,6 +86,10 @@ export async function POST(request: Request) {
 
   if (role === "CENTER_MANAGER" && !CENTER_OPTIONS.some((option) => option.value === center)) {
     return NextResponse.json({ message: "Please choose a valid centre." }, { status: 400 });
+  }
+
+  if (role === "SUPER_ADMIN" && !await verifySuperAdminPassword(admin, body?.superAdminPassword || "")) {
+    return NextResponse.json({ message: "Security confirmation failed. Super Admin creation requires your password." }, { status: 403 });
   }
 
   try {

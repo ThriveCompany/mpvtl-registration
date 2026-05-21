@@ -38,6 +38,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
     role: "DIRECTOR",
     center: "",
     active: true,
+    superAdminPassword: "",
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
   const [newPassword, setNewPassword] = useState("");
   const [showSecurityPassword, setShowSecurityPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showCreateSecurityPassword, setShowCreateSecurityPassword] = useState(false);
   const [actionRole, setActionRole] = useState("DIRECTOR");
   const [actionCenter, setActionCenter] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -110,7 +112,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
     setMessage(result?.emailWarning
       ? "User created, but the onboarding email could not be sent."
       : "User created and onboarding email sent.");
-    setForm({ name: "", email: "", role: "DIRECTOR", center: "", active: true });
+    setForm({ name: "", email: "", role: "DIRECTOR", center: "", active: true, superAdminPassword: "" });
     await loadUsers();
   }
 
@@ -120,7 +122,7 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
     setNewPassword("");
     setShowSecurityPassword(false);
     setShowNewPassword(false);
-    setActionRole(action.user.role === "SUPER_ADMIN" ? "DIRECTOR" : action.user.role);
+    setActionRole(action.user.role);
     setActionCenter(action.user.center || "");
     setMessage("");
   }
@@ -204,6 +206,20 @@ export default function UsersClient({ admin }: { admin: SafeAdmin }) {
                 <option key={role} value={role}>{formatRole(role)}</option>
               ))}
             </select>
+            {form.role === "SUPER_ADMIN" && (
+              <div className="md:col-span-2 xl:col-span-3">
+                <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
+                  Super Admin accounts have full system access.
+                </div>
+                <PasswordInput
+                  label="Confirm your SUPER_ADMIN password"
+                  value={form.superAdminPassword}
+                  visible={showCreateSecurityPassword}
+                  onToggle={() => setShowCreateSecurityPassword((current) => !current)}
+                  onChange={(value) => setForm({ ...form, superAdminPassword: value })}
+                />
+              </div>
+            )}
             {form.role === "CENTER_MANAGER" && (
               availableCenters.length > 0 ? (
                 <select className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100" value={form.center} onChange={(event) => setForm({ ...form, center: event.target.value })}>
@@ -452,7 +468,7 @@ function UserActions({
           <button type="button" className={menuItemClass} onClick={() => selectAction({ type: "set-password", user })}>
             Set Password
           </button>
-          {user.role !== "SUPER_ADMIN" && (
+          {user.id !== currentAdminId && (
             <button type="button" className={menuItemClass} onClick={() => selectAction({ type: "update-role", user })}>
               Change Role
             </button>

@@ -74,10 +74,6 @@ export async function PATCH(
     return NextResponse.json({ message: "User not found." }, { status: 404 });
   }
 
-  if (targetUser.role === "SUPER_ADMIN" && targetUser.id !== admin.id) {
-    return NextResponse.json({ message: "Only the current super admin account can be modified here." }, { status: 403 });
-  }
-
   const ipAddress = await getRequestIp();
 
   if (body?.action === "set-password" || body?.action === "generate-password") {

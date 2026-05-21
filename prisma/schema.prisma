@@ -73,6 +73,10 @@ model Registration {
   editedAt            DateTime?
   originalSubmittedAt DateTime?
   editedAfterDecision Boolean                    @default(false)
+  needsAdminAttention Boolean                    @default(false)
+  archivedAsDuplicate Boolean                    @default(false)
+  mergedIntoRegistrationId String?
+  verificationQuestionSnapshot Json?
   files               RegistrationFile[]
   notifications       RegistrationNotification[]
 
@@ -81,6 +85,48 @@ model Registration {
   @@index([createdAt])
   @@index([wasEdited])
   @@index([editedAfterDecision])
+  @@index([needsAdminAttention])
+  @@index([archivedAsDuplicate])
+  @@index([mergedIntoRegistrationId])
+}
+
+model CourseCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  courses   Course[]
+}
+
+model Course {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  categoryId  String
+  category    CourseCategory @relation(fields: [categoryId], references: [id])
+  levels      String[]       @default([])
+  centerIds   String[]       @default([])
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@index([active])
+}
+
+model VerificationQuestion {
+  id           String   @id @default(cuid())
+  level        String
+  key          String
+  questionText String
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([level, key])
+  @@index([level, active])
+  @@index([sortOrder])
 }
 
 model RegistrationFile {

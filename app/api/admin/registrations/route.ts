@@ -2,15 +2,20 @@ import { NextResponse } from "next/server";
 import { getCurrentAdmin, registrationAccessWhere } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await getCurrentAdmin();
   if (!admin) {
     return NextResponse.json({ message: "Unauthorized", registrations: [] }, { status: 401 });
   }
 
   try {
+    const url = new URL(request.url);
+    const includeArchived = admin.role === "SUPER_ADMIN" && url.searchParams.get("includeArchived") === "true";
     const registrations = await prisma.registration.findMany({
-      where: registrationAccessWhere(admin),
+      where: {
+        ...registrationAccessWhere(admin),
+        ...(includeArchived ? {} : { archivedAsDuplicate: false }),
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -22,6 +27,8 @@ export async function GET() {
         wasEdited: true,
         editedAt: true,
         editedAfterDecision: true,
+        needsAdminAttention: true,
+        archivedAsDuplicate: true,
       },
       take: 200,
     });

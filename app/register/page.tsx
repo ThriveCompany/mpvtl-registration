@@ -73,6 +73,12 @@ type SubmittedRegistrationState = {
   editCount?: number;
 };
 
+type RegistrationConfig = {
+  courses: { name: string; active: boolean }[];
+  categories: { name: string; active: boolean }[];
+  questions: { level: string; key: string; questionText: string; sortOrder: number }[];
+};
+
 const verificationAnswerKeys = [
   "priorExposure",
   "completedBasicCourse",
@@ -720,6 +726,35 @@ function buildVerificationAnswers(rawAnswers: AnswerState): VerificationAnswers 
   return stableAnswers;
 }
 
+function buildVerificationQuestionSnapshot(level: Level, courseName: string) {
+  const course = courseName || "selected course";
+  if (level === "Basic") {
+    return {
+      canReadAndWrite: "Can you read and write in English?",
+      newToField: `Are you new to ${course}?`,
+      reasonForCourse: `Why are you registering for ${course}?`,
+      availableForPracticalTraining: `Are you available for practical training in ${course}?`,
+      basicWriting: "Writing sample typed by applicant.",
+    };
+  }
+
+  if (level === "Intermediate") {
+    return {
+      priorExposure: `Do you have basic knowledge or prior exposure to ${course}?`,
+      completedBasicCourse: `Have you completed a basic course in ${course} before?`,
+      experienceDescription: `Describe your experience with ${course} briefly.`,
+      availableForEntryReview: `Are you available for ${course} Entry Review?`,
+    };
+  }
+
+  return {
+    priorTraining: `Do you have prior training or demonstrable experience in ${course}?`,
+    hasPreviousCertificate: `Do you have a previous certificate in ${course}?`,
+    practicalExperience: `Describe your practical experience in ${course}.`,
+    availableForAssessment: `Are you available for ${course} assessment/interview?`,
+  };
+}
+
 function clampStep(value: unknown, maxStep: number) {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.min(Math.max(Math.round(value), 0), maxStep)
@@ -847,6 +882,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [draftReady, setDraftReady] = useState(false);
+  const [registrationConfig, setRegistrationConfig] = useState<RegistrationConfig | null>(null);
 
   const selectedCourse = courses.find((course) => course.id === selectedCourseId);
   const availableLocations = selectedCourse
@@ -855,7 +891,15 @@ export default function RegisterPage() {
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
   const shouldAskHostel = locationHasHostel(selectedLocationData);
   const selectedLevel = selectedCourse?.level ?? "Basic";
-  const activeQuestions = Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
+  const configuredQuestions = (registrationConfig?.questions ?? [])
+    .filter((question) => question.level === selectedLevel && (verificationAnswerKeys as readonly string[]).includes(question.key))
+    .sort((first, second) => first.sortOrder - second.sortOrder);
+  const questionTextByKey = Object.fromEntries(
+    configuredQuestions.map((question) => [question.key, question.questionText.replaceAll("{course}", selectedCourse?.name ?? "selected course")]),
+  ) as Partial<Record<VerificationAnswerKey, string>>;
+  const activeQuestions = configuredQuestions.length > 0
+    ? configuredQuestions.map((question) => question.key as VerificationAnswerKey)
+    : Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
   const stepItems = Array.isArray(activeSteps) ? activeSteps : [];
   const uploadedFiles = Object.values(files ?? {}).filter(Boolean) as UploadedFileData[];
@@ -872,12 +916,24 @@ export default function RegisterPage() {
   const verifiedEmailVerificationId = emailVerified ? emailVerification.verificationId : "";
 
   const filteredCourses = useMemo(() => {
+    const courseRows = registrationConfig?.courses ?? [];
+    const categoryRows = registrationConfig?.categories ?? [];
+    const inactiveCourseNames = new Set(courseRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
+    const inactiveCategoryNames = new Set(categoryRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
+
     return courses.filter((course) => {
+      if (inactiveCourseNames.has(course.name.toLowerCase())) return false;
+      if (inactiveCategoryNames.has(course.category.toLowerCase())) return false;
       const matchesCategory = category === "All Categories" || course.category === category;
       const matchesSearch = course.name.toLowerCase().includes(search.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [category, search]);
+  }, [category, registrationConfig, search]);
+  const visibleCategories = useMemo(() => {
+    const categoryRows = registrationConfig?.categories ?? [];
+    const inactiveCategoryNames = new Set(categoryRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
+    return categories.filter((item) => item === "All Categories" || !inactiveCategoryNames.has(item.toLowerCase()));
+  }, [registrationConfig]);
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1003,6 +1059,27 @@ export default function RegisterPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    fetch("/api/registration-config", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: RegistrationConfig) => {
+        if (!active) return;
+        setRegistrationConfig({
+          courses: Array.isArray(result?.courses) ? result.courses : [],
+          categories: Array.isArray(result?.categories) ? result.categories : [],
+          questions: Array.isArray(result?.questions) ? result.questions : [],
+        });
+      })
+      .catch(() => {
+        if (active) setRegistrationConfig({ courses: [], categories: [], questions: [] });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!draftReady) return;
 
     writeRegistrationDraft({
@@ -1081,6 +1158,10 @@ export default function RegisterPage() {
       return next;
     });
   }, [emailVerified]);
+
+  useEffect(() => {
+    if (!visibleCategories.includes(category)) setCategory("All Categories");
+  }, [category, visibleCategories]);
 
   function selectCourse(courseId: string) {
     setSelectedCourseId(courseId);
@@ -1306,6 +1387,10 @@ export default function RegisterPage() {
     const verificationAnswers = buildVerificationAnswers(answers);
     verificationAnswers.basicWriting = selectedLevel === "Basic" ? basicDeclaration.trim() : "";
     const submittedAt = new Date().toISOString();
+    const verificationQuestionSnapshot = {
+      ...buildVerificationQuestionSnapshot(selectedLevel, selectedCourse.name),
+      ...questionTextByKey,
+    };
     const payload = {
       registrationId: submittedRecord?.registrationId ?? "",
       course: selectedCourse,
@@ -1315,6 +1400,7 @@ export default function RegisterPage() {
       applicant: { ...details, hostel: shouldAskHostel ? details.hostel : "No" },
       verification: answers,
       verificationAnswers,
+      verificationQuestionSnapshot,
       ...verificationAnswers,
       uploads: safeArray(uploadedFiles).map(({ file, ...upload }) => upload),
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
@@ -1353,6 +1439,7 @@ export default function RegisterPage() {
       formData.append("receiveUpdates", String(receiveUpdates));
       formData.append("emailVerificationId", verifiedEmailVerificationId);
       if (submittedRecord?.registrationId) formData.append("registrationId", submittedRecord.registrationId);
+      formData.append("verificationQuestionSnapshot", JSON.stringify(verificationQuestionSnapshot));
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
       formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
@@ -1465,6 +1552,7 @@ export default function RegisterPage() {
                         setSearch={setSearch}
                         category={category}
                         setCategory={setCategory}
+                        categories={visibleCategories}
                         filteredCourses={filteredCourses}
                         selectedCourseId={selectedCourseId}
                         setSelectedCourseId={selectCourse}
@@ -1498,6 +1586,7 @@ export default function RegisterPage() {
                         level={selectedLevel}
                         courseName={selectedCourse?.name ?? "selected course"}
                         questions={activeQuestions}
+                        questionTextByKey={questionTextByKey}
                         answers={answers}
                         setAnswers={setAnswers}
                         errors={errors}
@@ -1789,6 +1878,7 @@ function CourseStep(props: {
   setSearch: (value: string) => void;
   category: string;
   setCategory: (value: string) => void;
+  categories: string[];
   filteredCourses: Course[];
   selectedCourseId: string;
   setSelectedCourseId: (value: string) => void;
@@ -1820,7 +1910,7 @@ function CourseStep(props: {
           onChange={(event) => props.setCategory(event.target.value)}
           className="h-14 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-100"
         >
-          {safeArray(categories).map((item) => (
+          {safeArray(props.categories).map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -2071,12 +2161,15 @@ function VerificationStep(props: {
   level: Level;
   courseName: string;
   questions: VerificationAnswerKey[];
+  questionTextByKey: Partial<Record<VerificationAnswerKey, string>>;
   answers: AnswerState;
   setAnswers: (value: AnswerState) => void;
   errors: Record<string, string>;
 }) {
   const courseName = props.courseName || "selected course";
   const questions = Array.isArray(props.questions) ? props.questions : [];
+  const showQuestion = (key: VerificationAnswerKey) => questions.includes(key);
+  const labelFor = (key: VerificationAnswerKey, fallback: string) => props.questionTextByKey[key] || fallback;
   const updateAnswer = (key: keyof AnswerState, value: string, clearKeys: (keyof AnswerState)[] = []) => {
     const nextAnswers = { ...props.answers, [key]: value } as AnswerState;
     clearKeys.forEach((clearKey) => {
@@ -2091,30 +2184,30 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Basic Verification Questions" subtitle="These questions capture clear entry information before registration." />
 
         <div className="mt-7 grid gap-5">
-          <SelectField
+          {showQuestion(basicQuestionKeys.readWriteEnglish) && <SelectField
             errorKey={basicQuestionKeys.readWriteEnglish}
-            label="Can you read and write in English?"
+            label={labelFor(basicQuestionKeys.readWriteEnglish, "Can you read and write in English?")}
             value={props.answers[basicQuestionKeys.readWriteEnglish] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.readWriteEnglish, value)}
             options={yesNoOptions}
             error={props.errors[basicQuestionKeys.readWriteEnglish]}
-          />
-          <SelectField
+          />}
+          {showQuestion(basicQuestionKeys.newToField) && <SelectField
             errorKey={basicQuestionKeys.newToField}
-            label={`Are you new to ${courseName}?`}
+            label={labelFor(basicQuestionKeys.newToField, `Are you new to ${courseName}?`)}
             value={props.answers[basicQuestionKeys.newToField] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.newToField, value)}
             options={yesNoOptions}
             error={props.errors[basicQuestionKeys.newToField]}
-          />
-          <SelectField
+          />}
+          {showQuestion(basicQuestionKeys.courseReason) && <SelectField
             errorKey={basicQuestionKeys.courseReason}
-            label={`Why are you registering for ${courseName}?`}
+            label={labelFor(basicQuestionKeys.courseReason, `Why are you registering for ${courseName}?`)}
             value={props.answers[basicQuestionKeys.courseReason] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
             options={courseReasonOptions}
             error={props.errors[basicQuestionKeys.courseReason]}
-          />
+          />}
           {props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
             <AnswerTextArea
               errorKey={basicQuestionKeys.courseReasonOther}
@@ -2124,14 +2217,14 @@ function VerificationStep(props: {
               error={props.errors[basicQuestionKeys.courseReasonOther]}
             />
           )}
-          <SelectField
+          {showQuestion(basicQuestionKeys.practicalAvailability) && <SelectField
             errorKey={basicQuestionKeys.practicalAvailability}
-            label={`Are you available for practical training in ${courseName}?`}
+            label={labelFor(basicQuestionKeys.practicalAvailability, `Are you available for practical training in ${courseName}?`)}
             value={props.answers[basicQuestionKeys.practicalAvailability] ?? ""}
             onChange={(value) => updateAnswer(basicQuestionKeys.practicalAvailability, value)}
             options={availabilityOptions}
             error={props.errors[basicQuestionKeys.practicalAvailability]}
-          />
+          />}
         </div>
       </div>
     );
@@ -2143,37 +2236,37 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Intermediate Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
-          <SelectField
+          {showQuestion(intermediateQuestionKeys.priorExposure) && <SelectField
             errorKey={intermediateQuestionKeys.priorExposure}
-            label={`Do you have basic knowledge or prior exposure to ${courseName}?`}
+            label={labelFor(intermediateQuestionKeys.priorExposure, `Do you have basic knowledge or prior exposure to ${courseName}?`)}
             value={props.answers[intermediateQuestionKeys.priorExposure] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.priorExposure, value)}
             options={yesNoOptions}
             error={props.errors[intermediateQuestionKeys.priorExposure]}
-          />
-          <SelectField
+          />}
+          {showQuestion(intermediateQuestionKeys.completedBasicCourse) && <SelectField
             errorKey={intermediateQuestionKeys.completedBasicCourse}
-            label={`Have you completed a basic course in ${courseName} before?`}
+            label={labelFor(intermediateQuestionKeys.completedBasicCourse, `Have you completed a basic course in ${courseName} before?`)}
             value={props.answers[intermediateQuestionKeys.completedBasicCourse] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.completedBasicCourse, value)}
             options={yesNoOptions}
             error={props.errors[intermediateQuestionKeys.completedBasicCourse]}
-          />
-          <AnswerTextArea
+          />}
+          {showQuestion(intermediateQuestionKeys.experienceBrief) && <AnswerTextArea
             errorKey={intermediateQuestionKeys.experienceBrief}
-            label={`Describe your experience with ${courseName} briefly.`}
+            label={labelFor(intermediateQuestionKeys.experienceBrief, `Describe your experience with ${courseName} briefly.`)}
             value={props.answers[intermediateQuestionKeys.experienceBrief] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.experienceBrief, value)}
             error={props.errors[intermediateQuestionKeys.experienceBrief]}
-          />
-          <SelectField
+          />}
+          {showQuestion(intermediateQuestionKeys.entryReviewAvailability) && <SelectField
             errorKey={intermediateQuestionKeys.entryReviewAvailability}
-            label={`Are you available for ${courseName} Entry Review?`}
+            label={labelFor(intermediateQuestionKeys.entryReviewAvailability, `Are you available for ${courseName} Entry Review?`)}
             value={props.answers[intermediateQuestionKeys.entryReviewAvailability] ?? ""}
             onChange={(value) => updateAnswer(intermediateQuestionKeys.entryReviewAvailability, value)}
             options={availabilityOptions}
             error={props.errors[intermediateQuestionKeys.entryReviewAvailability]}
-          />
+          />}
         </div>
       </div>
     );
@@ -2185,18 +2278,18 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Advanced Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
-          <SelectField
+          {showQuestion(advancedQuestionKeys.priorTraining) && <SelectField
             errorKey={advancedQuestionKeys.priorTraining}
-            label={`Do you have prior training or demonstrable experience in ${courseName}?`}
+            label={labelFor(advancedQuestionKeys.priorTraining, `Do you have prior training or demonstrable experience in ${courseName}?`)}
             value={props.answers[advancedQuestionKeys.priorTraining] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.priorTraining, value)}
             options={yesNoOptions}
             error={props.errors[advancedQuestionKeys.priorTraining]}
-          />
+          />}
 
-          <SelectField
+          {showQuestion(advancedQuestionKeys.previousCertificate) && <SelectField
             errorKey={advancedQuestionKeys.previousCertificate}
-            label={`Do you have a previous certificate in ${courseName}?`}
+            label={labelFor(advancedQuestionKeys.previousCertificate, `Do you have a previous certificate in ${courseName}?`)}
             value={props.answers[advancedQuestionKeys.previousCertificate] ?? ""}
             onChange={(value) => updateAnswer(
               advancedQuestionKeys.previousCertificate,
@@ -2208,7 +2301,7 @@ function VerificationStep(props: {
             )}
             options={yesNoOptions}
             error={props.errors[advancedQuestionKeys.previousCertificate]}
-          />
+          />}
           {props.answers[advancedQuestionKeys.previousCertificate] === "Yes" && (
             <SelectField
               errorKey={advancedQuestionKeys.certificateType}
@@ -2229,22 +2322,22 @@ function VerificationStep(props: {
             />
           )}
 
-          <AnswerTextArea
+          {showQuestion(advancedQuestionKeys.practicalExperience) && <AnswerTextArea
             errorKey={advancedQuestionKeys.practicalExperience}
-            label={`Describe your practical experience in ${courseName}.`}
+            label={labelFor(advancedQuestionKeys.practicalExperience, `Describe your practical experience in ${courseName}.`)}
             value={props.answers[advancedQuestionKeys.practicalExperience] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.practicalExperience, value)}
             error={props.errors[advancedQuestionKeys.practicalExperience]}
-          />
+          />}
 
-          <SelectField
+          {showQuestion(advancedQuestionKeys.assessmentAvailability) && <SelectField
             errorKey={advancedQuestionKeys.assessmentAvailability}
-            label={`Are you available for ${courseName} assessment/interview?`}
+            label={labelFor(advancedQuestionKeys.assessmentAvailability, `Are you available for ${courseName} assessment/interview?`)}
             value={props.answers[advancedQuestionKeys.assessmentAvailability] ?? ""}
             onChange={(value) => updateAnswer(advancedQuestionKeys.assessmentAvailability, value)}
             options={availabilityOptions}
             error={props.errors[advancedQuestionKeys.assessmentAvailability]}
-          />
+          />}
         </div>
       </div>
     );

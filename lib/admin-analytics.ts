@@ -199,6 +199,7 @@ export async function buildAnalyticsData(admin: SafeAdmin, params: URLSearchPara
   const dateRange = getDateRange(params);
   const where: Prisma.RegistrationWhereInput = {
     ...registrationAccessWhere(admin),
+    archivedAsDuplicate: false,
   };
 
   if (dateRange.startDate || dateRange.endDate) {
