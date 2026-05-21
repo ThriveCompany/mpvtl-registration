@@ -216,43 +216,78 @@ export default function AnalyticsClient() {
 
   return (
     <div className="space-y-3 sm:space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-700 sm:text-xs">Report Period</p>
-            <h2 className="mt-1 text-base font-semibold leading-6 text-navy-950 sm:text-lg">{rangeSubtitle(data)}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Use the controls below to update the dashboard and formal PDF report.</p>
+            <h2 className="mt-1 text-[15px] font-semibold leading-6 text-navy-950 sm:text-lg">{rangeSubtitle(data)}</h2>
+            <p className="mt-1 hidden text-sm leading-6 text-slate-600 sm:block">Use the controls below to update the dashboard and formal PDF report.</p>
           </div>
           <button
             type="button"
             onClick={generatePdfReport}
             disabled={!hasData || pdfLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-3 py-2.5 text-xs font-semibold text-white shadow-[0_14px_35px_rgba(127,29,45,0.18)] transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-3 sm:text-sm"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-700 px-3 text-xs font-semibold text-white shadow-[0_14px_35px_rgba(127,29,45,0.18)] transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 sm:h-auto sm:px-4 sm:py-3 sm:text-sm"
           >
             <Download size={16} />
             {pdfLoading ? "Preparing PDF..." : "Download PDF Report"}
           </button>
         </div>
 
-        <div className="relative mt-4 sm:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Quick period</p>
-              <p className="mt-0.5 truncate text-sm font-semibold text-navy-950">{activeFilterLabel}</p>
+        <div className="relative mt-3 sm:hidden">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/90 shadow-[0_12px_34px_rgba(6,19,33,0.06)]">
+            <div className="flex min-h-11 items-center gap-3 px-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Period</p>
+                <p className="truncate text-sm font-semibold text-navy-950">{activeFilterLabel}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Open period filters"
+                aria-expanded={periodMenuOpen}
+                onClick={() => setPeriodMenuOpen((current) => !current)}
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-navy-950 shadow-[0_8px_20px_rgba(6,19,33,0.08)]"
+              >
+                <MoreHorizontal size={17} />
+              </button>
             </div>
+
+            <div className="border-t border-slate-200/80">
+              <label className="flex min-h-11 items-center justify-between gap-3 px-3">
+                <span className="text-xs font-semibold text-slate-500">Start</span>
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={(event) => setCustomStart(event.target.value)}
+                  className="h-9 min-w-0 flex-1 bg-transparent text-right text-sm font-medium text-navy-950 outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="border-t border-slate-200/80">
+              <label className="flex min-h-11 items-center justify-between gap-3 px-3">
+                <span className="text-xs font-semibold text-slate-500">End</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={(event) => setCustomEnd(event.target.value)}
+                  className="h-9 min-w-0 flex-1 bg-transparent text-right text-sm font-medium text-navy-950 outline-none"
+                />
+              </label>
+            </div>
+
             <button
               type="button"
-              aria-label="Open period filters"
-              aria-expanded={periodMenuOpen}
-              onClick={() => setPeriodMenuOpen((current) => !current)}
-              className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-navy-950 shadow-[0_10px_26px_rgba(6,19,33,0.06)]"
+              onClick={applyCustomRange}
+              className="flex min-h-11 w-full items-center justify-center gap-2 border-t border-slate-200/80 bg-white text-sm font-semibold text-brand-700"
             >
-              <MoreHorizontal size={18} />
+              <CalendarDays size={15} />
+              Apply Filter
             </button>
           </div>
 
           {periodMenuOpen && (
-            <div className="absolute right-0 top-14 z-20 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_60px_rgba(6,19,33,0.16)]">
+            <div className="absolute right-0 top-12 z-20 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_60px_rgba(6,19,33,0.16)]">
               {quickFilters.map((filter) => (
                 <button
                   key={filter.range}
@@ -288,7 +323,7 @@ export default function AnalyticsClient() {
           ))}
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-4 hidden gap-3 sm:grid md:grid-cols-[1fr_1fr_auto]">
           <label className="block">
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">Start date</span>
             <input
