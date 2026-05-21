@@ -1,8 +1,8 @@
 "use client";
 
-import { CalendarDays, Download, RefreshCw } from "lucide-react";
+import { CalendarDays, Download, MoreHorizontal, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Cell,
@@ -97,10 +97,6 @@ const chartColors = [
   "#7c3aed",
 ];
 
-function compactNumber(value: number) {
-  return new Intl.NumberFormat(undefined, { notation: value >= 10000 ? "compact" : "standard" }).format(value);
-}
-
 function readableStatus(value: string) {
   return value.replaceAll("_", " ");
 }
@@ -134,21 +130,10 @@ export default function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
 
   const hasData = Boolean(data && data.totals.total > 0);
-  const kpis = useMemo(() => {
-    const totals = data?.totals;
-    return [
-      { label: "Total Registrations", value: totals ? compactNumber(totals.total) : "0", tone: "navy" },
-      { label: "Needs Review", value: totals ? compactNumber(totals.needsReview) : "0", tone: "review" },
-      { label: "Approved", value: totals ? compactNumber(totals.approved) : "0", tone: "approved" },
-      { label: "Unapproved", value: totals ? compactNumber(totals.unapproved) : "0", tone: "danger" },
-      { label: "Further Review", value: totals ? compactNumber(totals.needsFurtherReview) : "0", tone: "amber" },
-      { label: "Most Registered Course", value: totals?.mostRegisteredCourse?.name || "No course data yet", tone: "wide" },
-      { label: "Top Center", value: totals?.topCenter?.name || "No centre data yet", tone: "plain" },
-      { label: "Top Batch / Session", value: totals?.topBatch?.name || "No batch/session data yet", tone: "wide" },
-    ];
-  }, [data]);
+  const activeFilterLabel = quickFilters.find((filter) => filter.range === activeFilter.range)?.label || "Custom Range";
 
   async function loadAnalytics(filter = activeFilter) {
     setLoading(true);
@@ -180,6 +165,7 @@ export default function AnalyticsClient() {
   function selectQuickFilter(range: AnalyticsRange) {
     const filter = { range };
     setActiveFilter(filter);
+    setPeriodMenuOpen(false);
     void loadAnalytics(filter);
   }
 
@@ -230,12 +216,12 @@ export default function AnalyticsClient() {
 
   return (
     <div className="space-y-3 sm:space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 sm:text-xs">Report Period</p>
-            <h2 className="mt-1 text-sm font-semibold leading-6 text-navy-950 sm:text-base">{rangeSubtitle(data)}</h2>
-            <p className="mt-1 hidden text-xs text-slate-500 sm:block">Use the controls below to update the dashboard and formal PDF report.</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-700 sm:text-xs">Report Period</p>
+            <h2 className="mt-1 text-base font-semibold leading-6 text-navy-950 sm:text-lg">{rangeSubtitle(data)}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Use the controls below to update the dashboard and formal PDF report.</p>
           </div>
           <button
             type="button"
@@ -248,7 +234,44 @@ export default function AnalyticsClient() {
           </button>
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:flex-wrap sm:overflow-visible sm:pb-0">
+        <div className="relative mt-4 sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Quick period</p>
+              <p className="mt-0.5 truncate text-sm font-semibold text-navy-950">{activeFilterLabel}</p>
+            </div>
+            <button
+              type="button"
+              aria-label="Open period filters"
+              aria-expanded={periodMenuOpen}
+              onClick={() => setPeriodMenuOpen((current) => !current)}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-navy-950 shadow-[0_10px_26px_rgba(6,19,33,0.06)]"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
+
+          {periodMenuOpen && (
+            <div className="absolute right-0 top-14 z-20 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_22px_60px_rgba(6,19,33,0.16)]">
+              {quickFilters.map((filter) => (
+                <button
+                  key={filter.range}
+                  type="button"
+                  onClick={() => selectQuickFilter(filter.range)}
+                  className={`block w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                    activeFilter.range === filter.range
+                      ? "bg-navy-950 text-white"
+                      : "text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 hidden gap-2 sm:flex sm:flex-wrap">
           {quickFilters.map((filter) => (
             <button
               key={filter.range}
@@ -265,29 +288,29 @@ export default function AnalyticsClient() {
           ))}
         </div>
 
-        <div className="mt-3 grid gap-2 sm:mt-4 md:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">Start date</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">Start date</span>
             <input
               type="date"
               value={customStart}
               onChange={(event) => setCustomStart(event.target.value)}
-              className="mt-1 h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11"
+              className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
             />
           </label>
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">End date</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">End date</span>
             <input
               type="date"
               value={customEnd}
               onChange={(event) => setCustomEnd(event.target.value)}
-              className="mt-1 h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11"
+              className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
             />
           </label>
           <button
             type="button"
             onClick={applyCustomRange}
-            className="inline-flex h-10 items-center justify-center gap-2 self-end rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-navy-950 transition hover:border-brand-300 hover:text-brand-700 sm:h-11"
+            className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-navy-950 transition hover:border-brand-300 hover:text-brand-700"
           >
             <CalendarDays size={16} />
             Apply Filter
@@ -302,37 +325,18 @@ export default function AnalyticsClient() {
       )}
 
       <div className="space-y-3 bg-[#f3f6fa] sm:space-y-5">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
-          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-700 sm:text-xs">Performance Snapshot</p>
-              <h2 className="mt-1 text-lg font-semibold text-navy-950 sm:text-xl">Registration Analytics</h2>
-              <p className="mt-1 text-sm text-slate-600">{rangeSubtitle(data)}</p>
-            </div>
-            <p className="text-xs font-medium text-slate-500 sm:text-sm">Updated {new Date().toLocaleDateString()}</p>
+        {loading && (
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-600 shadow-[0_14px_40px_rgba(6,19,33,0.06)]">
+            <RefreshCw size={16} className="animate-spin" />
+            Loading analytics...
           </div>
+        )}
 
-          {loading && (
-            <div className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">
-              <RefreshCw size={16} className="animate-spin" />
-              Loading analytics...
-            </div>
-          )}
-
-          {!loading && !hasData && !error && (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-600">
-              No registrations found for this period.
-            </div>
-          )}
-
-          {!loading && data && (
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4">
-              {kpis.map((kpi) => (
-                <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} tone={kpi.tone} />
-              ))}
-            </div>
-          )}
-        </section>
+        {!loading && !hasData && !error && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-600 shadow-[0_14px_40px_rgba(6,19,33,0.06)]">
+            No registrations found for this period.
+          </div>
+        )}
 
         {data && hasData && (
           <>
@@ -385,31 +389,6 @@ export default function AnalyticsClient() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, tone }: { label: string; value: string; tone: string }) {
-  const className = tone === "navy"
-    ? "border-navy-900 bg-navy-950 text-white"
-    : tone === "review"
-      ? "border-brand-100 bg-brand-50 text-brand-800"
-      : tone === "approved"
-        ? "border-teal-100 bg-teal-50 text-teal-800"
-        : tone === "danger"
-          ? "border-rose-100 bg-rose-50 text-rose-800"
-          : tone === "amber"
-            ? "border-amber-100 bg-amber-50 text-amber-800"
-            : "border-slate-200 bg-white text-navy-950";
-  const labelClass = tone === "navy" ? "text-brand-100" : "text-slate-500";
-  const valueClass = tone === "wide"
-    ? "text-sm font-semibold leading-5 text-navy-950 sm:text-base"
-    : "text-xl font-semibold leading-none sm:text-2xl";
-
-  return (
-    <div className={`min-h-[76px] rounded-xl border p-3 shadow-[0_10px_28px_rgba(6,19,33,0.05)] sm:min-h-[92px] sm:rounded-2xl sm:p-4 ${className} ${tone === "wide" ? "col-span-2" : ""}`}>
-      <p className={`text-[9px] font-semibold uppercase tracking-[0.1em] sm:text-[10px] ${labelClass}`}>{label}</p>
-      <p className={`mt-2 break-words ${valueClass}`}>{value}</p>
     </div>
   );
 }
