@@ -123,10 +123,13 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
 
             <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
               <div className="border-l-4 border-brand-700 pl-3 sm:pl-4">
-                <h1 className="text-xl font-bold leading-tight tracking-tight text-navy-950 sm:text-2xl">{title}</h1>
+                <h1 className="text-lg font-semibold leading-tight tracking-tight text-navy-950 sm:text-xl">{title}</h1>
                 {subtitle && <p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{subtitle}</p>}
               </div>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:hidden">
+              <div
+                className="grid gap-1.5 pb-1 xl:hidden"
+                style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
+              >
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const selected = active === item.section;
@@ -135,12 +138,12 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm ${
+                      className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-semibold sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm ${
                         selected ? "bg-brand-700 text-white shadow-[0_14px_35px_rgba(127,29,45,0.22)]" : "border border-slate-300 bg-white text-slate-700"
                       }`}
                     >
-                      <Icon size={14} />
-                      {item.label}
+                      <Icon className="shrink-0" size={13} />
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   );
                 })}

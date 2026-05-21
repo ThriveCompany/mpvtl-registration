@@ -6,8 +6,6 @@ import { CalendarDays, Download, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Line,
@@ -87,7 +85,18 @@ const quickFilters: { label: string; range: AnalyticsRange }[] = [
   { label: "So Far / All Time", range: "allTime" },
 ];
 
-const chartColors = ["#7f1d2d", "#061321", "#a91f35", "#193b5f", "#c72a42", "#64748b", "#102b46", "#f89bab"];
+const chartColors = [
+  "#8f1d2f",
+  "#0b1f33",
+  "#0f766e",
+  "#b7791f",
+  "#4f46e5",
+  "#0284c7",
+  "#be123c",
+  "#64748b",
+  "#047857",
+  "#7c3aed",
+];
 
 function compactNumber(value: number) {
   return new Intl.NumberFormat(undefined, { notation: value >= 10000 ? "compact" : "standard" }).format(value);
@@ -133,10 +142,10 @@ export default function AnalyticsClient() {
     const totals = data?.totals;
     return [
       { label: "Total Registrations", value: totals ? compactNumber(totals.total) : "0", tone: "navy" },
-      { label: "Needs Review", value: totals ? compactNumber(totals.needsReview) : "0", tone: "red" },
-      { label: "Approved", value: totals ? compactNumber(totals.approved) : "0", tone: "plain" },
-      { label: "Unapproved", value: totals ? compactNumber(totals.unapproved) : "0", tone: "plain" },
-      { label: "Needs Further Review", value: totals ? compactNumber(totals.needsFurtherReview) : "0", tone: "plain" },
+      { label: "Needs Review", value: totals ? compactNumber(totals.needsReview) : "0", tone: "review" },
+      { label: "Approved", value: totals ? compactNumber(totals.approved) : "0", tone: "approved" },
+      { label: "Unapproved", value: totals ? compactNumber(totals.unapproved) : "0", tone: "danger" },
+      { label: "Further Review", value: totals ? compactNumber(totals.needsFurtherReview) : "0", tone: "amber" },
       { label: "Most Registered Course", value: totals?.mostRegisteredCourse?.name || "No course data yet", tone: "wide" },
       { label: "Top Center", value: totals?.topCenter?.name || "No centre data yet", tone: "plain" },
       { label: "Top Batch / Session", value: totals?.topBatch?.name || "No batch/session data yet", tone: "wide" },
@@ -224,31 +233,31 @@ export default function AnalyticsClient() {
   }, []);
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_55px_rgba(6,19,33,0.08)] sm:p-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+    <div className="space-y-3 sm:space-y-5">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Report Period</p>
-            <h2 className="mt-1 text-lg font-bold text-navy-950">{rangeSubtitle(data)}</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 sm:text-xs">Report Period</p>
+            <h2 className="mt-1 text-sm font-semibold leading-6 text-navy-950 sm:text-base">{rangeSubtitle(data)}</h2>
           </div>
           <button
             type="button"
             onClick={generatePdfReport}
             disabled={!hasData || pdfLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(127,29,45,0.20)] transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-3 py-2.5 text-xs font-semibold text-white shadow-[0_14px_35px_rgba(127,29,45,0.18)] transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-3 sm:text-sm"
           >
             <Download size={16} />
             {pdfLoading ? "Generating PDF..." : "Generate PDF Report"}
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {quickFilters.map((filter) => (
             <button
               key={filter.range}
               type="button"
               onClick={() => selectQuickFilter(filter.range)}
-              className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+              className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition ${
                 activeFilter.range === filter.range
                   ? "bg-navy-950 text-white shadow-[0_12px_30px_rgba(6,19,33,0.18)]"
                   : "border border-slate-200 bg-white text-slate-700 hover:border-brand-200 hover:text-brand-700"
@@ -259,29 +268,29 @@ export default function AnalyticsClient() {
           ))}
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-3 grid gap-2 sm:mt-4 md:grid-cols-[1fr_1fr_auto]">
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Start date</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">Start date</span>
             <input
               type="date"
               value={customStart}
               onChange={(event) => setCustomStart(event.target.value)}
-              className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              className="mt-1 h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">End date</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">End date</span>
             <input
               type="date"
               value={customEnd}
               onChange={(event) => setCustomEnd(event.target.value)}
-              className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              className="mt-1 h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 sm:h-11"
             />
           </label>
           <button
             type="button"
             onClick={applyCustomRange}
-            className="inline-flex h-11 items-center justify-center gap-2 self-end rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-navy-950 transition hover:border-brand-300 hover:text-brand-700"
+            className="inline-flex h-10 items-center justify-center gap-2 self-end rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-navy-950 transition hover:border-brand-300 hover:text-brand-700 sm:h-11"
           >
             <CalendarDays size={16} />
             Apply Filter
@@ -295,15 +304,15 @@ export default function AnalyticsClient() {
         </div>
       )}
 
-      <div ref={reportRef} className="space-y-5 bg-[#f3f6fa]">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_rgba(6,19,33,0.08)]">
+      <div ref={reportRef} className="space-y-3 bg-[#f3f6fa] sm:space-y-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">MPVTL Registration System</p>
-              <h2 className="mt-1 text-2xl font-bold text-navy-950">Registration Analytics Report</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-700 sm:text-xs">MPVTL Registration System</p>
+              <h2 className="mt-1 text-lg font-semibold text-navy-950 sm:text-xl">Registration Analytics Report</h2>
               <p className="mt-1 text-sm text-slate-600">{rangeSubtitle(data)}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-600">Generated {new Date().toLocaleDateString()}</p>
+            <p className="text-xs font-medium text-slate-500 sm:text-sm">Generated {new Date().toLocaleDateString()}</p>
           </div>
 
           {loading && (
@@ -320,7 +329,7 @@ export default function AnalyticsClient() {
           )}
 
           {!loading && data && (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4">
               {kpis.map((kpi) => (
                 <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} tone={kpi.tone} />
               ))}
@@ -330,7 +339,7 @@ export default function AnalyticsClient() {
 
         {data && hasData && (
           <>
-            <section className="grid gap-5 xl:grid-cols-2">
+            <section className="grid gap-3 xl:grid-cols-2 xl:gap-5">
               <ChartCard title="Most Registered Courses" subtitle="Course demand by registration count">
                 <HorizontalBarChart data={data.byCourse.slice(0, 8)} />
               </ChartCard>
@@ -345,15 +354,15 @@ export default function AnalyticsClient() {
               </ChartCard>
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-2">
+            <section className="grid gap-3 xl:grid-cols-2 xl:gap-5">
               <ChartCard title="Registrations Over Time" subtitle="Registration movement across the selected period">
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={data.overTime}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#64748b" />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="#64748b" />
                     <Tooltip />
-                    <Line type="monotone" dataKey="count" stroke="#7f1d2d" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="count" stroke="#0284c7" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -386,23 +395,33 @@ export default function AnalyticsClient() {
 function KpiCard({ label, value, tone }: { label: string; value: string; tone: string }) {
   const className = tone === "navy"
     ? "border-navy-900 bg-navy-950 text-white"
-    : tone === "red"
-      ? "border-brand-200 bg-brand-50 text-brand-800"
-      : "border-slate-200 bg-white text-navy-950";
+    : tone === "review"
+      ? "border-brand-100 bg-brand-50 text-brand-800"
+      : tone === "approved"
+        ? "border-teal-100 bg-teal-50 text-teal-800"
+        : tone === "danger"
+          ? "border-rose-100 bg-rose-50 text-rose-800"
+          : tone === "amber"
+            ? "border-amber-100 bg-amber-50 text-amber-800"
+            : "border-slate-200 bg-white text-navy-950";
+  const labelClass = tone === "navy" ? "text-brand-100" : "text-slate-500";
+  const valueClass = tone === "wide"
+    ? "text-sm font-semibold leading-5 text-navy-950 sm:text-base"
+    : "text-xl font-semibold leading-none sm:text-2xl";
 
   return (
-    <div className={`min-h-[7rem] rounded-2xl border p-4 shadow-[0_14px_40px_rgba(6,19,33,0.06)] ${className} ${tone === "wide" ? "sm:col-span-2" : ""}`}>
-      <p className={`text-[11px] font-bold uppercase tracking-[0.14em] ${tone === "navy" ? "text-brand-100" : "text-slate-500"}`}>{label}</p>
-      <p className="mt-3 line-clamp-3 text-2xl font-black leading-tight">{value}</p>
+    <div className={`min-h-[76px] rounded-xl border p-3 shadow-[0_10px_28px_rgba(6,19,33,0.05)] sm:min-h-[92px] sm:rounded-2xl sm:p-4 ${className} ${tone === "wide" ? "col-span-2" : ""}`}>
+      <p className={`text-[9px] font-semibold uppercase tracking-[0.1em] sm:text-[10px] ${labelClass}`}>{label}</p>
+      <p className={`mt-2 break-words ${valueClass}`}>{value}</p>
     </div>
   );
 }
 
 function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_55px_rgba(6,19,33,0.08)] sm:p-5">
-      <div className="mb-4">
-        <h3 className="text-base font-bold text-navy-950">{title}</h3>
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.06)] sm:p-5">
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-navy-950 sm:text-base">{title}</h3>
         <p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p>
       </div>
       <div className="min-w-0">{children}</div>
@@ -415,16 +434,27 @@ function HorizontalBarChart({ data }: { data: CountPoint[] }) {
     return <EmptyChart message="No data available for this chart." />;
   }
 
+  const max = Math.max(...data.map((item) => item.count), 1);
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} stroke="#64748b" />
-        <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} stroke="#64748b" />
-        <Tooltip />
-        <Bar dataKey="count" radius={[0, 8, 8, 0]} fill="#7f1d2d" />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="space-y-3">
+      {data.map((item, index) => {
+        const width = `${Math.max(8, (item.count / max) * 100)}%`;
+        const color = chartColors[index % chartColors.length];
+
+        return (
+          <div key={`${item.name}-${index}`} className="min-w-0">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-xs font-medium text-slate-700" title={item.name}>{item.name}</p>
+              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-navy-950">{item.count}</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full" style={{ width, backgroundColor: color }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -434,16 +464,29 @@ function DonutChart({ data }: { data: CountPoint[] }) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <PieChart>
-        <Pie data={data} dataKey="count" nameKey="name" innerRadius={62} outerRadius={98} paddingAngle={2}>
-          {data.map((entry, index) => (
-            <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
-          ))}
-        </Pie>
-        <Tooltip />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="grid gap-3 md:grid-cols-[220px_1fr] md:items-center">
+      <ResponsiveContainer width="100%" height={210}>
+        <PieChart>
+          <Pie data={data} dataKey="count" nameKey="name" innerRadius={54} outerRadius={82} paddingAngle={2}>
+            {data.map((entry, index) => (
+              <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="grid gap-2">
+        {data.map((entry, index) => (
+          <div key={entry.name} className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
+              <span className="truncate text-xs font-medium text-slate-700">{entry.name}</span>
+            </span>
+            <span className="shrink-0 text-xs font-semibold text-navy-950">{entry.count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -453,31 +496,21 @@ function StatusChart({ data }: { data: CountPoint[] }) {
     return <EmptyChart message="No status data available." />;
   }
 
-  return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={safeData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#64748b" interval={0} angle={-20} textAnchor="end" height={70} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="#64748b" />
-        <Tooltip />
-        <Bar dataKey="count" radius={[8, 8, 0, 0]} fill="#061321" />
-      </BarChart>
-    </ResponsiveContainer>
-  );
+  return <HorizontalBarChart data={safeData} />;
 }
 
 function InsightCard({ title, text }: { title: string; text: string }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_55px_rgba(6,19,33,0.08)]">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{title}</p>
-      <p className="mt-3 text-sm leading-7 text-slate-700">{text}</p>
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.06)] sm:p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-700 sm:text-xs">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-700">{text}</p>
     </article>
   );
 }
 
 function EmptyChart({ message }: { message: string }) {
   return (
-    <div className="grid h-[260px] place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500">
+    <div className="grid min-h-[180px] place-items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 text-center text-sm font-medium text-slate-500">
       {message}
     </div>
   );
