@@ -1,10 +1,8 @@
 "use client";
 
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { CalendarDays, Download, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Cell,
@@ -60,6 +58,7 @@ type AnalyticsData = {
     topCenter: CountPoint | null;
     topBatch: CountPoint | null;
     approvalRate: number;
+    decisionRate: number;
   };
   byCourse: CountPoint[];
   byCenter: CountPoint[];
@@ -135,7 +134,6 @@ export default function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const hasData = Boolean(data && data.totals.total > 0);
   const kpis = useMemo(() => {
@@ -192,34 +190,32 @@ export default function AnalyticsClient() {
   }
 
   async function generatePdfReport() {
-    if (!reportRef.current || !data) return;
+    if (!data) return;
 
     setPdfLoading(true);
+    setError("");
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#f3f6fa",
-        scale: 2,
-        useCORS: true,
-      });
-      const image = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imageHeight = (canvas.height * pageWidth) / canvas.width;
-      let heightLeft = imageHeight;
-      let position = 0;
-
-      pdf.addImage(image, "PNG", 0, position, pageWidth, imageHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imageHeight;
-        pdf.addPage();
-        pdf.addImage(image, "PNG", 0, position, pageWidth, imageHeight);
-        heightLeft -= pageHeight;
+      const params = new URLSearchParams({ range: activeFilter.range });
+      if (activeFilter.range === "custom") {
+        if (activeFilter.startDate) params.set("startDate", activeFilter.startDate);
+        if (activeFilter.endDate) params.set("endDate", activeFilter.endDate);
       }
 
-      pdf.save(`MPVTL-Registration-Analytics-${sanitizeFilename(data.dateRange.label)}-${fileDate()}.pdf`);
+      const response = await fetch(`/api/admin/analytics/report?${params.toString()}`, { cache: "no-store" });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { message?: string } | null;
+        throw new Error(result?.message || "Could not generate PDF report.");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `MPVTL-Registration-Analytics-Report-${sanitizeFilename(data.dateRange.label)}-${fileDate()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     } catch (pdfError) {
       setError(pdfError instanceof Error ? pdfError.message : "Could not generate PDF report.");
     } finally {
@@ -239,6 +235,7 @@ export default function AnalyticsClient() {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700 sm:text-xs">Report Period</p>
             <h2 className="mt-1 text-sm font-semibold leading-6 text-navy-950 sm:text-base">{rangeSubtitle(data)}</h2>
+            <p className="mt-1 hidden text-xs text-slate-500 sm:block">Use the controls below to update the dashboard and formal PDF report.</p>
           </div>
           <button
             type="button"
@@ -247,7 +244,7 @@ export default function AnalyticsClient() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-3 py-2.5 text-xs font-semibold text-white shadow-[0_14px_35px_rgba(127,29,45,0.18)] transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-3 sm:text-sm"
           >
             <Download size={16} />
-            {pdfLoading ? "Generating PDF..." : "Generate PDF Report"}
+            {pdfLoading ? "Preparing PDF..." : "Download PDF Report"}
           </button>
         </div>
 
@@ -304,15 +301,15 @@ export default function AnalyticsClient() {
         </div>
       )}
 
-      <div ref={reportRef} className="space-y-3 bg-[#f3f6fa] sm:space-y-5">
+      <div className="space-y-3 bg-[#f3f6fa] sm:space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_rgba(6,19,33,0.07)] sm:p-5">
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-700 sm:text-xs">MPVTL Registration System</p>
-              <h2 className="mt-1 text-lg font-semibold text-navy-950 sm:text-xl">Registration Analytics Report</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-700 sm:text-xs">Performance Snapshot</p>
+              <h2 className="mt-1 text-lg font-semibold text-navy-950 sm:text-xl">Registration Analytics</h2>
               <p className="mt-1 text-sm text-slate-600">{rangeSubtitle(data)}</p>
             </div>
-            <p className="text-xs font-medium text-slate-500 sm:text-sm">Generated {new Date().toLocaleDateString()}</p>
+            <p className="text-xs font-medium text-slate-500 sm:text-sm">Updated {new Date().toLocaleDateString()}</p>
           </div>
 
           {loading && (
