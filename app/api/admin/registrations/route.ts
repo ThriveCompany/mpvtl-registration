@@ -19,6 +19,9 @@ export async function GET() {
         center: true,
         status: true,
         createdAt: true,
+        wasEdited: true,
+        editedAt: true,
+        editedAfterDecision: true,
       },
       take: 200,
     });

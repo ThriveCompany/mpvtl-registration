@@ -68,12 +68,19 @@ model Registration {
   reviewNote          String?
   reviewReason        String?
   reviewReasonOther   String?
+  wasEdited           Boolean                    @default(false)
+  editCount           Int                        @default(0)
+  editedAt            DateTime?
+  originalSubmittedAt DateTime?
+  editedAfterDecision Boolean                    @default(false)
   files               RegistrationFile[]
   notifications       RegistrationNotification[]
 
   @@index([center])
   @@index([status])
   @@index([createdAt])
+  @@index([wasEdited])
+  @@index([editedAfterDecision])
 }
 
 model RegistrationFile {

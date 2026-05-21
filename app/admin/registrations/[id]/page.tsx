@@ -184,6 +184,18 @@ export default async function RegistrationProfilePage({
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-200">Applicant</p>
             <h2 className="mt-1 text-2xl font-bold text-white">{registration.fullName}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">{registration.course}</p>
+            {registration.wasEdited && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white ring-1 ring-white/20">
+                  Response Edited
+                </span>
+                {registration.editedAfterDecision && (
+                  <span className="rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white ring-1 ring-brand-300">
+                    Edited After Decision
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-bold ring-1 ${getRegistrationStatusClass(registration.status)}`}>
             {formatRegistrationStatus(registration.status)}
@@ -204,6 +216,32 @@ export default async function RegistrationProfilePage({
                   <dd className="mt-1.5 break-words text-sm font-semibold leading-6 text-navy-950">{value}</dd>
                 </div>
               ))}
+            </dl>
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_22px_70px_rgba(6,19,33,0.09)]">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+              <h2 className="text-base font-bold text-navy-950">Response History</h2>
+            </div>
+            <dl className="grid divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <div className="px-5 py-4">
+                <dt className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Original submission</dt>
+                <dd className="mt-1.5 text-sm font-semibold leading-6 text-navy-950">
+                  {(registration.originalSubmittedAt || registration.createdAt).toLocaleString()}
+                </dd>
+              </div>
+              <div className="px-5 py-4">
+                <dt className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Last edited</dt>
+                <dd className="mt-1.5 text-sm font-semibold leading-6 text-navy-950">
+                  {registration.editedAt ? registration.editedAt.toLocaleString() : "Not edited"}
+                </dd>
+              </div>
+              <div className="px-5 py-4">
+                <dt className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Number of edits</dt>
+                <dd className="mt-1.5 text-sm font-semibold leading-6 text-navy-950">
+                  {registration.editCount}
+                </dd>
+              </div>
             </dl>
           </section>
 

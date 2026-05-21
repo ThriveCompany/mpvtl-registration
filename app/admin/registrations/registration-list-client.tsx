@@ -14,6 +14,9 @@ type RegistrationListItem = {
   center: string;
   status: string;
   createdAt: string;
+  wasEdited?: boolean;
+  editedAt?: string | null;
+  editedAfterDecision?: boolean;
 };
 
 type NotificationItem = {
@@ -21,7 +24,16 @@ type NotificationItem = {
   registrationId?: unknown;
   registration?: {
     id?: unknown;
+    fullName?: unknown;
+    course?: unknown;
+    center?: unknown;
   };
+};
+
+type NotificationAlert = {
+  registrationId: string;
+  fullName: string;
+  course: string;
 };
 
 function getNotificationKeys(value: unknown) {
@@ -53,9 +65,14 @@ function formatMobileDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatEditedDate(value?: string | null) {
+  if (!value) return "";
+  return new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
-  const [alert, setAlert] = useState("");
+  const [alert, setAlert] = useState<NotificationAlert | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
@@ -143,7 +160,17 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
       const newNotificationKeys = notificationKeys.filter((key) => !playedNotificationKeysRef.current.has(key));
 
       if (notificationCount > 0) {
-        setAlert("New Registration");
+        const firstNotification = Array.isArray(result?.notifications) ? result.notifications[0] as NotificationItem | undefined : undefined;
+        const firstRegistration = firstNotification?.registration;
+        setAlert({
+          registrationId: typeof firstRegistration?.id === "string"
+            ? firstRegistration.id
+            : typeof firstNotification?.registrationId === "string"
+              ? firstNotification.registrationId
+              : "",
+          fullName: typeof firstRegistration?.fullName === "string" ? firstRegistration.fullName : "Applicant",
+          course: typeof firstRegistration?.course === "string" ? firstRegistration.course : "MPVTL short course",
+        });
         if (newNotificationKeys.length > 0) {
           newNotificationKeys.forEach((key) => playedNotificationKeysRef.current.add(key));
           playNotificationBeeps();
@@ -158,9 +185,9 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
   async function markSeen() {
     try {
       await fetch("/api/admin/notifications/mark-seen", { method: "PATCH" });
-      setAlert("");
+      setAlert(null);
     } catch {
-      setAlert("");
+      setAlert(null);
     }
   }
 
@@ -197,13 +224,33 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
       subtitle={`${formatRole(admin.role)} access. Review applications, filter records, and open applicant profiles.`}
     >
         {alert && (
-          <button
-            type="button"
-            onClick={markSeen}
-            className="mb-4 w-full rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-left text-sm font-bold text-brand-800"
-          >
-            {alert} - click to mark seen
-          </button>
+          <div className="mb-4 rounded-2xl border border-brand-200 bg-white p-3 shadow-[0_18px_55px_rgba(127,29,45,0.12)] sm:p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 border-l-4 border-brand-700 pl-3">
+                <p className="text-sm font-black text-brand-800">New registration received</p>
+                <p className="mt-1 truncate text-sm font-semibold text-navy-950">
+                  {alert.fullName} - {alert.course}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                {alert.registrationId && (
+                  <Link
+                    href={`/admin/registrations/${alert.registrationId}`}
+                    className="inline-flex items-center justify-center rounded-full bg-brand-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-800"
+                  >
+                    View registration
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={markSeen}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-navy-950 transition hover:border-brand-300 hover:text-brand-700"
+                >
+                  Mark as seen
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         <section className="mb-3 grid grid-cols-3 gap-1.5 lg:mb-5 lg:gap-4">
@@ -388,7 +435,24 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       rowClass
                     }`}
                   >
-                    <span className={textClass}>{registration.fullName}</span>
+                    <span className={textClass}>
+                      <span className="block">{registration.fullName}</span>
+                      {registration.wasEdited && (
+                        <span className="mt-1 inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100">
+                          Response Edited
+                        </span>
+                      )}
+                      {registration.editedAfterDecision && (
+                        <span className="ml-1 mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-navy-900 ring-1 ring-slate-200">
+                          Edited After Decision
+                        </span>
+                      )}
+                      {registration.wasEdited && registration.editedAt && (
+                        <span className="block pt-1 text-xs font-semibold text-slate-500">
+                          Last edited: {formatEditedDate(registration.editedAt)}
+                        </span>
+                      )}
+                    </span>
                     <span className={textClass}>{registration.course}</span>
                     <span className={textClass}>{formatCenter(registration.center)}</span>
                     <span>
@@ -439,6 +503,23 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <p className={`col-span-2 mt-1 leading-4 ${dateClass}`}>
                         {formatMobileDate(registration.createdAt)}
                       </p>
+                      {registration.wasEdited && (
+                        <div className="col-span-2 mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold text-brand-700 ring-1 ring-brand-100">
+                            Response Edited
+                          </span>
+                          {registration.editedAfterDecision && (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-navy-900 ring-1 ring-slate-200">
+                              Edited After Decision
+                            </span>
+                          )}
+                          {registration.editedAt && (
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              Last edited: {formatEditedDate(registration.editedAt)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Link>
                 );
@@ -467,6 +548,18 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <div className="min-w-0 flex-1">
                         <h2 className={`text-sm leading-5 sm:text-base ${titleClass}`}>{registration.fullName}</h2>
                         <p className={`mt-1 break-words text-xs leading-5 sm:text-sm sm:leading-6 ${textClass}`}>{registration.course}</p>
+                        {registration.wasEdited && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-100">
+                              Response Edited
+                            </span>
+                            {registration.editedAfterDecision && (
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-navy-900 ring-1 ring-slate-200">
+                                Edited After Decision
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span className={`max-w-[8rem] shrink-0 whitespace-normal rounded-full px-2 py-0.5 text-center text-[9px] leading-4 ring-1 sm:px-2.5 sm:py-1 sm:text-xs ${
                         isNew ? "font-bold" : "font-semibold"
@@ -479,6 +572,11 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <p className={`text-xs ${needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}`}>
                         {new Date(registration.createdAt).toLocaleDateString()}
                       </p>
+                      {registration.wasEdited && registration.editedAt && (
+                        <p className="w-full text-xs font-semibold text-slate-500">
+                          Last edited: {formatEditedDate(registration.editedAt)}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 );

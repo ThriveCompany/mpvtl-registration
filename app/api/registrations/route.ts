@@ -24,6 +24,8 @@ const verificationAnswerKeys = [
   "availableForAssessment",
 ] as const;
 
+const finalDecisionStatuses = new Set(["APPROVED", "UNAPPROVED", "NEEDS_FURTHER_REVIEW", "REJECTED"]);
+
 type VerificationAnswerKey = (typeof verificationAnswerKeys)[number];
 type VerificationAnswers = Record<VerificationAnswerKey, string>;
 
@@ -51,6 +53,10 @@ function validateRequired(input: Record<string, string>) {
   return missing ? `${missing[0]} is required.` : "";
 }
 
+function normalizeDuplicateValue(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export async function POST(request: Request) {
   let formData: FormData;
 
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
   }
 
   const fullName = readText(formData, "fullName");
-  const email = readText(formData, "email");
+  const email = readText(formData, "email").toLowerCase();
   const phone = readText(formData, "phone");
   const course = readText(formData, "course");
   const category = readText(formData, "category");
@@ -72,6 +78,7 @@ export async function POST(request: Request) {
   const action = readText(formData, "action") || "Submit Registration";
   const receiveUpdates = readBoolean(formData, "receiveUpdates");
   const emailVerificationId = readText(formData, "emailVerificationId");
+  const submittedRegistrationId = readText(formData, "registrationId");
   const verificationAnswers = {
     ...getVerificationAnswers(formData),
     basicWriting: readText(formData, "basicWriting") || readText(formData, "basicDeclaration"),
@@ -145,10 +152,6 @@ export async function POST(request: Request) {
     .getAll("evidenceFiles")
     .filter((value): value is File => value instanceof File && value.size > 0);
 
-  if (level !== "Basic" && files.length === 0) {
-    return NextResponse.json({ message: "At least one evidence file is required." }, { status: 400 });
-  }
-
   for (const file of files) {
     const fileError = validateEvidenceFile(file);
     if (fileError) {
@@ -157,31 +160,124 @@ export async function POST(request: Request) {
   }
 
   try {
-    const registration = await prisma.registration.create({
-      data: {
-        fullName,
-        email,
-        phone,
-        course,
-        category,
-        level,
-        center,
-        session,
-        hostel,
-        action,
-        receiveUpdates,
-        verificationAnswers,
-        notifications: {
-          create: [
-            { targetRole: "SUPER_ADMIN" },
-            { targetRole: "DIRECTOR" },
-            { targetRole: "ADMISSION_OFFICIAL" },
-            { targetRole: "CENTER_MANAGER", targetCenter: center },
-          ],
+    const normalizedFullName = normalizeDuplicateValue(fullName);
+    const normalizedEmail = normalizeDuplicateValue(email);
+    const normalizedCourse = normalizeDuplicateValue(course);
+    const directEditRegistration = submittedRegistrationId
+      ? await prisma.registration.findUnique({
+        where: { id: submittedRegistrationId },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          course: true,
+          status: true,
+          createdAt: true,
+          originalSubmittedAt: true,
+          editedAfterDecision: true,
+          _count: { select: { files: true } },
+        },
+      })
+      : null;
+    const matchingEmailRegistrations = await prisma.registration.findMany({
+      where: {
+        email: {
+          equals: normalizedEmail,
+          mode: "insensitive",
         },
       },
-      select: { id: true, status: true },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        course: true,
+        status: true,
+        createdAt: true,
+        originalSubmittedAt: true,
+        editedAfterDecision: true,
+        _count: { select: { files: true } },
+      },
     });
+    const duplicateRegistration = matchingEmailRegistrations.find((registration) => (
+      normalizeDuplicateValue(registration.fullName) === normalizedFullName
+      && normalizeDuplicateValue(registration.course) === normalizedCourse
+    ));
+    const existingRegistration = directEditRegistration || duplicateRegistration;
+    const isEditingExisting = Boolean(existingRegistration);
+    const existingHasEvidence = (existingRegistration?._count.files ?? 0) > 0;
+
+    if (level !== "Basic" && files.length === 0 && !existingHasEvidence) {
+      return NextResponse.json({ message: "At least one evidence file is required." }, { status: 400 });
+    }
+
+    const now = new Date();
+    const registration = existingRegistration
+      ? await prisma.registration.update({
+        where: { id: existingRegistration.id },
+        data: {
+          fullName,
+          email: normalizedEmail,
+          phone,
+          course,
+          category,
+          level,
+          center,
+          session,
+          hostel,
+          action,
+          receiveUpdates,
+          verificationAnswers,
+          wasEdited: true,
+          editCount: { increment: 1 },
+          editedAt: now,
+          originalSubmittedAt: existingRegistration.originalSubmittedAt || existingRegistration.createdAt,
+          editedAfterDecision: finalDecisionStatuses.has(existingRegistration.status)
+            ? true
+            : existingRegistration.editedAfterDecision,
+        },
+        select: {
+          id: true,
+          status: true,
+          wasEdited: true,
+          editCount: true,
+          editedAt: true,
+          editedAfterDecision: true,
+        },
+      })
+      : await prisma.registration.create({
+        data: {
+          fullName,
+          email: normalizedEmail,
+          phone,
+          course,
+          category,
+          level,
+          center,
+          session,
+          hostel,
+          action,
+          receiveUpdates,
+          verificationAnswers,
+          originalSubmittedAt: now,
+          notifications: {
+            create: [
+              { targetRole: "SUPER_ADMIN" },
+              { targetRole: "DIRECTOR" },
+              { targetRole: "ADMISSION_OFFICIAL" },
+              { targetRole: "CENTER_MANAGER", targetCenter: center },
+            ],
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+          wasEdited: true,
+          editCount: true,
+          editedAt: true,
+          editedAfterDecision: true,
+        },
+      });
 
     for (const file of files) {
       const storedFile = await storeEvidenceFile(registration.id, file);
@@ -193,55 +289,65 @@ export async function POST(request: Request) {
       });
     }
 
-    try {
-      const internalRecipients = await prisma.adminUser.findMany({
-        where: {
-          active: true,
-          OR: [
-            { role: "DIRECTOR" },
-            { role: "ADMISSION_OFFICIAL" },
-            { role: "CENTER_MANAGER", center },
-          ],
-        },
-        select: {
-          name: true,
-          email: true,
-        },
-      });
+    if (!isEditingExisting) {
+      try {
+        const internalRecipients = await prisma.adminUser.findMany({
+          where: {
+            active: true,
+            OR: [
+              { role: "DIRECTOR" },
+              { role: "ADMISSION_OFFICIAL" },
+              { role: "CENTER_MANAGER", center },
+            ],
+          },
+          select: {
+            name: true,
+            email: true,
+          },
+        });
 
-      const emailResults = await Promise.allSettled([
-        ...internalRecipients.map((recipient) => sendInternalRegistrationEmail({
-          to: recipient.email,
-          recipientName: recipient.name,
-          registrationId: registration.id,
-          fullName,
-          phone,
-          email,
-          course,
-          category,
-          level,
-          center,
-          status: registration.status,
-        })),
-        sendApplicantRegistrationReceivedEmail({
-          to: email,
-          fullName,
-          course,
-          center,
-          level,
-        }),
-      ]);
+        const emailResults = await Promise.allSettled([
+          ...internalRecipients.map((recipient) => sendInternalRegistrationEmail({
+            to: recipient.email,
+            recipientName: recipient.name,
+            registrationId: registration.id,
+            fullName,
+            phone,
+            email,
+            course,
+            category,
+            level,
+            center,
+            status: registration.status,
+          })),
+          sendApplicantRegistrationReceivedEmail({
+            to: email,
+            fullName,
+            course,
+            center,
+            level,
+          }),
+        ]);
 
-      emailResults.forEach((result) => {
-        if (result.status === "rejected") {
-          console.error("Registration notification email failed", result.reason);
-        }
-      });
-    } catch (emailError) {
-      console.error("Registration notification email setup failed", emailError);
+        emailResults.forEach((result) => {
+          if (result.status === "rejected") {
+            console.error("Registration notification email failed", result.reason);
+          }
+        });
+      } catch (emailError) {
+        console.error("Registration notification email setup failed", emailError);
+      }
     }
 
-    return NextResponse.json({ success: true, id: registration.id });
+    return NextResponse.json({
+      success: true,
+      id: registration.id,
+      updated: isEditingExisting,
+      wasEdited: registration.wasEdited,
+      editCount: registration.editCount,
+      editedAt: registration.editedAt,
+      editedAfterDecision: registration.editedAfterDecision,
+    });
   } catch (error) {
     console.error("Registration submission failed", error);
     return NextResponse.json(

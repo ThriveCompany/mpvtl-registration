@@ -62,6 +62,17 @@ type EmailVerificationState = {
   codeSent: boolean;
 };
 
+type SubmittedRegistrationState = {
+  success: true;
+  registrationId: string;
+  submittedEmail: string;
+  submittedCourse: string;
+  submittedCenter: string;
+  submittedAt: string;
+  wasEdited?: boolean;
+  editCount?: number;
+};
+
 const verificationAnswerKeys = [
   "priorExposure",
   "completedBasicCourse",
@@ -94,6 +105,7 @@ const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_LABEL = "5MB";
 const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const DRAFT_STORAGE_KEY = "mpvtlShortCourseRegistrationDraft";
+const SUBMISSION_STORAGE_KEY = "mpvtlShortCourseRegistrationSubmission";
 
 const categories = [
   "All Categories",
@@ -738,6 +750,38 @@ function readRegistrationDraft() {
   }
 }
 
+function readSubmittedRegistration() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const value = JSON.parse(window.localStorage.getItem(SUBMISSION_STORAGE_KEY) || "null") as Partial<SubmittedRegistrationState> | null;
+    if (!value?.success || !value.registrationId) return null;
+
+    return {
+      success: true,
+      registrationId: value.registrationId,
+      submittedEmail: value.submittedEmail ?? "",
+      submittedCourse: value.submittedCourse ?? "",
+      submittedCenter: value.submittedCenter ?? "",
+      submittedAt: value.submittedAt ?? "",
+      wasEdited: Boolean(value.wasEdited),
+      editCount: typeof value.editCount === "number" ? value.editCount : 0,
+    } satisfies SubmittedRegistrationState;
+  } catch {
+    return null;
+  }
+}
+
+function writeSubmittedRegistration(value: SubmittedRegistrationState) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(SUBMISSION_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // The success screen still works even if the browser blocks persistence.
+  }
+}
+
 function writeRegistrationDraft(draft: {
   step: number;
   search: string;
@@ -798,6 +842,7 @@ export default function RegisterPage() {
   const [emailVerificationMessage, setEmailVerificationMessage] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submittedRecord, setSubmittedRecord] = useState<SubmittedRegistrationState | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
@@ -815,6 +860,7 @@ export default function RegisterPage() {
   const stepItems = Array.isArray(activeSteps) ? activeSteps : [];
   const uploadedFiles = Object.values(files ?? {}).filter(Boolean) as UploadedFileData[];
   const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
+  const editingExistingSubmission = Boolean(submittedRecord?.registrationId);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
   const normalizedApplicantEmail = details.email.trim().toLowerCase();
   const verifiedEmail = emailVerification.email.trim().toLowerCase();
@@ -916,6 +962,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const draft = readRegistrationDraft();
+    const savedSubmission = readSubmittedRegistration();
 
     if (draft) {
       const draftCourse = courses.find((course) => course.id === draft.selectedCourseId);
@@ -944,6 +991,12 @@ export default function RegisterPage() {
         codeSent: Boolean(draft.emailVerification?.codeSent),
       });
       setShowIntro(draft.showIntro ?? !draft.step);
+    }
+
+    if (savedSubmission) {
+      setSubmittedRecord(savedSubmission);
+      setSubmitted(true);
+      setShowIntro(false);
     }
 
     setDraftReady(true);
@@ -1088,7 +1141,7 @@ export default function RegisterPage() {
     if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
       nextErrors.basicDeclaration = "Please complete your writing sample before continuing.";
     }
-    if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0) {
+    if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0 && !(editingExistingSubmission && uploadedFiles.length > 0)) {
       nextErrors.uploads = uploadedFiles.length > 0
         ? "Please reselect the uploaded document before continuing."
         : "Please upload at least one document before continuing.";
@@ -1252,7 +1305,9 @@ export default function RegisterPage() {
 
     const verificationAnswers = buildVerificationAnswers(answers);
     verificationAnswers.basicWriting = selectedLevel === "Basic" ? basicDeclaration.trim() : "";
+    const submittedAt = new Date().toISOString();
     const payload = {
+      registrationId: submittedRecord?.registrationId ?? "",
       course: selectedCourse,
       location: selectedLocationData,
       session: selectedSession,
@@ -1269,7 +1324,7 @@ export default function RegisterPage() {
         email: emailVerification.email,
         verified: emailVerified,
       },
-      submittedAt: new Date().toISOString(),
+      submittedAt,
     };
 
     // Keep a local backup so applicants can edit their response after submitting.
@@ -1297,6 +1352,7 @@ export default function RegisterPage() {
       formData.append("action", finalAction);
       formData.append("receiveUpdates", String(receiveUpdates));
       formData.append("emailVerificationId", verifiedEmailVerificationId);
+      if (submittedRecord?.registrationId) formData.append("registrationId", submittedRecord.registrationId);
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
       formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
@@ -1310,12 +1366,41 @@ export default function RegisterPage() {
         method: "POST",
         body: formData,
       });
-      const result = await response.json().catch(() => null) as { message?: string } | null;
+      const result = await response.json().catch(() => null) as {
+        id?: string;
+        message?: string;
+        updated?: boolean;
+        wasEdited?: boolean;
+        editCount?: number;
+      } | null;
 
       if (!response.ok) {
         throw new Error(result?.message || "We could not submit your registration right now.");
       }
 
+      const nextSubmittedRecord = {
+        success: true,
+        registrationId: result?.id || submittedRecord?.registrationId || "",
+        submittedEmail: details.email,
+        submittedCourse: selectedCourse.name,
+        submittedCenter: selectedLocationData?.name || "",
+        submittedAt,
+        wasEdited: Boolean(result?.wasEdited || result?.updated),
+        editCount: typeof result?.editCount === "number" ? result.editCount : submittedRecord?.editCount,
+      } satisfies SubmittedRegistrationState;
+      writeSubmittedRegistration(nextSubmittedRecord);
+      setSubmittedRecord(nextSubmittedRecord);
+      try {
+        localStorage.setItem("mpvtlShortCourseRegistration", JSON.stringify({
+          ...payload,
+          registrationId: nextSubmittedRecord.registrationId,
+          submittedAt: nextSubmittedRecord.submittedAt,
+          success: true,
+          wasEdited: nextSubmittedRecord.wasEdited,
+        }));
+      } catch {
+        // Keep the success screen available even if this backup write fails.
+      }
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "We could not submit your registration right now. Your details are still saved on this device.");
@@ -1352,8 +1437,12 @@ export default function RegisterPage() {
             <SuccessScreen
               onEditResponse={() => {
                 setSubmitted(false);
+                setShowIntro(false);
                 requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
               }}
+              submittedRecord={submittedRecord}
+              fallbackCourse={selectedCourse?.name || ""}
+              fallbackCenter={selectedLocationData?.name || ""}
               whatsappUrl={centerWhatsAppUrl}
             />
           ) : (
@@ -2487,12 +2576,23 @@ function FinalStep(props: {
 
 function SuccessScreen({
   onEditResponse,
+  submittedRecord,
+  fallbackCourse,
+  fallbackCenter,
   whatsappUrl,
 }: {
   onEditResponse: () => void;
+  submittedRecord: SubmittedRegistrationState | null;
+  fallbackCourse: string;
+  fallbackCenter: string;
   whatsappUrl: string;
 }) {
   const [showPaymentNote, setShowPaymentNote] = useState(false);
+  const submittedCourse = submittedRecord?.submittedCourse || fallbackCourse;
+  const submittedCenter = submittedRecord?.submittedCenter || fallbackCenter;
+  const submittedDate = submittedRecord?.submittedAt
+    ? new Date(submittedRecord.submittedAt).toLocaleString()
+    : "";
 
   return (
     <motion.div
@@ -2510,16 +2610,41 @@ function SuccessScreen({
       </motion.div>
       <h2 className="mt-8 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-[2.125rem]">Registration Submitted Successfully</h2>
       <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-600">
-        Your registration has been sent to MPVTL. A backup copy is also saved on this device.
+        Your registration has been submitted.
       </p>
+      <div className="mx-auto mt-6 grid max-w-2xl gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 text-left">
+        {submittedCourse && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Course</p>
+            <p className="mt-1 text-sm font-bold leading-6 text-navy-950">{submittedCourse}</p>
+          </div>
+        )}
+        {submittedCenter && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Centre / mode</p>
+            <p className="mt-1 text-sm font-bold leading-6 text-navy-950">{submittedCenter}</p>
+          </div>
+        )}
+        {submittedDate && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Submitted</p>
+            <p className="mt-1 text-sm font-bold leading-6 text-navy-950">{submittedDate}</p>
+          </div>
+        )}
+        {submittedRecord?.wasEdited && (
+          <p className="rounded-2xl border border-brand-100 bg-white px-4 py-3 text-sm font-bold text-brand-700">
+            Your edited response has been saved.
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onEditResponse}
+        className="mt-6 text-sm font-bold text-brand-700 underline decoration-2 underline-offset-4 transition hover:text-brand-800"
+      >
+        Edit Response
+      </button>
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={onEditResponse}
-          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-navy-900 transition hover:border-brand-500 hover:text-brand-700"
-        >
-          Edit Response
-        </button>
         <button
           type="button"
           onClick={() => setShowPaymentNote(true)}
