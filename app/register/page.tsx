@@ -1282,6 +1282,13 @@ export default function RegisterPage() {
     setSubmitError("");
   }
 
+  function goToVisitedStep(targetStep: number) {
+    if (!Number.isFinite(targetStep) || targetStep > step || targetStep < 0) return;
+    setStep(Math.round(targetStep));
+    setErrors({});
+    setSubmitError("");
+  }
+
   async function sendEmailVerificationCode() {
     setEmailVerificationMessage("");
     setErrors((current) => {
@@ -1576,7 +1583,7 @@ export default function RegisterPage() {
             />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              <Stepper currentStep={step} steps={stepItems} />
+              <Stepper currentStep={step} steps={stepItems} onStepSelect={goToVisitedStep} />
 
               <div ref={stepPanelRef} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-premium">
                 <AnimatePresence mode="wait">
@@ -1823,7 +1830,15 @@ function IntroCard({ onRegister }: { onRegister: () => void }) {
   );
 }
 
-function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] }) {
+function Stepper({
+  currentStep,
+  steps,
+  onStepSelect,
+}: {
+  currentStep: number;
+  steps: string[];
+  onStepSelect: (step: number) => void;
+}) {
   const stepItems = Array.isArray(steps) ? steps : [];
   const boundedStep = stepItems.length > 0
     ? Math.min(Math.max(currentStep, 0), stepItems.length - 1)
@@ -1857,7 +1872,15 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
             const done = index < boundedStep;
 
             return (
-              <div key={label} className="min-w-0 text-center" aria-label={`Step ${index + 1}: ${label}`}>
+              <button
+                key={label}
+                type="button"
+                disabled={index > boundedStep}
+                onClick={() => onStepSelect(index)}
+                aria-current={active ? "step" : undefined}
+                aria-label={`${index <= boundedStep ? "Go to" : "Locked"} step ${index + 1}: ${label}`}
+                className="min-w-0 text-center outline-none disabled:cursor-not-allowed"
+              >
                 <span
                   className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-bold transition sm:h-10 sm:w-10 sm:text-sm ${
                     active
@@ -1865,7 +1888,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
                       : done
                         ? "bg-navy-950 text-white"
                         : "bg-slate-100 text-slate-500"
-                  }`}
+                  } ${index <= boundedStep ? "hover:scale-105 focus-visible:ring-4 focus-visible:ring-brand-100" : "opacity-70"}`}
                 >
                   {done ? <Check size={16} /> : index + 1}
                 </span>
@@ -1876,7 +1899,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
                 >
                   {label}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1896,11 +1919,16 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
           const done = index < boundedStep;
 
           return (
-            <div
+            <button
               key={label}
-              className={`flex items-center gap-3 rounded-2xl p-3 transition ${
+              type="button"
+              disabled={index > boundedStep}
+              onClick={() => onStepSelect(index)}
+              aria-current={active ? "step" : undefined}
+              aria-label={`${index <= boundedStep ? "Go to" : "Locked"} step ${index + 1}: ${label}`}
+              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100 disabled:cursor-not-allowed ${
                 active ? "bg-brand-700 text-white" : done ? "bg-navy-950 text-white" : "bg-slate-50 text-slate-500"
-              }`}
+              } ${index <= boundedStep ? "hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(6,19,33,0.12)]" : "opacity-70"}`}
             >
               <span className={`grid h-9 w-9 place-items-center rounded-full text-sm font-bold ${
                 active ? "bg-white text-brand-700" : done ? "bg-white text-navy-950" : "bg-white text-slate-500"
@@ -1908,7 +1936,7 @@ function Stepper({ currentStep, steps }: { currentStep: number; steps: string[] 
                 {done ? <Check size={16} /> : index + 1}
               </span>
               <span className="text-sm font-semibold">{label}</span>
-            </div>
+            </button>
           );
         })}
       </div>
