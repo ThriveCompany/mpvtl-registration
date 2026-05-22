@@ -67,6 +67,44 @@ function formatMobileDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function shouldShowEditedNotice(registration: RegistrationListItem) {
+  return Boolean(registration.wasEdited && registration.needsAdminAttention);
+}
+
+function EditedNotice({ editedAfterDecision }: { editedAfterDecision?: boolean }) {
+  return (
+    <span className="inline-flex flex-col items-start leading-tight">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-brand-700" />
+        Response Edited
+      </span>
+      {editedAfterDecision && (
+        <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+          After decision
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StatusDisplay({ registration, mobile = false }: { registration: RegistrationListItem; mobile?: boolean }) {
+  if (shouldShowEditedNotice(registration)) {
+    return <EditedNotice editedAfterDecision={registration.editedAfterDecision} />;
+  }
+
+  return (
+    <span
+      className={`inline-flex whitespace-nowrap rounded-full ring-1 ${
+        mobile
+          ? "items-center justify-center px-1.5 py-0.5 text-center text-[7.5px] font-bold leading-3"
+          : "px-2.5 py-1 text-xs font-semibold"
+      } ${registration.status === "NEW" ? "font-bold" : ""} ${getRegistrationStatusClass(registration.status)}`}
+    >
+      {mobile ? formatMobileStatus(registration.status) : formatRegistrationStatus(registration.status)}
+    </span>
+  );
+}
+
 export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) {
   const [registrations, setRegistrations] = useState<RegistrationListItem[]>([]);
   const [alert, setAlert] = useState<NotificationAlert | null>(null);
@@ -465,18 +503,8 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                   >
                     <span className={textClass}>
                       <span className="block">{registration.fullName}</span>
-                      {registration.wasEdited && (
-                        <span className="mt-1 inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
-                          Response Edited
-                        </span>
-                      )}
-                      {registration.editedAfterDecision && (
-                        <span className="ml-1 mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
-                          Edited After Decision
-                        </span>
-                      )}
                       {registration.archivedAsDuplicate && (
-                        <span className="ml-1 mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
+                        <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
                           Archived Duplicate
                         </span>
                       )}
@@ -484,11 +512,7 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                     <span className={textClass}>{registration.course}</span>
                     <span className={textClass}>{formatCenter(registration.center)}</span>
                     <span>
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ring-1 ${
-                        isNew ? "font-bold" : "font-semibold"
-                      } whitespace-nowrap ${getRegistrationStatusClass(registration.status)}`}>
-                        {formatRegistrationStatus(registration.status)}
-                      </span>
+                      <StatusDisplay registration={registration} />
                     </span>
                     <span className={needsAttention ? "font-bold text-navy-950" : "font-normal text-slate-500"}>{new Date(registration.createdAt).toLocaleDateString()}</span>
                   </Link>
@@ -524,8 +548,8 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <div className="min-w-0">
                         <h2 className={`leading-5 ${titleClass}`}>{registration.fullName}</h2>
                       </div>
-                      <span className={`inline-flex items-center justify-center self-start justify-self-end whitespace-nowrap rounded-full px-1.5 py-0.5 text-center text-[7.5px] font-bold leading-3 ring-1 ${getRegistrationStatusClass(registration.status)}`}>
-                        {formatMobileStatus(registration.status)}
+                      <span className="self-start justify-self-end">
+                        <StatusDisplay registration={registration} mobile />
                       </span>
                       <p className={`col-span-2 mt-1 flex min-w-0 max-w-full items-center overflow-hidden leading-4 ${metaClass}`}>
                         <span className="min-w-0 flex-1 truncate">{registration.course}</span>
@@ -535,18 +559,6 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <p className={`col-span-2 mt-1 leading-4 ${dateClass}`}>
                         {formatMobileDate(registration.createdAt)}
                       </p>
-                      {registration.wasEdited && (
-                        <div className="col-span-2 mt-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[9px] font-bold text-sky-700 ring-1 ring-sky-200">
-                            Response Edited
-                          </span>
-                          {registration.editedAfterDecision && (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-800 ring-1 ring-amber-200">
-                              Edited After Decision
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </Link>
                 );
@@ -579,23 +591,9 @@ export default function RegistrationListClient({ admin }: { admin: SafeAdmin }) 
                       <div className="min-w-0 flex-1">
                         <h2 className={`text-sm leading-5 sm:text-base ${titleClass}`}>{registration.fullName}</h2>
                         <p className={`mt-1 break-words text-xs leading-5 sm:text-sm sm:leading-6 ${textClass}`}>{registration.course}</p>
-                        {registration.wasEdited && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
-                              Response Edited
-                            </span>
-                            {registration.editedAfterDecision && (
-                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
-                                Edited After Decision
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
-                      <span className={`max-w-[8rem] shrink-0 whitespace-normal rounded-full px-2 py-0.5 text-center text-[9px] leading-4 ring-1 sm:px-2.5 sm:py-1 sm:text-xs ${
-                        isNew ? "font-bold" : "font-semibold"
-                      } ${getRegistrationStatusClass(registration.status)}`}>
-                        {formatRegistrationStatus(registration.status)}
+                      <span className="max-w-[8rem] shrink-0">
+                        <StatusDisplay registration={registration} />
                       </span>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">

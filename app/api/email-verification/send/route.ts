@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CODE_EXPIRY_MINUTES = 10;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -27,17 +28,41 @@ export async function POST(request: Request) {
 
   const code = createVerificationCode();
   const codeHash = await bcrypt.hash(code, 10);
-  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + CODE_EXPIRY_MINUTES * 60 * 1000);
 
   try {
+    const recentCode = await prisma.emailVerificationCode.findFirst({
+      where: {
+        email,
+        verifiedAt: null,
+        expiresAt: { gt: now },
+        createdAt: { gt: new Date(now.getTime() - RESEND_COOLDOWN_SECONDS * 1000) },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+
+    if (recentCode) {
+      const elapsedSeconds = Math.floor((now.getTime() - recentCode.createdAt.getTime()) / 1000);
+      const retryAfterSeconds = Math.max(1, RESEND_COOLDOWN_SECONDS - elapsedSeconds);
+      return NextResponse.json(
+        {
+          message: `Please wait ${retryAfterSeconds} seconds before requesting another code.`,
+          retryAfterSeconds,
+        },
+        { status: 429 },
+      );
+    }
+
     await prisma.emailVerificationCode.updateMany({
       where: {
         email,
         verifiedAt: null,
-        expiresAt: { gt: new Date() },
+        expiresAt: { gt: now },
       },
       data: {
-        expiresAt: new Date(),
+        expiresAt: now,
       },
     });
 
@@ -53,7 +78,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "If the email address is valid, a verification code has been sent.",
+      message: "Verification code sent. Check your inbox and spam folder.",
+      retryAfterSeconds: RESEND_COOLDOWN_SECONDS,
     });
   } catch (error) {
     console.error("Email verification send failed", error);

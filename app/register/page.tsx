@@ -60,6 +60,7 @@ type EmailVerificationState = {
   verificationId: string;
   verified: boolean;
   codeSent: boolean;
+  lastSentAt: string;
 };
 
 type SubmittedRegistrationState = {
@@ -871,10 +872,12 @@ export default function RegisterPage() {
     verificationId: "",
     verified: false,
     codeSent: false,
+    lastSentAt: "",
   });
   const [emailVerificationCode, setEmailVerificationCode] = useState("");
   const [emailVerificationLoading, setEmailVerificationLoading] = useState<"" | "send" | "verify">("");
   const [emailVerificationMessage, setEmailVerificationMessage] = useState("");
+  const [emailVerificationResendSeconds, setEmailVerificationResendSeconds] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState<SubmittedRegistrationState | null>(null);
@@ -1045,6 +1048,7 @@ export default function RegisterPage() {
         verificationId: draft.emailVerification?.verificationId ?? "",
         verified: Boolean(draft.emailVerification?.verified),
         codeSent: Boolean(draft.emailVerification?.codeSent),
+        lastSentAt: draft.emailVerification?.lastSentAt ?? "",
       });
       setShowIntro(draft.showIntro ?? !draft.step);
     }
@@ -1134,9 +1138,11 @@ export default function RegisterPage() {
       verificationId: "",
       verified: false,
       codeSent: false,
+      lastSentAt: "",
     });
     setEmailVerificationCode("");
     setEmailVerificationMessage("");
+    setEmailVerificationResendSeconds(0);
   }, [
     draftReady,
     emailVerification.codeSent,
@@ -1158,6 +1164,28 @@ export default function RegisterPage() {
       return next;
     });
   }, [emailVerified]);
+
+  useEffect(() => {
+    if (!emailVerification.lastSentAt || emailVerified) {
+      setEmailVerificationResendSeconds(0);
+      return;
+    }
+
+    const sentAt = new Date(emailVerification.lastSentAt).getTime();
+    if (!Number.isFinite(sentAt)) {
+      setEmailVerificationResendSeconds(0);
+      return;
+    }
+
+    function updateCountdown() {
+      const remaining = Math.max(0, 30 - Math.floor((Date.now() - sentAt) / 1000));
+      setEmailVerificationResendSeconds(remaining);
+    }
+
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
+  }, [emailVerification.lastSentAt, emailVerified]);
 
   useEffect(() => {
     if (!visibleCategories.includes(category)) setCategory("All Categories");
@@ -1277,9 +1305,19 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailToVerify }),
       });
-      const result = await response.json().catch(() => null) as { message?: string } | null;
+      const result = await response.json().catch(() => null) as { message?: string; retryAfterSeconds?: number } | null;
 
       if (!response.ok) {
+        if (typeof result?.retryAfterSeconds === "number" && result.retryAfterSeconds > 0) {
+          const lastSentAt = new Date(Date.now() - Math.max(0, 30 - result.retryAfterSeconds) * 1000).toISOString();
+          setEmailVerification({
+            email: emailToVerify,
+            verificationId: "",
+            verified: false,
+            codeSent: true,
+            lastSentAt,
+          });
+        }
         throw new Error(result?.message || "We could not send a verification code right now.");
       }
 
@@ -1288,6 +1326,7 @@ export default function RegisterPage() {
         verificationId: "",
         verified: false,
         codeSent: true,
+        lastSentAt: new Date().toISOString(),
       });
       setEmailVerificationCode("");
       setEmailVerificationMessage(result?.message || "A verification code has been sent to your email.");
@@ -1340,6 +1379,7 @@ export default function RegisterPage() {
         verificationId: result.verificationId,
         verified: true,
         codeSent: true,
+        lastSentAt: emailVerification.lastSentAt,
       } satisfies EmailVerificationState;
 
       setEmailVerification(nextEmailVerification);
@@ -1368,9 +1408,11 @@ export default function RegisterPage() {
       verificationId: "",
       verified: false,
       codeSent: false,
+      lastSentAt: "",
     });
     setEmailVerificationCode("");
     setEmailVerificationMessage("");
+    setEmailVerificationResendSeconds(0);
     setStep(3);
     window.setTimeout(() => scrollToErrorKey("email"), 160);
   }
@@ -1618,6 +1660,7 @@ export default function RegisterPage() {
                         setCode={setEmailVerificationCode}
                         codeSent={emailVerification.codeSent && emailVerification.email === normalizedApplicantEmail}
                         emailVerified={emailVerified}
+                        resendSeconds={emailVerificationResendSeconds}
                         loading={emailVerificationLoading}
                         message={emailVerificationMessage}
                         error={errors.emailVerification}
@@ -2568,6 +2611,7 @@ function FinalStep(props: {
   setCode: (value: string) => void;
   codeSent: boolean;
   emailVerified: boolean;
+  resendSeconds: number;
   loading: "" | "send" | "verify";
   message: string;
   error?: string;
@@ -2607,14 +2651,20 @@ function FinalStep(props: {
 
         {!props.emailVerified && (
           <div className="mt-5 grid gap-3">
-            <button
-              type="button"
-              onClick={props.onSendCode}
-              disabled={props.loading === "send"}
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-navy-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
-            >
-              {props.loading === "send" ? "Sending..." : props.codeSent ? "Send New Code" : "Send Verification Code"}
-            </button>
+            {(!props.codeSent || props.resendSeconds === 0) ? (
+              <button
+                type="button"
+                onClick={props.onSendCode}
+                disabled={props.loading === "send"}
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-navy-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
+              >
+                {props.loading === "send" ? "Sending..." : props.codeSent ? "Resend Code" : "Send Verification Code"}
+              </button>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                Code sent. Resend will be available in <span className="font-black text-navy-950">{props.resendSeconds}s</span>.
+              </div>
+            )}
 
             {props.codeSent && (
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
