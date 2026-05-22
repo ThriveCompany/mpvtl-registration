@@ -59,6 +59,9 @@ export default function ProfileActions({
   submittedReviewNote,
   submittedReviewReason,
   submittedReviewReasonOther,
+  wasEdited,
+  editedAfterDecision,
+  needsAdminAttention,
 }: {
   registrationId: string;
   clientEmail: string;
@@ -69,6 +72,9 @@ export default function ProfileActions({
   submittedReviewNote?: string | null;
   submittedReviewReason?: string | null;
   submittedReviewReasonOther?: string | null;
+  wasEdited?: boolean;
+  editedAfterDecision?: boolean;
+  needsAdminAttention?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
@@ -77,6 +83,8 @@ export default function ProfileActions({
   const [reviewReason, setReviewReason] = useState("");
   const [additionalReviewNote, setAdditionalReviewNote] = useState("");
   const isFinal = isFinalRegistrationStatus(status);
+  const canChangeDecisionAfterEdit = Boolean(isFinal && wasEdited && editedAfterDecision && needsAdminAttention);
+  const actionsLocked = isFinal && !canChangeDecisionAfterEdit;
 
   async function submitStatus(nextStatus: string, reason: string, reasonOther = "") {
     setLoading(nextStatus);
@@ -135,32 +143,38 @@ export default function ProfileActions({
   const decisions: PendingDecision[] = [
     {
       status: "APPROVED",
-      buttonLabel: "Approve",
-      title: "Confirm Approval",
-      message: `This action will mark this registration as APPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
-      confirmLabel: "Send Approval Email",
+      buttonLabel: canChangeDecisionAfterEdit ? "Approve Updated Response" : "Approve",
+      title: canChangeDecisionAfterEdit ? "Confirm Updated Approval" : "Confirm Approval",
+      message: canChangeDecisionAfterEdit
+        ? `This will change the previous decision to APPROVED after reviewing the edited response. This will send an updated review email to ${clientEmail}. Do you want to proceed?`
+        : `This action will mark this registration as APPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
+      confirmLabel: canChangeDecisionAfterEdit ? "Send Updated Approval" : "Send Approval Email",
       reasons: approveReasons,
     },
     {
       status: "UNAPPROVED",
-      buttonLabel: "Unapprove",
-      title: "Confirm Unapproval",
-      message: `This action will mark this registration as UNAPPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
-      confirmLabel: "Submit Unapproval",
+      buttonLabel: canChangeDecisionAfterEdit ? "Unapprove Updated Response" : "Unapprove",
+      title: canChangeDecisionAfterEdit ? "Confirm Updated Unapproval" : "Confirm Unapproval",
+      message: canChangeDecisionAfterEdit
+        ? `This will change the previous decision to UNAPPROVED after reviewing the edited response. This will send an updated review email to ${clientEmail}. Do you want to proceed?`
+        : `This action will mark this registration as UNAPPROVED. This will send an email to ${clientEmail}. Do you want to proceed?`,
+      confirmLabel: canChangeDecisionAfterEdit ? "Send Updated Decision" : "Submit Unapproval",
       reasons: unapproveReasons,
     },
     {
       status: "NEEDS_FURTHER_REVIEW",
-      buttonLabel: "Needs Further Review",
-      title: "Confirm Further Review",
-      message: `This action will mark this registration as NEEDS FURTHER REVIEW. This will send an email to ${clientEmail}. Do you want to proceed?`,
-      confirmLabel: "Submit Review Decision",
+      buttonLabel: canChangeDecisionAfterEdit ? "Request Further Review Again" : "Needs Further Review",
+      title: canChangeDecisionAfterEdit ? "Confirm Updated Further Review" : "Confirm Further Review",
+      message: canChangeDecisionAfterEdit
+        ? `This will change the previous decision to NEEDS FURTHER REVIEW after reviewing the edited response. This will send an updated review email to ${clientEmail}. Do you want to proceed?`
+        : `This action will mark this registration as NEEDS FURTHER REVIEW. This will send an email to ${clientEmail}. Do you want to proceed?`,
+      confirmLabel: canChangeDecisionAfterEdit ? "Send Updated Review Email" : "Submit Review Decision",
       reasons: furtherReviewReasons,
     },
   ];
 
   return (
-    <div className={isFinal ? "opacity-75" : ""}>
+    <div className={actionsLocked ? "opacity-75" : ""}>
       {isFinal && (
         <div className="mb-4 rounded-2xl border border-brand-100 bg-brand-50/60 p-4 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Final Decision Submitted</p>
@@ -183,7 +197,16 @@ export default function ProfileActions({
         </div>
       )}
 
-      {!isFinal && (
+      {canChangeDecisionAfterEdit && (
+        <div className="mb-4 rounded-2xl border border-brand-200 bg-white p-4 shadow-[0_14px_45px_rgba(127,29,45,0.08)]">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Updated Response Awaiting Review</p>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            The applicant changed their response after the previous decision. Review the updated information, then change the decision below if needed.
+          </p>
+        </div>
+      )}
+
+      {(!isFinal || canChangeDecisionAfterEdit) && (
         <div className="grid gap-3">
           {decisions.map((decision) => (
             <button

@@ -12,6 +12,10 @@ export type DecisionEmailInput = ApprovalEmailInput & {
   reviewReasonOther?: string | null;
 };
 
+export type RevisedDecisionEmailInput = DecisionEmailInput & {
+  decisionLabel: string;
+};
+
 export type InternalRegistrationEmailInput = {
   to: string;
   recipientName: string;
@@ -481,6 +485,52 @@ MPVTL Registration Team`;
   return { subject, html, text };
 }
 
+export function renderRevisedDecisionEmail(input: RevisedDecisionEmailInput): RenderedEmail {
+  const subject = "MPVTL Updated Response Reviewed";
+  const additionalReason = input.reviewReasonOther ? `<p style="margin:8px 0 0;color:${brand.charcoal};font-size:14px;line-height:24px;">${escapeHtml(input.reviewReasonOther)}</p>` : "";
+  const html = renderBaseEmailTemplate({
+    title: "Updated Response Reviewed",
+    body: `
+      <p style="margin:0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Dear ${escapeHtml(input.fullName)},
+      </p>
+      <p style="margin:12px 0 0;color:${brand.charcoal};font-size:15px;line-height:26px;">
+        Your updated response for ${escapeHtml(input.course)} at MPVTL has been reviewed.
+      </p>
+      ${highlightBox(`
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          ${renderInfoRows([
+            ["Current decision", input.decisionLabel],
+            ["Course", input.course],
+            ["Centre", input.center],
+            ["Reason", input.reviewReason],
+          ])}
+        </table>
+        ${additionalReason}
+      `)}
+      <p style="margin:0;color:${brand.charcoal};font-size:14px;line-height:24px;">
+        An MPVTL representative will contact you if any further action is required.
+      </p>
+    `,
+  });
+  const text = `Dear ${input.fullName},
+
+Your updated response for ${input.course} at MPVTL has been reviewed.
+
+Current decision: ${input.decisionLabel}
+Course: ${input.course}
+Centre: ${input.center}
+Reason: ${input.reviewReason}
+${input.reviewReasonOther || ""}
+
+An MPVTL representative will contact you if any further action is required.
+
+Thank you,
+MPVTL Registration Team`;
+
+  return { subject, html, text };
+}
+
 async function sendMail(input: MailInput) {
   if (!smtpConfigured()) {
     console.log("SMTP not configured. Email content:", {
@@ -559,5 +609,12 @@ export async function sendFurtherReviewEmail(input: DecisionEmailInput) {
   await sendMail({
     to: input.to,
     ...renderFurtherReviewEmail(input),
+  });
+}
+
+export async function sendRevisedDecisionEmail(input: RevisedDecisionEmailInput) {
+  await sendMail({
+    to: input.to,
+    ...renderRevisedDecisionEmail(input),
   });
 }

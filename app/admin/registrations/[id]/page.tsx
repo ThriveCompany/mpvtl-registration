@@ -147,13 +147,6 @@ export default async function RegistrationProfilePage({
 
   if (!registration || !canViewCenter(admin, registration.center)) notFound();
 
-  if (registration.needsAdminAttention) {
-    await prisma.registration.update({
-      where: { id: registration.id },
-      data: { needsAdminAttention: false },
-    });
-  }
-
   const answers = typeof registration.verificationAnswers === "object" && registration.verificationAnswers !== null
     ? registration.verificationAnswers as Record<string, string>
     : {};
@@ -322,6 +315,9 @@ export default async function RegistrationProfilePage({
               submittedReviewNote={registration.reviewNote}
               submittedReviewReason={registration.reviewReason}
               submittedReviewReasonOther={registration.reviewReasonOther}
+              wasEdited={registration.wasEdited}
+              editedAfterDecision={registration.editedAfterDecision}
+              needsAdminAttention={registration.needsAdminAttention}
             />
           </div>
           {registration.approvedAt && !registration.reviewedAt && (

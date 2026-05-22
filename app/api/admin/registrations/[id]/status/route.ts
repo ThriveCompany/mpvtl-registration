@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { RegistrationStatus } from "@prisma/client";
 import { canViewCenter, getCurrentAdmin } from "@/lib/auth";
-import { FINAL_REGISTRATION_STATUSES, isFinalRegistrationStatus } from "@/lib/admin-constants";
-import { sendApprovalEmail, sendFurtherReviewEmail, sendUnapprovalEmail } from "@/lib/email";
+import { FINAL_REGISTRATION_STATUSES, formatRegistrationStatus, isFinalRegistrationStatus } from "@/lib/admin-constants";
+import { sendApprovalEmail, sendFurtherReviewEmail, sendRevisedDecisionEmail, sendUnapprovalEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses: RegistrationStatus[] = [
@@ -51,7 +51,14 @@ export async function PATCH(
       return NextResponse.json({ message: "Registration not found.", registration: null }, { status: 404 });
     }
 
-    if (isFinalRegistrationStatus(registration.status)) {
+    const canReviseDecision = Boolean(
+      isFinalRegistrationStatus(registration.status) &&
+        registration.wasEdited &&
+        registration.editedAfterDecision &&
+        registration.needsAdminAttention,
+    );
+
+    if (isFinalRegistrationStatus(registration.status) && !canReviseDecision) {
       return NextResponse.json(
         { message: "A final decision has already been submitted for this applicant.", registration },
         { status: 409 },
@@ -64,8 +71,8 @@ export async function PATCH(
       where: { id },
       data: {
         status: nextStatus,
-        approvedAt: nextStatus === "APPROVED" ? now : registration.approvedAt,
-        approvedById: nextStatus === "APPROVED" ? admin.id : registration.approvedById,
+        approvedAt: nextStatus === "APPROVED" ? now : null,
+        approvedById: nextStatus === "APPROVED" ? admin.id : null,
         reviewedAt: isFinalDecision ? now : registration.reviewedAt,
         reviewedById: isFinalDecision ? admin.id : registration.reviewedById,
         reviewedRole: isFinalDecision ? admin.role : registration.reviewedRole,
@@ -76,22 +83,32 @@ export async function PATCH(
             ? reasonOther || reason
             : reason
           : registration.reviewNote,
+        needsAdminAttention: isFinalDecision ? false : registration.needsAdminAttention,
+        editedAfterDecision: canReviseDecision && isFinalDecision ? false : registration.editedAfterDecision,
       },
     });
 
     let emailWarning = false;
 
     try {
-      if (nextStatus === "APPROVED") {
+      if (canReviseDecision && isFinalDecision) {
+        await sendRevisedDecisionEmail({
+          to: updated.email,
+          fullName: updated.fullName,
+          course: updated.course,
+          center: updated.center,
+          reviewReason: reason,
+          reviewReasonOther: reasonOther || null,
+          decisionLabel: formatRegistrationStatus(nextStatus),
+        });
+      } else if (nextStatus === "APPROVED") {
         await sendApprovalEmail({
           to: updated.email,
           fullName: updated.fullName,
           course: updated.course,
           center: updated.center,
         });
-      }
-
-      if (nextStatus === "UNAPPROVED") {
+      } else if (nextStatus === "UNAPPROVED") {
         await sendUnapprovalEmail({
           to: updated.email,
           fullName: updated.fullName,
@@ -100,9 +117,7 @@ export async function PATCH(
           reviewReason: reason,
           reviewReasonOther: reasonOther || null,
         });
-      }
-
-      if (nextStatus === "NEEDS_FURTHER_REVIEW") {
+      } else if (nextStatus === "NEEDS_FURTHER_REVIEW") {
         await sendFurtherReviewEmail({
           to: updated.email,
           fullName: updated.fullName,
