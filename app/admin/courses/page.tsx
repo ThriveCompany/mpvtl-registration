@@ -14,7 +14,7 @@ export default async function CoursesPage() {
       admin={admin}
       active="courses"
       title="Courses"
-      subtitle="Manage course catalogue, categories, active status, and centre availability."
+      subtitle="Manage the course catalogue, public course content, categories, active status, and centre availability."
     >
       <CoursesClient />
     </AdminShell>

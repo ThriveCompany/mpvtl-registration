@@ -91,12 +91,13 @@ model Registration {
 }
 
 model CourseCategory {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String                 @id @default(cuid())
+  name      String                 @unique
+  active    Boolean                @default(true)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
   courses   Course[]
+  questions VerificationQuestion[]
 }
 
 model Course {
@@ -106,6 +107,15 @@ model Course {
   category    CourseCategory @relation(fields: [categoryId], references: [id])
   levels      String[]       @default([])
   centerIds   String[]       @default([])
+  description String         @default("")
+  duration    String         @default("")
+  certificate String         @default("")
+  learn       String[]       @default([])
+  skills      String[]       @default([])
+  careers     String[]       @default([])
+  requirement String         @default("")
+  value       String         @default("")
+  contentBlocks Json?
   active      Boolean        @default(true)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -115,16 +125,19 @@ model Course {
 }
 
 model VerificationQuestion {
-  id           String   @id @default(cuid())
+  id           String          @id @default(cuid())
+  categoryId   String?
+  category     CourseCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   level        String
   key          String
   questionText String
-  active       Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  active       Boolean         @default(true)
+  sortOrder    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
-  @@unique([level, key])
+  @@unique([categoryId, level, key])
+  @@index([categoryId])
   @@index([level, active])
   @@index([sortOrder])
 }

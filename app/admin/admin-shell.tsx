@@ -45,6 +45,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       icon: BookOpenCheck,
       section: "courses" as const,
       visible: admin.role === "SUPER_ADMIN",
+      mobileVisible: false,
     },
     {
       href: "/admin/questions",
@@ -52,6 +53,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       icon: HelpCircle,
       section: "questions" as const,
       visible: admin.role === "SUPER_ADMIN",
+      mobileVisible: true,
     },
     {
       href: "/admin/data-cleanup",
@@ -59,6 +61,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       icon: Database,
       section: "data-cleanup" as const,
       visible: admin.role === "SUPER_ADMIN",
+      mobileVisible: true,
     },
     {
       href: "/admin/settings",
@@ -148,7 +151,7 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
                 {subtitle && <p className="mt-1 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:block">{subtitle}</p>}
               </div>
               <div className="flex gap-1.5 overflow-x-auto pb-1 xl:hidden">
-                {navItems.map((item) => {
+                {navItems.filter((item) => item.mobileVisible !== false).map((item) => {
                   const Icon = item.icon;
                   const selected = active === item.section;
 

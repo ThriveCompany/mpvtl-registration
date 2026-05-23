@@ -28,7 +28,10 @@ type Course = {
   id: string;
   name: string;
   category: string;
+  categoryId?: string;
   level: Level;
+  levels?: Level[];
+  centerIds?: string[];
   duration: string;
   certificate: string;
   description: string;
@@ -75,9 +78,25 @@ type SubmittedRegistrationState = {
 };
 
 type RegistrationConfig = {
-  courses: { name: string; active: boolean }[];
-  categories: { name: string; active: boolean }[];
-  questions: { level: string; key: string; questionText: string; sortOrder: number }[];
+  courses: {
+    id: string;
+    name: string;
+    active: boolean;
+    levels: string[];
+    centerIds: string[];
+    description: string;
+    duration: string;
+    certificate: string;
+    learn: string[];
+    skills: string[];
+    careers: string[];
+    requirement: string;
+    value: string;
+    contentBlocks?: unknown;
+    category: { id: string; name: string; active: boolean };
+  }[];
+  categories: { id: string; name: string; active: boolean }[];
+  questions: { categoryId?: string | null; level: string; key: string; questionText: string; sortOrder: number }[];
 };
 
 const verificationAnswerKeys = [
@@ -618,6 +637,39 @@ function safeArray<T>(value: readonly T[] | null | undefined): T[] {
   return Array.isArray(value) ? [...value] : [];
 }
 
+function normalizeCourseName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeLevel(value: string | undefined): Level | null {
+  if (value === "Basic" || value === "Intermediate" || value === "Advanced") return value;
+  return null;
+}
+
+function mapDatabaseCourse(course: RegistrationConfig["courses"][number]): Course {
+  const fallback = courses.find((item) => normalizeCourseName(item.name) === normalizeCourseName(course.name));
+  const primaryLevel = normalizeLevel(course.levels?.[0]) ?? fallback?.level ?? "Basic";
+  const levels = safeArray(course.levels).map(normalizeLevel).filter(Boolean) as Level[];
+
+  return {
+    id: fallback?.id || course.id,
+    name: course.name,
+    category: course.category?.name || fallback?.category || "General",
+    categoryId: course.category?.id,
+    level: primaryLevel,
+    levels: levels.length > 0 ? levels : [primaryLevel],
+    centerIds: safeArray(course.centerIds),
+    duration: course.duration || fallback?.duration || "To be confirmed",
+    certificate: course.certificate || fallback?.certificate || "MPVTL Vocational Certificate of Completion",
+    description: course.description || fallback?.description || "This MPVTL short course is designed to build practical competence through guided training and applied learning.",
+    learn: safeArray(course.learn).length > 0 ? safeArray(course.learn) : fallback?.learn ?? [],
+    skills: safeArray(course.skills).length > 0 ? safeArray(course.skills) : fallback?.skills ?? [],
+    careers: safeArray(course.careers).length > 0 ? safeArray(course.careers) : fallback?.careers ?? [],
+    requirement: course.requirement || fallback?.requirement || shortCourseRequirements[primaryLevel],
+    value: course.value || fallback?.value || "This course supports practical skill development, workplace readiness, and professional growth.",
+  };
+}
+
 function createEmptyVerificationAnswers(): VerificationAnswers {
   return Object.fromEntries(safeArray(verificationAnswerKeys).map((key) => [key, ""])) as VerificationAnswers;
 }
@@ -887,21 +939,40 @@ export default function RegisterPage() {
   const [draftReady, setDraftReady] = useState(false);
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationConfig | null>(null);
 
-  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+  const courseCatalog = useMemo(() => {
+    const dbCourses = registrationConfig?.courses ?? [];
+    if (dbCourses.length > 0) return dbCourses.map(mapDatabaseCourse);
+
+    const categoryRows = registrationConfig?.categories ?? [];
+    const inactiveCategoryNames = new Set(categoryRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
+    return courses.filter((course) => !inactiveCategoryNames.has(course.category.toLowerCase()));
+  }, [registrationConfig]);
+  const selectedCourse = courseCatalog.find((course) => course.id === selectedCourseId);
+  const selectedCourseCenterIds = selectedCourse?.centerIds?.length
+    ? selectedCourse.centerIds
+    : selectedCourse
+      ? courseLocationIds[selectedCourse.id]
+      : [];
   const availableLocations = selectedCourse
-    ? locations.filter((location) => courseLocationIds[selectedCourse.id]?.includes(location.id))
+    ? locations.filter((location) => safeArray(selectedCourseCenterIds).includes(location.id))
     : [];
   const selectedLocationData = locations.find((location) => location.id === selectedLocation);
   const shouldAskHostel = locationHasHostel(selectedLocationData);
   const selectedLevel = selectedCourse?.level ?? "Basic";
   const configuredQuestions = (registrationConfig?.questions ?? [])
-    .filter((question) => question.level === selectedLevel && (verificationAnswerKeys as readonly string[]).includes(question.key))
+    .filter((question) => (
+      question.level === selectedLevel &&
+      (verificationAnswerKeys as readonly string[]).includes(question.key) &&
+      (!selectedCourse?.categoryId || question.categoryId === selectedCourse.categoryId || question.categoryId === null)
+    ))
     .sort((first, second) => first.sortOrder - second.sortOrder);
+  const categoryQuestions = configuredQuestions.filter((question) => question.categoryId && question.categoryId === selectedCourse?.categoryId);
+  const questionRows = categoryQuestions.length > 0 ? categoryQuestions : configuredQuestions.filter((question) => !question.categoryId);
   const questionTextByKey = Object.fromEntries(
-    configuredQuestions.map((question) => [question.key, question.questionText.replaceAll("{course}", selectedCourse?.name ?? "selected course")]),
+    questionRows.map((question) => [question.key, question.questionText.replaceAll("{course}", selectedCourse?.name ?? "selected course")]),
   ) as Partial<Record<VerificationAnswerKey, string>>;
-  const activeQuestions = configuredQuestions.length > 0
-    ? configuredQuestions.map((question) => question.key as VerificationAnswerKey)
+  const activeQuestions = questionRows.length > 0
+    ? questionRows.map((question) => question.key as VerificationAnswerKey)
     : Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
   const stepItems = Array.isArray(activeSteps) ? activeSteps : [];
@@ -919,23 +990,19 @@ export default function RegisterPage() {
   const verifiedEmailVerificationId = emailVerified ? emailVerification.verificationId : "";
 
   const filteredCourses = useMemo(() => {
-    const courseRows = registrationConfig?.courses ?? [];
-    const categoryRows = registrationConfig?.categories ?? [];
-    const inactiveCourseNames = new Set(courseRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
-    const inactiveCategoryNames = new Set(categoryRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
-
-    return courses.filter((course) => {
-      if (inactiveCourseNames.has(course.name.toLowerCase())) return false;
-      if (inactiveCategoryNames.has(course.category.toLowerCase())) return false;
+    return courseCatalog.filter((course) => {
       const matchesCategory = category === "All Categories" || course.category === category;
       const matchesSearch = course.name.toLowerCase().includes(search.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [category, registrationConfig, search]);
+  }, [category, courseCatalog, search]);
   const visibleCategories = useMemo(() => {
     const categoryRows = registrationConfig?.categories ?? [];
-    const inactiveCategoryNames = new Set(categoryRows.filter((item) => !item.active).map((item) => item.name.toLowerCase()));
-    return categories.filter((item) => item === "All Categories" || !inactiveCategoryNames.has(item.toLowerCase()));
+    if (categoryRows.length > 0) {
+      return ["All Categories", ...categoryRows.filter((item) => item.active).map((item) => item.name)];
+    }
+
+    return categories;
   }, [registrationConfig]);
 
   function scrollToForm() {

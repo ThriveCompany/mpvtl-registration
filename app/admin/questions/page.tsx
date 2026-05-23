@@ -14,7 +14,7 @@ export default async function QuestionsPage() {
       admin={admin}
       active="questions"
       title="Verification Questions"
-      subtitle="Manage the question text shown for Basic, Intermediate, and Advanced applicants."
+      subtitle="Manage category-based question sets with dynamic tags for selected courses."
     >
       <QuestionsClient />
     </AdminShell>

@@ -245,21 +245,37 @@ async function seedRegistrationConfiguration() {
     });
   }
 
-  for (const [level, key, questionText, sortOrder] of seededQuestions) {
-    await prisma.verificationQuestion.upsert({
-      where: { level_key: { level, key } },
-      update: {
-        questionText,
-        sortOrder,
-      },
-      create: {
-        level,
-        key,
-        questionText,
-        sortOrder,
-        active: true,
-      },
-    });
+  for (const category of categoryByName.values()) {
+    for (const [level, key, questionText, sortOrder] of seededQuestions) {
+      const existingQuestion = await prisma.verificationQuestion.findFirst({
+        where: {
+          categoryId: category.id,
+          level,
+          key,
+        },
+      });
+
+      if (existingQuestion) {
+        await prisma.verificationQuestion.update({
+          where: { id: existingQuestion.id },
+          data: {
+            questionText,
+            sortOrder,
+          },
+        });
+      } else {
+        await prisma.verificationQuestion.create({
+          data: {
+            categoryId: category.id,
+            level,
+            key,
+            questionText,
+            sortOrder,
+            active: true,
+          },
+        });
+      }
+    }
   }
 }
 
