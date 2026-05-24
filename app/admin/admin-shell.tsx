@@ -2,11 +2,11 @@
 
 import type { SafeAdmin } from "@/lib/auth";
 import { formatCenter, formatRole } from "@/lib/admin-constants";
-import { BarChart3, BookOpenCheck, ClipboardList, Database, HelpCircle, LogOut, Settings, Users } from "lucide-react";
+import { BarChart3, ClipboardList, Database, FileCog, LogOut, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AdminSection = "registrations" | "analytics" | "users" | "settings" | "courses" | "questions" | "data-cleanup";
+type AdminSection = "registrations" | "analytics" | "users" | "settings" | "form-builder" | "data-cleanup";
 
 type AdminShellProps = {
   admin: SafeAdmin;
@@ -40,18 +40,10 @@ export default function AdminShell({ admin, active, title, subtitle, children }:
       visible: admin.role === "SUPER_ADMIN",
     },
     {
-      href: "/admin/courses",
-      label: "Courses",
-      icon: BookOpenCheck,
-      section: "courses" as const,
-      visible: admin.role === "SUPER_ADMIN",
-      mobileVisible: false,
-    },
-    {
-      href: "/admin/questions",
-      label: "Questions",
-      icon: HelpCircle,
-      section: "questions" as const,
+      href: "/admin/form-builder",
+      label: "Form Builder",
+      icon: FileCog,
+      section: "form-builder" as const,
       visible: admin.role === "SUPER_ADMIN",
       mobileVisible: true,
     },

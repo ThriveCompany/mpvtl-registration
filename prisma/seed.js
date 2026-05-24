@@ -172,6 +172,17 @@ async function seedUser(user) {
 
 async function seedRegistrationConfiguration() {
   const categoryByName = new Map();
+  const levelByName = new Map();
+  const fieldByName = new Map();
+
+  for (const [index, name] of ["Basic", "Intermediate", "Advanced"].entries()) {
+    const level = await prisma.courseLevel.upsert({
+      where: { name },
+      update: {},
+      create: { name, active: true, sortOrder: index + 1 },
+    });
+    levelByName.set(name, level);
+  }
 
   for (const name of seededCategories) {
     const category = await prisma.courseCategory.upsert({
@@ -180,16 +191,27 @@ async function seedRegistrationConfiguration() {
       create: { name, active: true },
     });
     categoryByName.set(name, category);
+
+    const field = await prisma.courseField.upsert({
+      where: { name },
+      update: {},
+      create: { name, active: true, sortOrder: categoryByName.size },
+    });
+    fieldByName.set(name, field);
   }
 
   for (const course of seededCourses) {
     const category = categoryByName.get(course.category);
+    const level = levelByName.get(course.levels[0] || "Basic");
+    const field = fieldByName.get(course.category);
     if (!category) continue;
 
     await prisma.course.upsert({
       where: { name: course.name },
       update: {
         categoryId: category.id,
+        levelId: level?.id,
+        fieldId: field?.id,
         levels: course.levels,
         centerIds: course.centerIds,
         duration: course.duration,
@@ -204,6 +226,8 @@ async function seedRegistrationConfiguration() {
       create: {
         name: course.name,
         categoryId: category.id,
+        levelId: level?.id,
+        fieldId: field?.id,
         levels: course.levels,
         centerIds: course.centerIds,
         duration: course.duration,
@@ -251,6 +275,49 @@ async function seedRegistrationConfiguration() {
           },
         });
       }
+    }
+  }
+
+  for (const field of fieldByName.values()) {
+    for (const question of seededQuestions) {
+      const level = levelByName.get(question.level);
+      if (!level) continue;
+      const existingFormQuestion = await prisma.formQuestion.findFirst({
+        where: {
+          levelId: level.id,
+          fieldId: field.id,
+          questionText: question.questionText,
+        },
+      });
+      if (existingFormQuestion) continue;
+
+      const questionType = question.format === "open"
+        ? "open"
+        : ["canReadAndWrite", "newToField", "priorExposure", "completedBasicCourse", "priorTraining", "hasPreviousCertificate"].includes(question.key)
+          ? "yes_no"
+          : "dropdown";
+      const options = questionType === "open"
+        ? []
+        : question.key === "reasonForCourse"
+          ? ["Start a new skill or career", "Improve my current work", "Start or grow a business", "Prepare for employment", "Build personal confidence", "Other, please describe"]
+          : question.questionText.toLowerCase().includes("available")
+            ? ["Yes", "No", "Maybe", "Other, please describe"]
+            : ["Yes", "No", "Other, please describe"];
+
+      await prisma.formQuestion.create({
+        data: {
+          levelId: level.id,
+          fieldId: field.id,
+          questionText: question.questionText,
+          questionType,
+          required: true,
+          active: true,
+          sortOrder: question.sortOrder,
+          options: {
+            create: options.map((value, index) => ({ value, sortOrder: index + 1 })),
+          },
+        },
+      });
     }
   }
 }

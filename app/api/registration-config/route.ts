@@ -8,9 +8,24 @@ export async function GET() {
   try {
     await ensureDefaultRegistrationCatalog(prisma);
 
-    const [courses, categories, questions] = await Promise.all([
+    const [courses, categories, questions, formQuestions] = await Promise.all([
       prisma.course.findMany({
-        where: { active: true, category: { active: true } },
+        where: {
+          active: true,
+          category: { active: true },
+          OR: [
+            { levelId: null },
+            { level: { active: true } },
+          ],
+          AND: [
+            {
+              OR: [
+                { fieldId: null },
+                { field: { active: true } },
+              ],
+            },
+          ],
+        },
         orderBy: { name: "asc" },
         select: {
           id: true,
@@ -27,6 +42,8 @@ export async function GET() {
           requirement: true,
           value: true,
           contentBlocks: true,
+          level: { select: { id: true, name: true, active: true, sortOrder: true } },
+          field: { select: { id: true, name: true, active: true, sortOrder: true } },
           category: { select: { id: true, name: true, active: true } },
         },
       }),
@@ -39,18 +56,43 @@ export async function GET() {
         orderBy: [{ categoryId: "asc" }, { level: "asc" }, { sortOrder: "asc" }],
         select: { categoryId: true, level: true, key: true, questionText: true, format: true, sortOrder: true },
       }),
+      prisma.formQuestion.findMany({
+        where: {
+          active: true,
+          OR: [
+            { level: { active: true } },
+            { field: { active: true } },
+            { course: { active: true } },
+          ],
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          questionText: true,
+          questionType: true,
+          required: true,
+          sortOrder: true,
+          levelId: true,
+          fieldId: true,
+          courseId: true,
+          options: { orderBy: { sortOrder: "asc" }, select: { id: true, value: true, sortOrder: true } },
+          targetRules: { select: { sourceQuestionId: true, operator: true, value: true, action: true } },
+        },
+      }),
     ]);
 
     return NextResponse.json({
       courses,
       categories,
       questions,
+      formQuestions,
     });
   } catch {
     return NextResponse.json({
       courses: [],
       categories: [],
       questions: [],
+      formQuestions: [],
     });
   }
 }

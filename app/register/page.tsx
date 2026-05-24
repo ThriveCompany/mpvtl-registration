@@ -30,6 +30,9 @@ type Course = {
   name: string;
   category: string;
   categoryId?: string;
+  levelId?: string;
+  fieldId?: string;
+  field?: string;
   level: Level;
   levels?: Level[];
   centerIds?: string[];
@@ -94,10 +97,24 @@ type RegistrationConfig = {
     requirement: string;
     value: string;
     contentBlocks?: unknown;
+    level?: { id: string; name: string; active: boolean; sortOrder: number } | null;
+    field?: { id: string; name: string; active: boolean; sortOrder: number } | null;
     category: { id: string; name: string; active: boolean };
   }[];
   categories: { id: string; name: string; active: boolean }[];
   questions: { categoryId?: string | null; level: string; key: string; questionText: string; format?: string; sortOrder: number }[];
+  formQuestions: {
+    id: string;
+    questionText: string;
+    questionType: "open" | "short_text" | "dropdown" | "yes_no";
+    required: boolean;
+    sortOrder: number;
+    levelId?: string | null;
+    fieldId?: string | null;
+    courseId?: string | null;
+    options: { id: string; value: string; sortOrder: number }[];
+    targetRules: { sourceQuestionId: string; operator: string; value: string; action: string }[];
+  }[];
 };
 
 const verificationAnswerKeys = [
@@ -629,6 +646,17 @@ function otherAnswerKey(key: VerificationAnswerKey) {
   return `${key}Other`;
 }
 
+function dynamicAnswerKey(questionId: string) {
+  return `formQuestion:${questionId}`;
+}
+
+function renderDynamicQuestionText(text: string, course?: Course) {
+  return text
+    .replaceAll("{course}", course?.name || "selected course")
+    .replaceAll("{level}", course?.level || "selected level")
+    .replaceAll("{field}", course?.field || course?.category || "selected field");
+}
+
 function locationHasHostel(location?: LocationOption) {
   return location?.hostel.toLowerCase() === "hostel available";
 }
@@ -663,14 +691,17 @@ function normalizeLevel(value: string | undefined): Level | null {
 
 function mapDatabaseCourse(course: RegistrationConfig["courses"][number]): Course {
   const fallback = courses.find((item) => normalizeCourseName(item.name) === normalizeCourseName(course.name));
-  const primaryLevel = normalizeLevel(course.levels?.[0]) ?? fallback?.level ?? "Basic";
+  const primaryLevel = normalizeLevel(course.level?.name) ?? normalizeLevel(course.levels?.[0]) ?? fallback?.level ?? "Basic";
   const levels = safeArray(course.levels).map(normalizeLevel).filter(Boolean) as Level[];
 
   return {
     id: fallback?.id || course.id,
     name: course.name,
-    category: course.category?.name || fallback?.category || "General",
+    category: course.field?.name || course.category?.name || fallback?.category || "General",
     categoryId: course.category?.id,
+    levelId: course.level?.id,
+    fieldId: course.field?.id,
+    field: course.field?.name,
     level: primaryLevel,
     levels: levels.length > 0 ? levels : [primaryLevel],
     centerIds: safeArray(course.centerIds),
@@ -992,6 +1023,28 @@ export default function RegisterPage() {
   const questionFormatByKey = Object.fromEntries(
     questionRows.map((question) => [question.key, normalizeQuestionFormat(question.format)]),
   ) as Partial<Record<VerificationAnswerKey, QuestionFormat>>;
+  const formQuestionRows = selectedCourse
+    ? (registrationConfig?.formQuestions ?? [])
+      .filter((question) => (
+        question.levelId === selectedCourse.levelId
+        || question.fieldId === selectedCourse.fieldId
+        || question.courseId === selectedCourse.id
+      ))
+      .sort((first, second) => {
+        const firstPriority = first.levelId ? 1 : first.fieldId ? 2 : 3;
+        const secondPriority = second.levelId ? 1 : second.fieldId ? 2 : 3;
+        return firstPriority - secondPriority || first.sortOrder - second.sortOrder;
+      })
+    : [];
+  const visibleFormQuestionRows = formQuestionRows.filter((question) => {
+    const rules = Array.isArray(question.targetRules) ? question.targetRules : [];
+    if (rules.length === 0) return true;
+    return rules.some((rule) => {
+      const answer = answers[dynamicAnswerKey(rule.sourceQuestionId)]?.trim() || "";
+      return rule.operator === "not_equals" ? answer !== rule.value : answer === rule.value;
+    });
+  });
+  const usesFormBuilderQuestions = visibleFormQuestionRows.length > 0;
   const activeQuestions = questionRows.length > 0
     ? questionRows.map((question) => question.key as VerificationAnswerKey)
     : Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
@@ -1160,10 +1213,11 @@ export default function RegisterPage() {
           courses: Array.isArray(result?.courses) ? result.courses : [],
           categories: Array.isArray(result?.categories) ? result.categories : [],
           questions: Array.isArray(result?.questions) ? result.questions : [],
+          formQuestions: Array.isArray(result?.formQuestions) ? result.formQuestions : [],
         });
       })
       .catch(() => {
-        if (active) setRegistrationConfig({ courses: [], categories: [], questions: [] });
+        if (active) setRegistrationConfig({ courses: [], categories: [], questions: [], formQuestions: [] });
       });
 
     return () => {
@@ -1314,27 +1368,39 @@ export default function RegisterPage() {
       if (shouldAskHostel && !details.hostel) nextErrors.hostel = "Please choose Yes or No.";
     }
     if (targetStep >= 4) {
-      activeQuestions.forEach((question) => {
-        if (!answers[question]?.trim()) nextErrors[question] = "This answer is required.";
-        if (answers[question] === otherOption && !answers[otherAnswerKey(question)]?.trim()) {
-          nextErrors[otherAnswerKey(question)] = "Please describe your answer.";
-        }
-      });
-
-      if (selectedLevel === "Advanced") {
-        if (answers[advancedQuestionKeys.previousCertificate] === "Yes") {
-          if (!answers[advancedQuestionKeys.certificateType]?.trim()) {
-            nextErrors[advancedQuestionKeys.certificateType] = "Please choose the certification type.";
+      if (usesFormBuilderQuestions) {
+        visibleFormQuestionRows.forEach((question) => {
+          const answerKey = dynamicAnswerKey(question.id);
+          if (question.required && !answers[answerKey]?.trim()) nextErrors[answerKey] = "This answer is required.";
+          if (answers[answerKey] === otherOption && !answers[`${answerKey}:other`]?.trim()) {
+            nextErrors[`${answerKey}:other`] = "Please describe your answer.";
           }
-          if (answers[advancedQuestionKeys.certificateType] === otherOption && !answers[advancedQuestionKeys.certificateTypeOther]?.trim()) {
-            nextErrors[advancedQuestionKeys.certificateTypeOther] = "Please describe the certification type.";
+        });
+      } else {
+        activeQuestions.forEach((question) => {
+          if (!answers[question]?.trim()) nextErrors[question] = "This answer is required.";
+          if (answers[question] === otherOption && !answers[otherAnswerKey(question)]?.trim()) {
+            nextErrors[otherAnswerKey(question)] = "Please describe your answer.";
           }
-        }
+        });
       }
 
-      if (selectedLevel === "Basic") {
-        if (answers[basicQuestionKeys.courseReason] === otherOption && !answers[basicQuestionKeys.courseReasonOther]?.trim()) {
-          nextErrors[basicQuestionKeys.courseReasonOther] = "Please describe your reason.";
+      if (!usesFormBuilderQuestions) {
+        if (selectedLevel === "Advanced") {
+          if (answers[advancedQuestionKeys.previousCertificate] === "Yes") {
+            if (!answers[advancedQuestionKeys.certificateType]?.trim()) {
+              nextErrors[advancedQuestionKeys.certificateType] = "Please choose the certification type.";
+            }
+            if (answers[advancedQuestionKeys.certificateType] === otherOption && !answers[advancedQuestionKeys.certificateTypeOther]?.trim()) {
+              nextErrors[advancedQuestionKeys.certificateTypeOther] = "Please describe the certification type.";
+            }
+          }
+        }
+
+        if (selectedLevel === "Basic") {
+          if (answers[basicQuestionKeys.courseReason] === otherOption && !answers[basicQuestionKeys.courseReasonOther]?.trim()) {
+            nextErrors[basicQuestionKeys.courseReasonOther] = "Please describe your reason.";
+          }
         }
       }
     }
@@ -1531,6 +1597,21 @@ export default function RegisterPage() {
       ...buildVerificationQuestionSnapshot(selectedLevel, selectedCourse.name),
       ...questionTextByKey,
     };
+    const registrationAnswers = visibleFormQuestionRows.map((question, index) => {
+      const answerKey = dynamicAnswerKey(question.id);
+      const answer = answers[answerKey] === otherOption && answers[`${answerKey}:other`]?.trim()
+        ? `Other: ${answers[`${answerKey}:other`]?.trim()}`
+        : answers[answerKey]?.trim() || "";
+      return {
+        questionId: question.id,
+        questionKey: question.id,
+        questionTextRendered: renderDynamicQuestionText(question.questionText, selectedCourse),
+        questionType: question.questionType,
+        required: question.required,
+        answer,
+        sortOrder: index + 1,
+      };
+    });
     const payload = {
       registrationId: submittedRecord?.registrationId ?? "",
       course: selectedCourse,
@@ -1541,6 +1622,7 @@ export default function RegisterPage() {
       verification: answers,
       verificationAnswers,
       verificationQuestionSnapshot,
+      registrationAnswers,
       ...verificationAnswers,
       uploads: safeArray(uploadedFiles).map(({ file, ...upload }) => upload),
       basicDeclaration: selectedLevel === "Basic" ? basicDeclaration : "",
@@ -1580,6 +1662,7 @@ export default function RegisterPage() {
       formData.append("emailVerificationId", verifiedEmailVerificationId);
       if (submittedRecord?.registrationId) formData.append("registrationId", submittedRecord.registrationId);
       formData.append("verificationQuestionSnapshot", JSON.stringify(verificationQuestionSnapshot));
+      formData.append("registrationAnswers", JSON.stringify(registrationAnswers));
       formData.append("basicDeclaration", selectedLevel === "Basic" ? basicDeclaration : "");
       formData.append("basicWriting", selectedLevel === "Basic" ? basicDeclaration.trim() : "");
       verificationAnswerKeys.forEach((key) => {
@@ -1725,7 +1808,9 @@ export default function RegisterPage() {
                       <VerificationStep
                         level={selectedLevel}
                         courseName={selectedCourse?.name ?? "selected course"}
+                        selectedCourse={selectedCourse}
                         questions={activeQuestions}
+                        formQuestions={visibleFormQuestionRows}
                         questionTextByKey={questionTextByKey}
                         questionFormatByKey={questionFormatByKey}
                         answers={answers}
@@ -2323,7 +2408,9 @@ function DetailsStep(props: {
 function VerificationStep(props: {
   level: Level;
   courseName: string;
+  selectedCourse?: Course;
   questions: VerificationAnswerKey[];
+  formQuestions: RegistrationConfig["formQuestions"];
   questionTextByKey: Partial<Record<VerificationAnswerKey, string>>;
   questionFormatByKey: Partial<Record<VerificationAnswerKey, QuestionFormat>>;
   answers: AnswerState;
@@ -2331,6 +2418,7 @@ function VerificationStep(props: {
   errors: Record<string, string>;
 }) {
   const courseName = props.courseName || "selected course";
+  const dynamicQuestions = Array.isArray(props.formQuestions) ? props.formQuestions : [];
   const questions = Array.isArray(props.questions) ? props.questions : [];
   const showQuestion = (key: VerificationAnswerKey) => questions.includes(key);
   const labelFor = (key: VerificationAnswerKey, fallback: string) => props.questionTextByKey[key] || fallback;
@@ -2383,6 +2471,73 @@ function VerificationStep(props: {
       </>
     );
   };
+
+  const renderDynamicQuestion = (question: RegistrationConfig["formQuestions"][number]) => {
+    const key = dynamicAnswerKey(question.id);
+    const label = renderDynamicQuestionText(question.questionText, props.selectedCourse || ({ name: courseName } as Course));
+    const options = question.questionType === "yes_no"
+      ? ["Yes", "No"]
+      : question.options.map((option) => option.value);
+
+    if (question.questionType === "open") {
+      return (
+        <AnswerTextArea
+          key={question.id}
+          errorKey={key}
+          label={label}
+          value={props.answers[key] ?? ""}
+          onChange={(value) => updateAnswer(key, value)}
+          error={props.errors[key]}
+        />
+      );
+    }
+
+    if (question.questionType === "short_text") {
+      return (
+        <TextField
+          key={question.id}
+          errorKey={key}
+          label={label}
+          value={props.answers[key] ?? ""}
+          onChange={(value) => updateAnswer(key, value)}
+          error={props.errors[key]}
+        />
+      );
+    }
+
+    return (
+      <div key={question.id} className="grid gap-3">
+        <SelectField
+          errorKey={key}
+          label={label}
+          value={props.answers[key] ?? ""}
+          onChange={(value) => updateAnswer(key, value, [`${key}:other`])}
+          options={options}
+          error={props.errors[key]}
+        />
+        {props.answers[key] === otherOption && (
+          <AnswerTextArea
+            errorKey={`${key}:other`}
+            label="Please describe your answer"
+            value={props.answers[`${key}:other`] ?? ""}
+            onChange={(value) => updateAnswer(`${key}:other`, value)}
+            error={props.errors[`${key}:other`]}
+          />
+        )}
+      </div>
+    );
+  };
+
+  if (dynamicQuestions.length > 0) {
+    return (
+      <div>
+        <StepHeader icon={<ShieldCheck />} title={`${props.level} Verification Questions`} subtitle="These questions adjust to your selected course." />
+        <div className="mt-7 grid gap-5">
+          {dynamicQuestions.map(renderDynamicQuestion)}
+        </div>
+      </div>
+    );
+  }
 
   if (props.level === "Basic") {
     return (

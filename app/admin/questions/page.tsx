@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/auth";
-import AdminShell from "../admin-shell";
-import QuestionsClient from "./questions-client";
 
 export default async function QuestionsPage() {
   const admin = await getCurrentAdmin();
@@ -9,14 +7,5 @@ export default async function QuestionsPage() {
   if (admin.forcePasswordChange) redirect("/admin/change-password");
   if (admin.role !== "SUPER_ADMIN") redirect("/admin/registrations");
 
-  return (
-    <AdminShell
-      admin={admin}
-      active="questions"
-      title="Verification Questions"
-      subtitle="Manage category-based question sets with dynamic tags for selected courses."
-    >
-      <QuestionsClient />
-    </AdminShell>
-  );
+  redirect("/admin/form-builder");
 }

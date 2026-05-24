@@ -79,6 +79,7 @@ model Registration {
   verificationQuestionSnapshot Json?
   files               RegistrationFile[]
   notifications       RegistrationNotification[]
+  answers             RegistrationAnswer[]
 
   @@index([center])
   @@index([status])
@@ -88,6 +89,34 @@ model Registration {
   @@index([needsAdminAttention])
   @@index([archivedAsDuplicate])
   @@index([mergedIntoRegistrationId])
+}
+
+model CourseLevel {
+  id        String         @id @default(cuid())
+  name      String         @unique
+  active    Boolean        @default(true)
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  courses   Course[]
+  questions FormQuestion[]
+
+  @@index([active])
+  @@index([sortOrder])
+}
+
+model CourseField {
+  id        String         @id @default(cuid())
+  name      String         @unique
+  active    Boolean        @default(true)
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  courses   Course[]
+  questions FormQuestion[]
+
+  @@index([active])
+  @@index([sortOrder])
 }
 
 model CourseCategory {
@@ -105,6 +134,10 @@ model Course {
   name        String         @unique
   categoryId  String
   category    CourseCategory @relation(fields: [categoryId], references: [id])
+  levelId     String?
+  level       CourseLevel?   @relation(fields: [levelId], references: [id])
+  fieldId     String?
+  field       CourseField?   @relation(fields: [fieldId], references: [id])
   levels      String[]       @default([])
   centerIds   String[]       @default([])
   description String         @default("")
@@ -119,9 +152,85 @@ model Course {
   active      Boolean        @default(true)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  formQuestions FormQuestion[]
 
   @@index([categoryId])
+  @@index([levelId])
+  @@index([fieldId])
   @@index([active])
+}
+
+model FormQuestion {
+  id           String                  @id @default(cuid())
+  questionText String
+  questionType String
+  required     Boolean                 @default(true)
+  active       Boolean                 @default(true)
+  sortOrder    Int                     @default(0)
+  levelId      String?
+  level        CourseLevel?            @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  fieldId      String?
+  field        CourseField?            @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  courseId     String?
+  course       Course?                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  options      FormQuestionOption[]
+  sourceRules  FormQuestionCondition[] @relation("ConditionSource")
+  targetRules  FormQuestionCondition[] @relation("ConditionTarget")
+  answers      RegistrationAnswer[]
+
+  @@index([levelId])
+  @@index([fieldId])
+  @@index([courseId])
+  @@index([active])
+  @@index([sortOrder])
+}
+
+model FormQuestionOption {
+  id         String       @id @default(cuid())
+  questionId String
+  question   FormQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  value      String
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([questionId])
+  @@index([sortOrder])
+}
+
+model FormQuestionCondition {
+  id               String       @id @default(cuid())
+  sourceQuestionId String
+  sourceQuestion   FormQuestion @relation("ConditionSource", fields: [sourceQuestionId], references: [id], onDelete: Cascade)
+  operator         String       @default("equals")
+  value            String
+  targetQuestionId String
+  targetQuestion   FormQuestion @relation("ConditionTarget", fields: [targetQuestionId], references: [id], onDelete: Cascade)
+  action           String       @default("show")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sourceQuestionId])
+  @@index([targetQuestionId])
+}
+
+model RegistrationAnswer {
+  id                   String        @id @default(cuid())
+  registrationId       String
+  registration         Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  questionId           String?
+  question             FormQuestion? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  questionKey          String?
+  questionTextRendered String
+  questionType         String
+  answer               String
+  sortOrder            Int           @default(0)
+  createdAt            DateTime      @default(now())
+
+  @@index([registrationId])
+  @@index([questionId])
 }
 
 model VerificationQuestion {

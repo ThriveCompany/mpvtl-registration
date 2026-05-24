@@ -140,6 +140,7 @@ export default async function RegistrationProfilePage({
     where: { id },
     include: {
       files: { orderBy: { createdAt: "asc" } },
+      answers: { orderBy: { sortOrder: "asc" } },
       approvedBy: { select: { name: true, email: true } },
       reviewedBy: { select: { name: true, email: true, role: true } },
     },
@@ -156,6 +157,7 @@ export default async function RegistrationProfilePage({
   const verificationItems = getVerificationDisplayItems(registration.level, registration.course);
   const isBasicRegistration = normalizeLevel(registration.level) === "Basic";
   const files = Array.isArray(registration.files) ? registration.files : [];
+  const registrationAnswers = Array.isArray(registration.answers) ? registration.answers : [];
   const detailItems = safeArray([
     ["Full name", registration.fullName],
     ["Email", registration.email],
@@ -260,21 +262,35 @@ export default async function RegistrationProfilePage({
               )}
             </div>
             <div className="grid gap-4 p-5 md:grid-cols-2">
-              {safeArray(verificationItems).map((item) => (
+              {registrationAnswers.length > 0 ? registrationAnswers.map((item) => (
                 <div
-                  key={item.key}
+                  key={item.id}
                   className={`rounded-2xl border p-5 ${
-                    item.longAnswer ? "border-brand-100 bg-brand-50/40 md:col-span-2" : "border-slate-200 bg-white"
+                    item.questionType === "open" ? "border-brand-100 bg-brand-50/40 md:col-span-2" : "border-slate-200 bg-white"
                   }`}
                 >
-                  <p className="text-sm font-bold leading-6 text-navy-950">{questionSnapshot[item.key] || item.question}</p>
+                  <p className="text-sm font-bold leading-6 text-navy-950">{item.questionTextRendered}</p>
                   <p className={`mt-3 whitespace-pre-wrap leading-7 text-slate-800 ${
-                    item.longAnswer ? "text-base font-medium" : "text-base font-semibold"
+                    item.questionType === "open" ? "text-base font-medium" : "text-base font-semibold"
                   }`}>
-                    {getAnswer(answers, item.key, item.fallbackKey)}
+                    {item.answer || "Not provided"}
                   </p>
                 </div>
-              ))}
+              )) : safeArray(verificationItems).map((item) => (
+                  <div
+                    key={item.key}
+                    className={`rounded-2xl border p-5 ${
+                      item.longAnswer ? "border-brand-100 bg-brand-50/40 md:col-span-2" : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <p className="text-sm font-bold leading-6 text-navy-950">{questionSnapshot[item.key] || item.question}</p>
+                    <p className={`mt-3 whitespace-pre-wrap leading-7 text-slate-800 ${
+                      item.longAnswer ? "text-base font-medium" : "text-base font-semibold"
+                    }`}>
+                      {getAnswer(answers, item.key, item.fallbackKey)}
+                    </p>
+                  </div>
+                ))}
             </div>
           </section>
 

@@ -28,6 +28,15 @@ const finalDecisionStatuses = new Set(["APPROVED", "UNAPPROVED", "NEEDS_FURTHER_
 
 type VerificationAnswerKey = (typeof verificationAnswerKeys)[number];
 type VerificationAnswers = Record<VerificationAnswerKey, string>;
+type SubmittedRegistrationAnswer = {
+  questionId?: string;
+  questionKey?: string;
+  questionTextRendered?: string;
+  questionType?: string;
+  required?: boolean;
+  answer?: string;
+  sortOrder?: number;
+};
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -64,6 +73,30 @@ function readJsonObject(formData: FormData, key: string) {
   }
 }
 
+function readRegistrationAnswers(formData: FormData) {
+  const value = readText(formData, "registrationAnswers");
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => item as SubmittedRegistrationAnswer)
+      .filter((item) => item.questionTextRendered && item.questionType)
+      .map((item, index) => ({
+        questionId: item.questionId || null,
+        questionKey: item.questionKey || null,
+        questionTextRendered: String(item.questionTextRendered || "").trim(),
+        questionType: String(item.questionType || "").trim(),
+        required: item.required !== false,
+        answer: String(item.answer || "").trim(),
+        sortOrder: Number.isFinite(Number(item.sortOrder)) ? Number(item.sortOrder) : index + 1,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 function normalizeDuplicateValue(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -95,6 +128,7 @@ export async function POST(request: Request) {
     basicWriting: readText(formData, "basicWriting") || readText(formData, "basicDeclaration"),
   };
   const verificationQuestionSnapshot = readJsonObject(formData, "verificationQuestionSnapshot");
+  const registrationAnswers = readRegistrationAnswers(formData);
 
   const validationError = validateRequired({
     fullName,
@@ -134,7 +168,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Please verify your email address before submitting." }, { status: 400 });
   }
 
-  const requiredVerificationValues = level === "Basic"
+  const requiredVerificationValues = registrationAnswers.length > 0
+    ? registrationAnswers.filter((answer) => answer.required && !answer.answer).map((answer) => answer.answer)
+    : level === "Basic"
     ? [
       verificationAnswers.canReadAndWrite,
       verificationAnswers.newToField,
@@ -154,7 +190,7 @@ export async function POST(request: Request) {
         verificationAnswers.hasPreviousCertificate,
         verificationAnswers.practicalExperience,
         verificationAnswers.availableForAssessment,
-      ];
+    ];
 
   if (requiredVerificationValues.some((value) => !value)) {
     return NextResponse.json({ message: "Verification answers are required." }, { status: 400 });
@@ -296,6 +332,21 @@ export async function POST(request: Request) {
           editedAfterDecision: true,
         },
       });
+
+    if (registrationAnswers.length > 0) {
+      await prisma.registrationAnswer.deleteMany({ where: { registrationId: registration.id } });
+      await prisma.registrationAnswer.createMany({
+        data: registrationAnswers.map((answer) => ({
+          registrationId: registration.id,
+          questionId: answer.questionId,
+          questionKey: answer.questionKey,
+          questionTextRendered: answer.questionTextRendered,
+          questionType: answer.questionType,
+          answer: answer.answer,
+          sortOrder: answer.sortOrder,
+        })),
+      });
+    }
 
     for (const file of files) {
       const storedFile = await storeEvidenceFile(registration.id, file);
