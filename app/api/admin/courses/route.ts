@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CENTER_OPTIONS } from "@/lib/admin-constants";
 import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultRegistrationCatalog } from "@/lib/registration-catalog-bootstrap";
 
 const levelOptions = ["Basic", "Intermediate", "Advanced"];
 const centreOptions = new Set<string>(CENTER_OPTIONS.map((center) => center.value));
@@ -63,6 +64,8 @@ export async function GET() {
   if (!admin) {
     return NextResponse.json({ message: "Forbidden", courses: [], categories: [] }, { status: 403 });
   }
+
+  await ensureDefaultRegistrationCatalog(prisma);
 
   const [courses, categories] = await Promise.all([
     prisma.course.findMany({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultRegistrationCatalog } from "@/lib/registration-catalog-bootstrap";
 
 const levels = ["Basic", "Intermediate", "Advanced"];
 
@@ -20,6 +21,8 @@ function normalizeKey(value: string) {
 export async function GET() {
   const admin = await requireSuperAdmin();
   if (!admin) return NextResponse.json({ message: "Forbidden", questions: [], categories: [] }, { status: 403 });
+
+  await ensureDefaultRegistrationCatalog(prisma);
 
   const [categories, questions] = await Promise.all([
     prisma.courseCategory.findMany({

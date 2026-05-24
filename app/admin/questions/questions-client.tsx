@@ -16,20 +16,11 @@ type Question = {
 };
 
 const levels = ["Basic", "Intermediate", "Advanced"];
-const knownKeys = [
-  "canReadAndWrite",
-  "newToField",
-  "reasonForCourse",
-  "availableForPracticalTraining",
-  "priorExposure",
-  "completedBasicCourse",
-  "experienceDescription",
-  "availableForEntryReview",
-  "priorTraining",
-  "hasPreviousCertificate",
-  "practicalExperience",
-  "availableForAssessment",
-];
+const knownKeysByLevel: Record<string, string[]> = {
+  Basic: ["canReadAndWrite", "newToField", "reasonForCourse", "availableForPracticalTraining"],
+  Intermediate: ["priorExposure", "completedBasicCourse", "experienceDescription", "availableForEntryReview"],
+  Advanced: ["priorTraining", "hasPreviousCertificate", "practicalExperience", "availableForAssessment"],
+};
 
 const emptyForm = {
   id: "",
@@ -76,7 +67,12 @@ export default function QuestionsClient() {
       .filter((question) => question.categoryId === selectedCategoryId && question.level === selectedLevel)
       .sort((first, second) => first.sortOrder - second.sortOrder)
   ), [questions, selectedCategoryId, selectedLevel]);
-  const canSave = Boolean(form.categoryId && form.level && form.key.trim() && form.questionText.trim());
+  const nextAvailableKey = useMemo(() => {
+    if (form.id) return form.key;
+    const usedKeys = new Set(selectedQuestions.map((question) => question.key));
+    return (knownKeysByLevel[selectedLevel] || []).find((key) => !usedKeys.has(key)) || "";
+  }, [form.id, form.key, selectedLevel, selectedQuestions]);
+  const canSave = Boolean(form.categoryId && form.level && nextAvailableKey.trim() && form.questionText.trim());
 
   async function loadQuestions() {
     const response = await fetch("/api/admin/questions", { cache: "no-store" });
@@ -111,7 +107,7 @@ export default function QuestionsClient() {
   }
 
   async function saveQuestion() {
-    const saved = await send(form, form.id ? "Question updated." : "Question added.");
+    const saved = await send({ ...form, key: nextAvailableKey }, form.id ? "Question updated." : "Question added.");
     if (saved) {
       setForm({ ...emptyForm, categoryId: selectedCategoryId, level: selectedLevel, sortOrder: selectedQuestions.length + 1 });
     }
@@ -215,36 +211,29 @@ export default function QuestionsClient() {
           Category: <span className="font-bold text-navy-950">{selectedCategory?.name || "Select category"}</span>. Use {"{course}"} where the selected course name should appear.
         </p>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_110px]">
-          <select
-            value={form.key}
-            onChange={(event) => setForm({ ...form, key: event.target.value })}
-            disabled={Boolean(form.id)}
-            className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-          >
-            <option value="">Select stable key</option>
-            {knownKeys.map((key) => <option key={key} value={key}>{key}</option>)}
-          </select>
-          <input
-            className="h-11 rounded-xl border border-slate-300 px-4 text-sm"
-            placeholder="Or type a new key"
-            value={form.key}
-            onChange={(event) => setForm({ ...form, key: event.target.value })}
-            disabled={Boolean(form.id)}
-          />
-          <input
-            className="h-11 rounded-xl border border-slate-300 px-4 text-sm"
-            type="number"
-            value={form.sortOrder}
-            onChange={(event) => setForm({ ...form, sortOrder: Number(event.target.value) })}
-          />
+        <div className="mt-4 grid gap-3 md:grid-cols-[150px_1fr]">
+          <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+            Order
+            <input
+              className="h-11 rounded-xl border border-slate-300 px-4 text-sm font-semibold normal-case tracking-normal text-navy-950"
+              type="number"
+              min={1}
+              value={form.sortOrder}
+              onChange={(event) => setForm({ ...form, sortOrder: Number(event.target.value) })}
+            />
+          </label>
           <textarea
-            className="min-h-24 rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 md:col-span-3"
+            className="min-h-24 rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6"
             placeholder="Question text"
             value={form.questionText}
             onChange={(event) => setForm({ ...form, questionText: event.target.value })}
           />
         </div>
+        {!form.id && !nextAvailableKey && (
+          <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200">
+            All available question slots for this level are already in use. Edit or reorder the existing questions below.
+          </p>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <label className="inline-flex items-center gap-2 text-sm font-semibold text-navy-950">
@@ -272,7 +261,7 @@ export default function QuestionsClient() {
             <div key={question.id} className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <button type="button" onClick={() => startEdit(question)} className="text-left">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{question.key} · Order {question.sortOrder}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Question {index + 1} · Order {question.sortOrder}</p>
                   <p className="mt-1 text-sm font-bold leading-6 text-navy-950">{question.questionText}</p>
                 </button>
                 <div className="flex shrink-0 flex-wrap gap-2">

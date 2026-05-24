@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const catalog = require("../lib/default-registration-catalog.json");
 
 const prisma = new PrismaClient();
 const OFFICIAL_EMAIL_DOMAIN = "@moaetscandg.org.ng";
@@ -85,59 +86,9 @@ const seededUsers = [
   },
 ];
 
-const seededCategories = [
-  "Culinary",
-  "Beauty Therapy",
-  "ICT",
-  "Electrical & Solar",
-  "Automobile & Mechatronics",
-  "Welding & Fabrication",
-  "Building & Construction",
-  "Teaching & Assessment",
-  "Health & Safety",
-];
-
-const seededCourses = [
-  ["Cake Design, Decoration & Pastry Masterclass", "Culinary", ["Intermediate"]],
-  ["Continental Culinary Arts - Nigerian & African Cuisine", "Culinary", ["Intermediate"]],
-  ["Professional Food Safety Compliance & Kitchen Hygiene (C&G Certified)", "Culinary", ["Advanced"]],
-  ["Hair Styling & Hair Making Technology", "Beauty Therapy", ["Basic"]],
-  ["Professional Pedicure & Manicure Services", "Beauty Therapy", ["Basic"]],
-  ["CCTV Camera Installation Program", "ICT", ["Intermediate"]],
-  ["Computer Appreciation", "ICT", ["Basic"]],
-  ["Computer Networking", "ICT", ["Intermediate"]],
-  ["Cyber Security", "ICT", ["Advanced"]],
-  ["ICT Hardware and Software Maintenance", "ICT", ["Intermediate"]],
-  ["Foundational Data Science & Analytics", "ICT", ["Intermediate"]],
-  ["Advanced Electrical Installation", "Electrical & Solar", ["Advanced"]],
-  ["Beginner Electrical Installation", "Electrical & Solar", ["Basic"]],
-  ["Automobile Electrical Works", "Automobile & Mechatronics", ["Intermediate"]],
-  ["Mechatronics System Principles & Fault Finding (C&G Certified)", "Automobile & Mechatronics", ["Advanced"]],
-  ["Solar System Installation", "Electrical & Solar", ["Intermediate"]],
-  ["Manual Arc Welding Technology (SMAW)", "Welding & Fabrication", ["Intermediate"]],
-  ["Welding & Metal Fabrication Technology", "Welding & Fabrication", ["Intermediate"]],
-  ["AutoCAD Training", "Building & Construction", ["Intermediate"]],
-  ["Plumbing & Pipe Fitting", "Building & Construction", ["Basic"]],
-  ["Professional Masonry & Construction Technology", "Building & Construction", ["Intermediate"]],
-  ["Teaching, Training & Assessing Learning (C&G Certified)", "Teaching & Assessment", ["Advanced"]],
-  ["Trade Test Preparation", "Teaching & Assessment", ["Intermediate"]],
-  ["Engineering Health and Safety (C&G Certified)", "Health & Safety", ["Advanced"]],
-];
-
-const seededQuestions = [
-  ["Basic", "canReadAndWrite", "Can you read and write in English?", 1],
-  ["Basic", "newToField", "Are you new to {course}?", 2],
-  ["Basic", "reasonForCourse", "Why are you registering for {course}?", 3],
-  ["Basic", "availableForPracticalTraining", "Are you available for practical training?", 4],
-  ["Intermediate", "priorExposure", "Do you have basic knowledge or prior exposure to {course}?", 1],
-  ["Intermediate", "completedBasicCourse", "Have you completed a basic course in {course} before?", 2],
-  ["Intermediate", "experienceDescription", "Describe your experience with {course} briefly.", 3],
-  ["Intermediate", "availableForEntryReview", "Are you available for entry review?", 4],
-  ["Advanced", "priorTraining", "Do you have prior training or demonstrable experience in {course}?", 1],
-  ["Advanced", "hasPreviousCertificate", "Do you have a previous certificate?", 2],
-  ["Advanced", "practicalExperience", "Describe your practical experience with {course}.", 3],
-  ["Advanced", "availableForAssessment", "Are you available for assessment or interview?", 4],
-];
+const seededCategories = catalog.categories;
+const seededCourses = catalog.courses;
+const seededQuestions = catalog.questions;
 
 function requireOfficialEmail(email) {
   if (!email.endsWith(OFFICIAL_EMAIL_DOMAIN)) {
@@ -188,27 +139,32 @@ async function seedSuperAdmin() {
 
 async function seedUser(user) {
   requireOfficialEmail(user.email);
-  const passwordHash = await bcrypt.hash(user.password, 12);
+  const existing = await prisma.adminUser.findUnique({ where: { email: user.email } });
 
-  await prisma.adminUser.upsert({
-    where: { email: user.email },
-    update: {
-      name: user.name,
-      passwordHash,
-      role: user.role,
-      center: user.role === "CENTER_MANAGER" ? user.center : null,
-      active: true,
-      forcePasswordChange: true,
-    },
-    create: {
+  if (existing) {
+    await prisma.adminUser.update({
+      where: { email: user.email },
+      data: {
+        name: user.name,
+        role: user.role,
+        center: user.role === "CENTER_MANAGER" ? user.center : null,
+        active: true,
+      },
+    });
+    console.log(`Seeded ${user.role}; password unchanged: ${user.email}`);
+    return;
+  }
+
+  await prisma.adminUser.create({
+    data: {
       name: user.name,
       email: user.email,
-      passwordHash,
+      passwordHash: await bcrypt.hash(user.password, 12),
       role: user.role,
       center: user.role === "CENTER_MANAGER" ? user.center : null,
       active: true,
       forcePasswordChange: true,
-    },
+    }
   });
 
   console.log(`Seeded ${user.role}: ${user.email}`);
@@ -226,32 +182,50 @@ async function seedRegistrationConfiguration() {
     categoryByName.set(name, category);
   }
 
-  for (const [name, categoryName, levels] of seededCourses) {
-    const category = categoryByName.get(categoryName);
+  for (const course of seededCourses) {
+    const category = categoryByName.get(course.category);
     if (!category) continue;
 
     await prisma.course.upsert({
-      where: { name },
+      where: { name: course.name },
       update: {
         categoryId: category.id,
-        levels,
+        levels: course.levels,
+        centerIds: course.centerIds,
+        duration: course.duration,
+        certificate: course.certificate,
+        description: course.description,
+        learn: course.learn,
+        skills: course.skills,
+        careers: course.careers,
+        requirement: course.requirement,
+        value: course.value,
       },
       create: {
-        name,
+        name: course.name,
         categoryId: category.id,
-        levels,
+        levels: course.levels,
+        centerIds: course.centerIds,
+        duration: course.duration,
+        certificate: course.certificate,
+        description: course.description,
+        learn: course.learn,
+        skills: course.skills,
+        careers: course.careers,
+        requirement: course.requirement,
+        value: course.value,
         active: true,
       },
     });
   }
 
   for (const category of categoryByName.values()) {
-    for (const [level, key, questionText, sortOrder] of seededQuestions) {
+    for (const question of seededQuestions) {
       const existingQuestion = await prisma.verificationQuestion.findFirst({
         where: {
           categoryId: category.id,
-          level,
-          key,
+          level: question.level,
+          key: question.key,
         },
       });
 
@@ -259,18 +233,18 @@ async function seedRegistrationConfiguration() {
         await prisma.verificationQuestion.update({
           where: { id: existingQuestion.id },
           data: {
-            questionText,
-            sortOrder,
+            questionText: question.questionText,
+            sortOrder: question.sortOrder,
           },
         });
       } else {
         await prisma.verificationQuestion.create({
           data: {
             categoryId: category.id,
-            level,
-            key,
-            questionText,
-            sortOrder,
+            level: question.level,
+            key: question.key,
+            questionText: question.questionText,
+            sortOrder: question.sortOrder,
             active: true,
           },
         });

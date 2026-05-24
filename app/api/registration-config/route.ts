@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultRegistrationCatalog } from "@/lib/registration-catalog-bootstrap";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    await ensureDefaultRegistrationCatalog(prisma);
+
     const [courses, categories, questions] = await Promise.all([
       prisma.course.findMany({
         where: { active: true, category: { active: true } },
