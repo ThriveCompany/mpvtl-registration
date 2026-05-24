@@ -126,7 +126,7 @@ const supplementalAnswerKeys = {
 } as const;
 
 type SupplementalAnswerKey = (typeof supplementalAnswerKeys)[keyof typeof supplementalAnswerKeys];
-type AnswerState = VerificationAnswers & Partial<Record<SupplementalAnswerKey, string>>;
+type AnswerState = VerificationAnswers & Partial<Record<string, string>>;
 
 const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_LABEL = "5MB";
@@ -603,15 +603,16 @@ const questions: Record<Level, VerificationAnswerKey[]> = {
 const standardSteps = ["Course", "Description", "Centre", "Details", "Verify", "Upload", "Submit"];
 const basicSteps = ["Course", "Description", "Centre", "Details", "Verify", "Confirm", "Submit"];
 
-const yesNoOptions = ["Yes", "No"];
-const availabilityOptions = ["Yes", "No", "Maybe"];
+const otherOption = "Other, please describe";
+const yesNoOptions = ["Yes", "No", otherOption];
+const availabilityOptions = ["Yes", "No", "Maybe", otherOption];
 const courseReasonOptions = [
   "Start a new skill or career",
   "Improve my current work",
   "Start or grow a business",
   "Prepare for employment",
   "Build personal confidence",
-  "Other, please describe",
+  otherOption,
 ];
 const certificateTypeOptions = [
   "City & Guilds",
@@ -621,8 +622,12 @@ const certificateTypeOptions = [
   "National Diploma (ND)",
   "Higher National Diploma (HND)",
   "Degree",
-  "Other, please describe",
+  otherOption,
 ];
+
+function otherAnswerKey(key: VerificationAnswerKey) {
+  return `${key}Other`;
+}
 
 function locationHasHostel(location?: LocationOption) {
   return location?.hostel.toLowerCase() === "hostel available";
@@ -764,6 +769,7 @@ function normalizeAnswerState(value: unknown): AnswerState {
     if (typeof value !== "string") return;
     const stableKey = (verificationAnswerKeys as readonly string[]).includes(key)
       || (Object.values(supplementalAnswerKeys) as readonly string[]).includes(key)
+      || key.endsWith("Other")
       ? key as keyof AnswerState
       : legacyKeyMap[key];
 
@@ -777,13 +783,15 @@ function buildVerificationAnswers(rawAnswers: AnswerState): VerificationAnswers 
   const stableAnswers = createEmptyVerificationAnswers();
 
   verificationAnswerKeys.forEach((key) => {
-    stableAnswers[key] = rawAnswers[key]?.trim() ?? "";
+    const value = rawAnswers[key]?.trim() ?? "";
+    const otherValue = rawAnswers[otherAnswerKey(key)]?.trim();
+    stableAnswers[key] = value === otherOption && otherValue ? `Other: ${otherValue}` : value;
   });
 
-  if (rawAnswers.reasonForCourse === "Other, please describe") {
+  if (rawAnswers.reasonForCourse === otherOption && rawAnswers.reasonForCourseOther?.trim()) {
     stableAnswers.reasonForCourse = rawAnswers.reasonForCourseOther?.trim()
       ? `Other: ${rawAnswers.reasonForCourseOther.trim()}`
-      : "Other, please describe";
+      : otherOption;
   }
 
   return stableAnswers;
@@ -1308,6 +1316,9 @@ export default function RegisterPage() {
     if (targetStep >= 4) {
       activeQuestions.forEach((question) => {
         if (!answers[question]?.trim()) nextErrors[question] = "This answer is required.";
+        if (answers[question] === otherOption && !answers[otherAnswerKey(question)]?.trim()) {
+          nextErrors[otherAnswerKey(question)] = "Please describe your answer.";
+        }
       });
 
       if (selectedLevel === "Advanced") {
@@ -1315,14 +1326,14 @@ export default function RegisterPage() {
           if (!answers[advancedQuestionKeys.certificateType]?.trim()) {
             nextErrors[advancedQuestionKeys.certificateType] = "Please choose the certification type.";
           }
-          if (answers[advancedQuestionKeys.certificateType] === "Other, please describe" && !answers[advancedQuestionKeys.certificateTypeOther]?.trim()) {
+          if (answers[advancedQuestionKeys.certificateType] === otherOption && !answers[advancedQuestionKeys.certificateTypeOther]?.trim()) {
             nextErrors[advancedQuestionKeys.certificateTypeOther] = "Please describe the certification type.";
           }
         }
       }
 
       if (selectedLevel === "Basic") {
-        if (answers[basicQuestionKeys.courseReason] === "Other, please describe" && !answers[basicQuestionKeys.courseReasonOther]?.trim()) {
+        if (answers[basicQuestionKeys.courseReason] === otherOption && !answers[basicQuestionKeys.courseReasonOther]?.trim()) {
           nextErrors[basicQuestionKeys.courseReasonOther] = "Please describe your reason.";
         }
       }
@@ -2337,6 +2348,7 @@ function VerificationStep(props: {
     options: string[],
     clearKeys: (keyof AnswerState)[] = [],
   ) => {
+    const otherKey = otherAnswerKey(key);
     if (formatFor(key) === "open") {
       return (
         <AnswerTextArea
@@ -2350,14 +2362,25 @@ function VerificationStep(props: {
     }
 
     return (
-      <SelectField
-        errorKey={key}
-        label={label}
-        value={props.answers[key] ?? ""}
-        onChange={(value) => updateAnswer(key, value, clearKeys)}
-        options={options}
-        error={props.errors[key]}
-      />
+      <>
+        <SelectField
+          errorKey={key}
+          label={label}
+          value={props.answers[key] ?? ""}
+          onChange={(value) => updateAnswer(key, value, [otherKey, ...clearKeys])}
+          options={options}
+          error={props.errors[key]}
+        />
+        {props.answers[key] === otherOption && (
+          <AnswerTextArea
+            errorKey={otherKey}
+            label="Please describe your answer"
+            value={props.answers[otherKey] ?? ""}
+            onChange={(value) => updateAnswer(otherKey, value)}
+            error={props.errors[otherKey]}
+          />
+        )}
+      </>
     );
   };
 
@@ -2382,15 +2405,6 @@ function VerificationStep(props: {
             labelFor(basicQuestionKeys.courseReason, `Why are you registering for ${courseName}?`),
             courseReasonOptions,
             [basicQuestionKeys.courseReasonOther],
-          )}
-          {formatFor(basicQuestionKeys.courseReason) === "closed" && props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
-            <AnswerTextArea
-              errorKey={basicQuestionKeys.courseReasonOther}
-              label="Please describe your reason"
-              value={props.answers[basicQuestionKeys.courseReasonOther] ?? ""}
-              onChange={(value) => updateAnswer(basicQuestionKeys.courseReasonOther, value)}
-              error={props.errors[basicQuestionKeys.courseReasonOther]}
-            />
           )}
           {showQuestion(basicQuestionKeys.practicalAvailability) && renderQuestion(
             basicQuestionKeys.practicalAvailability,
@@ -2464,7 +2478,7 @@ function VerificationStep(props: {
               error={props.errors[advancedQuestionKeys.certificateType]}
             />
           )}
-          {props.answers[advancedQuestionKeys.certificateType] === "Other, please describe" && (
+          {props.answers[advancedQuestionKeys.certificateType] === otherOption && (
             <AnswerTextArea
               errorKey={advancedQuestionKeys.certificateTypeOther}
               label="Please describe the certification type"
