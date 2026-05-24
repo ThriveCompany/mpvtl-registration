@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureDefaultRegistrationCatalog } from "@/lib/registration-catalog-bootstrap";
 
 const levels = ["Basic", "Intermediate", "Advanced"];
+const questionFormats = ["closed", "open"];
 
 async function requireSuperAdmin() {
   const admin = await getCurrentAdmin();
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     level?: string;
     key?: string;
     questionText?: string;
+    format?: string;
     active?: boolean;
     sortOrder?: number;
     orderedIds?: string[];
@@ -85,6 +87,7 @@ export async function POST(request: Request) {
     const level = body.level || "";
     const key = normalizeKey(body.key || "");
     const questionText = body.questionText?.trim() || "";
+    const format = questionFormats.includes(String(body.format || "")) ? String(body.format) : "closed";
 
     if (!categoryId || !levels.includes(level) || !key || !questionText) {
       return NextResponse.json({ message: "Category, level, key, and question text are required." }, { status: 400 });
@@ -98,6 +101,7 @@ export async function POST(request: Request) {
       level,
       key,
       questionText,
+      format,
       active: body.active ?? true,
       sortOrder: Number.isFinite(body.sortOrder) ? Number(body.sortOrder) : 0,
     };

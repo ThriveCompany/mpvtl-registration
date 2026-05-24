@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, CheckCircle2, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type Category = { id: string; name: string; active: boolean };
+type QuestionFormat = "closed" | "open";
 type Question = {
   id: string;
   categoryId: string | null;
@@ -11,6 +12,7 @@ type Question = {
   level: string;
   key: string;
   questionText: string;
+  format?: QuestionFormat;
   active: boolean;
   sortOrder: number;
 };
@@ -28,9 +30,14 @@ const emptyForm = {
   level: "Basic",
   key: "",
   questionText: "",
+  format: "closed" as QuestionFormat,
   sortOrder: 1,
   active: true,
 };
+
+function normalizeQuestionFormat(value: unknown): QuestionFormat {
+  return value === "open" ? "open" : "closed";
+}
 
 function Button({
   children,
@@ -135,6 +142,7 @@ export default function QuestionsClient() {
       level: question.level,
       key: question.key,
       questionText: question.questionText,
+      format: normalizeQuestionFormat(question.format),
       sortOrder: question.sortOrder,
       active: question.active,
     });
@@ -211,7 +219,7 @@ export default function QuestionsClient() {
           Category: <span className="font-bold text-navy-950">{selectedCategory?.name || "Select category"}</span>. Use {"{course}"} where the selected course name should appear.
         </p>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-[150px_1fr]">
+        <div className="mt-4 grid gap-3 md:grid-cols-[150px_220px_1fr]">
           <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
             Order
             <input
@@ -221,6 +229,17 @@ export default function QuestionsClient() {
               value={form.sortOrder}
               onChange={(event) => setForm({ ...form, sortOrder: Number(event.target.value) })}
             />
+          </label>
+          <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+            Format
+            <select
+              className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold normal-case tracking-normal text-navy-950"
+              value={form.format}
+              onChange={(event) => setForm({ ...form, format: normalizeQuestionFormat(event.target.value) })}
+            >
+              <option value="closed">Close-ended</option>
+              <option value="open">Open-ended</option>
+            </select>
           </label>
           <textarea
             className="min-h-24 rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6"
@@ -261,7 +280,9 @@ export default function QuestionsClient() {
             <div key={question.id} className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <button type="button" onClick={() => startEdit(question)} className="text-left">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Question {index + 1} · Order {question.sortOrder}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                    Question {index + 1} · {normalizeQuestionFormat(question.format) === "open" ? "Open-ended" : "Close-ended"} · Order {question.sortOrder}
+                  </p>
                   <p className="mt-1 text-sm font-bold leading-6 text-navy-950">{question.questionText}</p>
                 </button>
                 <div className="flex shrink-0 flex-wrap gap-2">

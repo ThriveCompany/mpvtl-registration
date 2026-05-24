@@ -20,6 +20,7 @@ type CatalogQuestion = {
   level: string;
   key: string;
   questionText: string;
+  format?: string;
   sortOrder: number;
 };
 
@@ -103,6 +104,7 @@ async function runBootstrap(prisma: PrismaClient) {
               level: question.level,
               key: question.key,
               questionText: question.questionText,
+              format: question.format === "open" ? "open" : "closed",
               sortOrder: question.sortOrder,
               active: true,
             },

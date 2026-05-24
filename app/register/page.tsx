@@ -23,6 +23,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Level = "Basic" | "Intermediate" | "Advanced";
+type QuestionFormat = "closed" | "open";
 
 type Course = {
   id: string;
@@ -96,7 +97,7 @@ type RegistrationConfig = {
     category: { id: string; name: string; active: boolean };
   }[];
   categories: { id: string; name: string; active: boolean }[];
-  questions: { categoryId?: string | null; level: string; key: string; questionText: string; sortOrder: number }[];
+  questions: { categoryId?: string | null; level: string; key: string; questionText: string; format?: string; sortOrder: number }[];
 };
 
 const verificationAnswerKeys = [
@@ -569,6 +570,15 @@ const advancedQuestionKeys = {
   certificateTypeOther: supplementalAnswerKeys.previousCertificateTypeOther,
 } as const;
 
+const defaultQuestionFormats: Partial<Record<VerificationAnswerKey, QuestionFormat>> = {
+  experienceDescription: "open",
+  practicalExperience: "open",
+};
+
+function normalizeQuestionFormat(value: unknown): QuestionFormat {
+  return value === "open" ? "open" : "closed";
+}
+
 const questions: Record<Level, VerificationAnswerKey[]> = {
   Basic: [
     basicQuestionKeys.readWriteEnglish,
@@ -971,6 +981,9 @@ export default function RegisterPage() {
   const questionTextByKey = Object.fromEntries(
     questionRows.map((question) => [question.key, question.questionText.replaceAll("{course}", selectedCourse?.name ?? "selected course")]),
   ) as Partial<Record<VerificationAnswerKey, string>>;
+  const questionFormatByKey = Object.fromEntries(
+    questionRows.map((question) => [question.key, normalizeQuestionFormat(question.format)]),
+  ) as Partial<Record<VerificationAnswerKey, QuestionFormat>>;
   const activeQuestions = questionRows.length > 0
     ? questionRows.map((question) => question.key as VerificationAnswerKey)
     : Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
@@ -1703,6 +1716,7 @@ export default function RegisterPage() {
                         courseName={selectedCourse?.name ?? "selected course"}
                         questions={activeQuestions}
                         questionTextByKey={questionTextByKey}
+                        questionFormatByKey={questionFormatByKey}
                         answers={answers}
                         setAnswers={setAnswers}
                         errors={errors}
@@ -2300,6 +2314,7 @@ function VerificationStep(props: {
   courseName: string;
   questions: VerificationAnswerKey[];
   questionTextByKey: Partial<Record<VerificationAnswerKey, string>>;
+  questionFormatByKey: Partial<Record<VerificationAnswerKey, QuestionFormat>>;
   answers: AnswerState;
   setAnswers: (value: AnswerState) => void;
   errors: Record<string, string>;
@@ -2308,12 +2323,42 @@ function VerificationStep(props: {
   const questions = Array.isArray(props.questions) ? props.questions : [];
   const showQuestion = (key: VerificationAnswerKey) => questions.includes(key);
   const labelFor = (key: VerificationAnswerKey, fallback: string) => props.questionTextByKey[key] || fallback;
+  const formatFor = (key: VerificationAnswerKey) => props.questionFormatByKey[key] || defaultQuestionFormats[key] || "closed";
   const updateAnswer = (key: keyof AnswerState, value: string, clearKeys: (keyof AnswerState)[] = []) => {
     const nextAnswers = { ...props.answers, [key]: value } as AnswerState;
     clearKeys.forEach((clearKey) => {
       delete nextAnswers[clearKey];
     });
     props.setAnswers(nextAnswers);
+  };
+  const renderQuestion = (
+    key: VerificationAnswerKey,
+    label: string,
+    options: string[],
+    clearKeys: (keyof AnswerState)[] = [],
+  ) => {
+    if (formatFor(key) === "open") {
+      return (
+        <AnswerTextArea
+          errorKey={key}
+          label={label}
+          value={props.answers[key] ?? ""}
+          onChange={(value) => updateAnswer(key, value, clearKeys)}
+          error={props.errors[key]}
+        />
+      );
+    }
+
+    return (
+      <SelectField
+        errorKey={key}
+        label={label}
+        value={props.answers[key] ?? ""}
+        onChange={(value) => updateAnswer(key, value, clearKeys)}
+        options={options}
+        error={props.errors[key]}
+      />
+    );
   };
 
   if (props.level === "Basic") {
@@ -2322,31 +2367,23 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Basic Verification Questions" subtitle="These questions capture clear entry information before registration." />
 
         <div className="mt-7 grid gap-5">
-          {showQuestion(basicQuestionKeys.readWriteEnglish) && <SelectField
-            errorKey={basicQuestionKeys.readWriteEnglish}
-            label={labelFor(basicQuestionKeys.readWriteEnglish, "Can you read and write in English?")}
-            value={props.answers[basicQuestionKeys.readWriteEnglish] ?? ""}
-            onChange={(value) => updateAnswer(basicQuestionKeys.readWriteEnglish, value)}
-            options={yesNoOptions}
-            error={props.errors[basicQuestionKeys.readWriteEnglish]}
-          />}
-          {showQuestion(basicQuestionKeys.newToField) && <SelectField
-            errorKey={basicQuestionKeys.newToField}
-            label={labelFor(basicQuestionKeys.newToField, `Are you new to ${courseName}?`)}
-            value={props.answers[basicQuestionKeys.newToField] ?? ""}
-            onChange={(value) => updateAnswer(basicQuestionKeys.newToField, value)}
-            options={yesNoOptions}
-            error={props.errors[basicQuestionKeys.newToField]}
-          />}
-          {showQuestion(basicQuestionKeys.courseReason) && <SelectField
-            errorKey={basicQuestionKeys.courseReason}
-            label={labelFor(basicQuestionKeys.courseReason, `Why are you registering for ${courseName}?`)}
-            value={props.answers[basicQuestionKeys.courseReason] ?? ""}
-            onChange={(value) => updateAnswer(basicQuestionKeys.courseReason, value, [basicQuestionKeys.courseReasonOther])}
-            options={courseReasonOptions}
-            error={props.errors[basicQuestionKeys.courseReason]}
-          />}
-          {props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
+          {showQuestion(basicQuestionKeys.readWriteEnglish) && renderQuestion(
+            basicQuestionKeys.readWriteEnglish,
+            labelFor(basicQuestionKeys.readWriteEnglish, "Can you read and write in English?"),
+            yesNoOptions,
+          )}
+          {showQuestion(basicQuestionKeys.newToField) && renderQuestion(
+            basicQuestionKeys.newToField,
+            labelFor(basicQuestionKeys.newToField, `Are you new to ${courseName}?`),
+            yesNoOptions,
+          )}
+          {showQuestion(basicQuestionKeys.courseReason) && renderQuestion(
+            basicQuestionKeys.courseReason,
+            labelFor(basicQuestionKeys.courseReason, `Why are you registering for ${courseName}?`),
+            courseReasonOptions,
+            [basicQuestionKeys.courseReasonOther],
+          )}
+          {formatFor(basicQuestionKeys.courseReason) === "closed" && props.answers[basicQuestionKeys.courseReason] === "Other, please describe" && (
             <AnswerTextArea
               errorKey={basicQuestionKeys.courseReasonOther}
               label="Please describe your reason"
@@ -2355,14 +2392,11 @@ function VerificationStep(props: {
               error={props.errors[basicQuestionKeys.courseReasonOther]}
             />
           )}
-          {showQuestion(basicQuestionKeys.practicalAvailability) && <SelectField
-            errorKey={basicQuestionKeys.practicalAvailability}
-            label={labelFor(basicQuestionKeys.practicalAvailability, `Are you available for practical training in ${courseName}?`)}
-            value={props.answers[basicQuestionKeys.practicalAvailability] ?? ""}
-            onChange={(value) => updateAnswer(basicQuestionKeys.practicalAvailability, value)}
-            options={availabilityOptions}
-            error={props.errors[basicQuestionKeys.practicalAvailability]}
-          />}
+          {showQuestion(basicQuestionKeys.practicalAvailability) && renderQuestion(
+            basicQuestionKeys.practicalAvailability,
+            labelFor(basicQuestionKeys.practicalAvailability, `Are you available for practical training in ${courseName}?`),
+            availabilityOptions,
+          )}
         </div>
       </div>
     );
@@ -2374,37 +2408,26 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Intermediate Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
-          {showQuestion(intermediateQuestionKeys.priorExposure) && <SelectField
-            errorKey={intermediateQuestionKeys.priorExposure}
-            label={labelFor(intermediateQuestionKeys.priorExposure, `Do you have basic knowledge or prior exposure to ${courseName}?`)}
-            value={props.answers[intermediateQuestionKeys.priorExposure] ?? ""}
-            onChange={(value) => updateAnswer(intermediateQuestionKeys.priorExposure, value)}
-            options={yesNoOptions}
-            error={props.errors[intermediateQuestionKeys.priorExposure]}
-          />}
-          {showQuestion(intermediateQuestionKeys.completedBasicCourse) && <SelectField
-            errorKey={intermediateQuestionKeys.completedBasicCourse}
-            label={labelFor(intermediateQuestionKeys.completedBasicCourse, `Have you completed a basic course in ${courseName} before?`)}
-            value={props.answers[intermediateQuestionKeys.completedBasicCourse] ?? ""}
-            onChange={(value) => updateAnswer(intermediateQuestionKeys.completedBasicCourse, value)}
-            options={yesNoOptions}
-            error={props.errors[intermediateQuestionKeys.completedBasicCourse]}
-          />}
-          {showQuestion(intermediateQuestionKeys.experienceBrief) && <AnswerTextArea
-            errorKey={intermediateQuestionKeys.experienceBrief}
-            label={labelFor(intermediateQuestionKeys.experienceBrief, `Describe your experience with ${courseName} briefly.`)}
-            value={props.answers[intermediateQuestionKeys.experienceBrief] ?? ""}
-            onChange={(value) => updateAnswer(intermediateQuestionKeys.experienceBrief, value)}
-            error={props.errors[intermediateQuestionKeys.experienceBrief]}
-          />}
-          {showQuestion(intermediateQuestionKeys.entryReviewAvailability) && <SelectField
-            errorKey={intermediateQuestionKeys.entryReviewAvailability}
-            label={labelFor(intermediateQuestionKeys.entryReviewAvailability, `Are you available for ${courseName} Entry Review?`)}
-            value={props.answers[intermediateQuestionKeys.entryReviewAvailability] ?? ""}
-            onChange={(value) => updateAnswer(intermediateQuestionKeys.entryReviewAvailability, value)}
-            options={availabilityOptions}
-            error={props.errors[intermediateQuestionKeys.entryReviewAvailability]}
-          />}
+          {showQuestion(intermediateQuestionKeys.priorExposure) && renderQuestion(
+            intermediateQuestionKeys.priorExposure,
+            labelFor(intermediateQuestionKeys.priorExposure, `Do you have basic knowledge or prior exposure to ${courseName}?`),
+            yesNoOptions,
+          )}
+          {showQuestion(intermediateQuestionKeys.completedBasicCourse) && renderQuestion(
+            intermediateQuestionKeys.completedBasicCourse,
+            labelFor(intermediateQuestionKeys.completedBasicCourse, `Have you completed a basic course in ${courseName} before?`),
+            yesNoOptions,
+          )}
+          {showQuestion(intermediateQuestionKeys.experienceBrief) && renderQuestion(
+            intermediateQuestionKeys.experienceBrief,
+            labelFor(intermediateQuestionKeys.experienceBrief, `Describe your experience with ${courseName} briefly.`),
+            yesNoOptions,
+          )}
+          {showQuestion(intermediateQuestionKeys.entryReviewAvailability) && renderQuestion(
+            intermediateQuestionKeys.entryReviewAvailability,
+            labelFor(intermediateQuestionKeys.entryReviewAvailability, `Are you available for ${courseName} Entry Review?`),
+            availabilityOptions,
+          )}
         </div>
       </div>
     );
@@ -2416,31 +2439,22 @@ function VerificationStep(props: {
         <StepHeader icon={<ShieldCheck />} title="Advanced Verification Questions" subtitle="These questions capture entry review information in a structured format." />
 
         <div className="mt-7 grid gap-5">
-          {showQuestion(advancedQuestionKeys.priorTraining) && <SelectField
-            errorKey={advancedQuestionKeys.priorTraining}
-            label={labelFor(advancedQuestionKeys.priorTraining, `Do you have prior training or demonstrable experience in ${courseName}?`)}
-            value={props.answers[advancedQuestionKeys.priorTraining] ?? ""}
-            onChange={(value) => updateAnswer(advancedQuestionKeys.priorTraining, value)}
-            options={yesNoOptions}
-            error={props.errors[advancedQuestionKeys.priorTraining]}
-          />}
+          {showQuestion(advancedQuestionKeys.priorTraining) && renderQuestion(
+            advancedQuestionKeys.priorTraining,
+            labelFor(advancedQuestionKeys.priorTraining, `Do you have prior training or demonstrable experience in ${courseName}?`),
+            yesNoOptions,
+          )}
 
-          {showQuestion(advancedQuestionKeys.previousCertificate) && <SelectField
-            errorKey={advancedQuestionKeys.previousCertificate}
-            label={labelFor(advancedQuestionKeys.previousCertificate, `Do you have a previous certificate in ${courseName}?`)}
-            value={props.answers[advancedQuestionKeys.previousCertificate] ?? ""}
-            onChange={(value) => updateAnswer(
-              advancedQuestionKeys.previousCertificate,
-              value,
-              [
-                advancedQuestionKeys.certificateType,
-                advancedQuestionKeys.certificateTypeOther,
-              ],
-            )}
-            options={yesNoOptions}
-            error={props.errors[advancedQuestionKeys.previousCertificate]}
-          />}
-          {props.answers[advancedQuestionKeys.previousCertificate] === "Yes" && (
+          {showQuestion(advancedQuestionKeys.previousCertificate) && renderQuestion(
+            advancedQuestionKeys.previousCertificate,
+            labelFor(advancedQuestionKeys.previousCertificate, `Do you have a previous certificate in ${courseName}?`),
+            yesNoOptions,
+            [
+              advancedQuestionKeys.certificateType,
+              advancedQuestionKeys.certificateTypeOther,
+            ],
+          )}
+          {formatFor(advancedQuestionKeys.previousCertificate) === "closed" && props.answers[advancedQuestionKeys.previousCertificate] === "Yes" && (
             <SelectField
               errorKey={advancedQuestionKeys.certificateType}
               label="Type of certification"
@@ -2460,22 +2474,17 @@ function VerificationStep(props: {
             />
           )}
 
-          {showQuestion(advancedQuestionKeys.practicalExperience) && <AnswerTextArea
-            errorKey={advancedQuestionKeys.practicalExperience}
-            label={labelFor(advancedQuestionKeys.practicalExperience, `Describe your practical experience in ${courseName}.`)}
-            value={props.answers[advancedQuestionKeys.practicalExperience] ?? ""}
-            onChange={(value) => updateAnswer(advancedQuestionKeys.practicalExperience, value)}
-            error={props.errors[advancedQuestionKeys.practicalExperience]}
-          />}
+          {showQuestion(advancedQuestionKeys.practicalExperience) && renderQuestion(
+            advancedQuestionKeys.practicalExperience,
+            labelFor(advancedQuestionKeys.practicalExperience, `Describe your practical experience in ${courseName}.`),
+            yesNoOptions,
+          )}
 
-          {showQuestion(advancedQuestionKeys.assessmentAvailability) && <SelectField
-            errorKey={advancedQuestionKeys.assessmentAvailability}
-            label={labelFor(advancedQuestionKeys.assessmentAvailability, `Are you available for ${courseName} assessment/interview?`)}
-            value={props.answers[advancedQuestionKeys.assessmentAvailability] ?? ""}
-            onChange={(value) => updateAnswer(advancedQuestionKeys.assessmentAvailability, value)}
-            options={availabilityOptions}
-            error={props.errors[advancedQuestionKeys.assessmentAvailability]}
-          />}
+          {showQuestion(advancedQuestionKeys.assessmentAvailability) && renderQuestion(
+            advancedQuestionKeys.assessmentAvailability,
+            labelFor(advancedQuestionKeys.assessmentAvailability, `Are you available for ${courseName} assessment/interview?`),
+            availabilityOptions,
+          )}
         </div>
       </div>
     );

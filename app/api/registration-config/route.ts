@@ -37,7 +37,7 @@ export async function GET() {
       prisma.verificationQuestion.findMany({
         where: { active: true },
         orderBy: [{ categoryId: "asc" }, { level: "asc" }, { sortOrder: "asc" }],
-        select: { categoryId: true, level: true, key: true, questionText: true, sortOrder: true },
+        select: { categoryId: true, level: true, key: true, questionText: true, format: true, sortOrder: true },
       }),
     ]);
 

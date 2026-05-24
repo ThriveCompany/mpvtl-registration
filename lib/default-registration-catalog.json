@@ -349,17 +349,17 @@
     }
   ],
   "questions": [
-    { "level": "Basic", "key": "canReadAndWrite", "questionText": "Can you read and write in English?", "sortOrder": 1 },
-    { "level": "Basic", "key": "newToField", "questionText": "Are you new to {course}?", "sortOrder": 2 },
-    { "level": "Basic", "key": "reasonForCourse", "questionText": "Why are you registering for {course}?", "sortOrder": 3 },
-    { "level": "Basic", "key": "availableForPracticalTraining", "questionText": "Are you available for practical training?", "sortOrder": 4 },
-    { "level": "Intermediate", "key": "priorExposure", "questionText": "Do you have basic knowledge or prior exposure to {course}?", "sortOrder": 1 },
-    { "level": "Intermediate", "key": "completedBasicCourse", "questionText": "Have you completed a basic course in {course} before?", "sortOrder": 2 },
-    { "level": "Intermediate", "key": "experienceDescription", "questionText": "Describe your experience with {course} briefly.", "sortOrder": 3 },
-    { "level": "Intermediate", "key": "availableForEntryReview", "questionText": "Are you available for entry review?", "sortOrder": 4 },
-    { "level": "Advanced", "key": "priorTraining", "questionText": "Do you have prior training or demonstrable experience in {course}?", "sortOrder": 1 },
-    { "level": "Advanced", "key": "hasPreviousCertificate", "questionText": "Do you have a previous certificate?", "sortOrder": 2 },
-    { "level": "Advanced", "key": "practicalExperience", "questionText": "Describe your practical experience with {course}.", "sortOrder": 3 },
-    { "level": "Advanced", "key": "availableForAssessment", "questionText": "Are you available for assessment or interview?", "sortOrder": 4 }
+    { "level": "Basic", "key": "canReadAndWrite", "questionText": "Can you read and write in English?", "format": "closed", "sortOrder": 1 },
+    { "level": "Basic", "key": "newToField", "questionText": "Are you new to {course}?", "format": "closed", "sortOrder": 2 },
+    { "level": "Basic", "key": "reasonForCourse", "questionText": "Why are you registering for {course}?", "format": "closed", "sortOrder": 3 },
+    { "level": "Basic", "key": "availableForPracticalTraining", "questionText": "Are you available for practical training?", "format": "closed", "sortOrder": 4 },
+    { "level": "Intermediate", "key": "priorExposure", "questionText": "Do you have basic knowledge or prior exposure to {course}?", "format": "closed", "sortOrder": 1 },
+    { "level": "Intermediate", "key": "completedBasicCourse", "questionText": "Have you completed a basic course in {course} before?", "format": "closed", "sortOrder": 2 },
+    { "level": "Intermediate", "key": "experienceDescription", "questionText": "Describe your experience with {course} briefly.", "format": "open", "sortOrder": 3 },
+    { "level": "Intermediate", "key": "availableForEntryReview", "questionText": "Are you available for entry review?", "format": "closed", "sortOrder": 4 },
+    { "level": "Advanced", "key": "priorTraining", "questionText": "Do you have prior training or demonstrable experience in {course}?", "format": "closed", "sortOrder": 1 },
+    { "level": "Advanced", "key": "hasPreviousCertificate", "questionText": "Do you have a previous certificate?", "format": "closed", "sortOrder": 2 },
+    { "level": "Advanced", "key": "practicalExperience", "questionText": "Describe your practical experience with {course}.", "format": "open", "sortOrder": 3 },
+    { "level": "Advanced", "key": "availableForAssessment", "questionText": "Are you available for assessment or interview?", "format": "closed", "sortOrder": 4 }
   ]
 }

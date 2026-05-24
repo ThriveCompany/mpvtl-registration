@@ -234,6 +234,7 @@ async function seedRegistrationConfiguration() {
           where: { id: existingQuestion.id },
           data: {
             questionText: question.questionText,
+            format: question.format === "open" ? "open" : "closed",
             sortOrder: question.sortOrder,
           },
         });
@@ -244,6 +245,7 @@ async function seedRegistrationConfiguration() {
             level: question.level,
             key: question.key,
             questionText: question.questionText,
+            format: question.format === "open" ? "open" : "closed",
             sortOrder: question.sortOrder,
             active: true,
           },

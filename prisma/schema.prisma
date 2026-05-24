@@ -131,6 +131,7 @@ model VerificationQuestion {
   level        String
   key          String
   questionText String
+  format       String          @default("closed")
   active       Boolean         @default(true)
   sortOrder    Int             @default(0)
   createdAt    DateTime        @default(now())
