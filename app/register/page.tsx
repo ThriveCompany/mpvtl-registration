@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import type { FormEvent, ReactNode } from "react";
+import type { Dispatch, FormEvent, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Level = "Basic" | "Intermediate" | "Advanced";
@@ -61,6 +61,23 @@ type UploadedFileData = {
   uploadedFileSize: number;
   file?: File;
 };
+
+function isAllowedUploadType(fileType: string) {
+  return ALLOWED_UPLOAD_TYPES.includes(fileType);
+}
+
+function hasValidUploadMetadata(upload: UploadedFileData | undefined): upload is UploadedFileData {
+  return Boolean(
+    upload?.uploadedFileName &&
+      isAllowedUploadType(upload.uploadedFileType) &&
+      upload.uploadedFileSize > 0 &&
+      upload.uploadedFileSize <= MAX_UPLOAD_SIZE_BYTES,
+  );
+}
+
+function hasLiveUploadFile(upload: UploadedFileData): upload is UploadedFileData & { file: File } {
+  return typeof File !== "undefined" && upload.file instanceof File;
+}
 
 type EmailVerificationState = {
   email: string;
@@ -147,7 +164,7 @@ type AnswerState = VerificationAnswers & Partial<Record<string, string>>;
 
 const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_LABEL = "5MB";
-const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
 const DRAFT_STORAGE_KEY = "mpvtlShortCourseRegistrationDraft";
 const SUBMISSION_STORAGE_KEY = "mpvtlShortCourseRegistrationSubmission";
 
@@ -1050,8 +1067,8 @@ export default function RegisterPage() {
     : Array.isArray(questions[selectedLevel]) ? questions[selectedLevel] : [];
   const activeSteps = selectedLevel === "Basic" ? basicSteps : standardSteps;
   const stepItems = Array.isArray(activeSteps) ? activeSteps : [];
-  const uploadedFiles = Object.values(files ?? {}).filter(Boolean) as UploadedFileData[];
-  const selectedEvidenceFiles = uploadedFiles.filter((upload) => upload.file);
+  const uploadedFiles = (Object.values(files ?? {}).filter(Boolean) as UploadedFileData[]).filter(hasValidUploadMetadata);
+  const selectedEvidenceFiles = uploadedFiles.filter(hasLiveUploadFile);
   const editingExistingSubmission = Boolean(submittedRecord?.registrationId);
   const centerWhatsAppUrl = getCenterWhatsAppUrl(selectedLocationData);
   const normalizedApplicantEmail = details.email.trim().toLowerCase();
@@ -1407,10 +1424,11 @@ export default function RegisterPage() {
     if (targetStep >= 5 && selectedLevel === "Basic" && !basicDeclaration.trim()) {
       nextErrors.basicDeclaration = "Please complete your writing sample before continuing.";
     }
-    if (targetStep >= 5 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0 && !(editingExistingSubmission && uploadedFiles.length > 0)) {
-      nextErrors.uploads = uploadedFiles.length > 0
-        ? "Please reselect the uploaded document before continuing."
-        : "Please upload at least one document before continuing.";
+    if (targetStep >= 5 && selectedLevel !== "Basic" && uploadedFiles.length === 0) {
+      nextErrors.uploads = "Please upload at least one document before continuing.";
+    }
+    if (targetStep >= 6 && selectedLevel !== "Basic" && selectedEvidenceFiles.length === 0 && !(editingExistingSubmission && uploadedFiles.length > 0)) {
+      nextErrors.uploads = "Please reselect the uploaded document before submitting.";
     }
     if (targetStep >= 6 && emailVerified !== true) {
       nextErrors.emailVerification = "Please verify your email address before submitting.";
@@ -2793,7 +2811,7 @@ function BasicDeclarationStep(props: {
 
 function EvidenceStep(props: {
   files: Record<string, UploadedFileData | undefined>;
-  setFiles: (value: Record<string, UploadedFileData | undefined>) => void;
+  setFiles: Dispatch<SetStateAction<Record<string, UploadedFileData | undefined>>>;
   error?: string;
   setUploadError: (message: string) => void;
 }) {
@@ -2802,7 +2820,7 @@ function EvidenceStep(props: {
   function handleFileChange(field: string, file?: File) {
     if (!file) return;
 
-    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+    if (!isAllowedUploadType(file.type)) {
       props.setUploadError(`"${file.name}" is not supported. Please upload a JPG, PNG, or PDF file.`);
       return;
     }
@@ -2812,8 +2830,8 @@ function EvidenceStep(props: {
       return;
     }
 
-    props.setFiles({
-      ...props.files,
+    props.setFiles((current) => ({
+      ...current,
       [field]: {
         field,
         uploadedFileName: file.name,
@@ -2821,7 +2839,7 @@ function EvidenceStep(props: {
         uploadedFileSize: file.size,
         file,
       },
-    });
+    }));
     props.setUploadError("");
   }
 
@@ -2829,8 +2847,8 @@ function EvidenceStep(props: {
     <div>
       <StepHeader icon={<FileUp />} title="Upload Evidence" subtitle="Select supporting files for MPVTL review." />
 
-      <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm font-semibold text-brand-800">
-        Upload at least one JPG, PNG, or PDF document. Each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+        Accepted documents: JPG, PNG, or PDF. Each file must be {MAX_UPLOAD_SIZE_LABEL} or smaller.
       </div>
       {props.error && <p data-error-key="uploads" className="mt-3 text-sm font-semibold text-brand-700">{props.error}</p>}
 
