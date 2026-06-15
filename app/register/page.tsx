@@ -547,7 +547,7 @@ const locations: LocationOption[] = [
 const centerWhatsAppNumbers: Record<string, string> = {
   L1000: "+2349024208667",
   L1001: "+2348036545517",
-  L1002: "+2347059558727",
+  L1002: "+2348107231445",
   L1003: "+2348036358220",
   L1004: "+2348023041736",
   L1005: "+2348067228580",
@@ -672,6 +672,21 @@ function renderDynamicQuestionText(text: string, course?: Course) {
     .replaceAll("{course}", course?.name || "selected course")
     .replaceAll("{level}", course?.level || "selected level")
     .replaceAll("{field}", course?.field || course?.category || "selected field");
+}
+
+function ensureClosedQuestionOptions(questionText: string, options: string[]) {
+  const safeOptions = safeArray(options).map((option) => option.trim()).filter(Boolean);
+  const normalized = safeOptions.map((option) => option.toLowerCase());
+
+  if (questionText.toLowerCase().includes("available")) {
+    const required = ["Yes", "No", "Maybe", "Other, please describe"];
+    return required.filter((option) => !normalized.includes(option.toLowerCase())).length > 0
+      ? required
+      : safeOptions;
+  }
+
+  if (safeOptions.length === 0) return ["Yes", "No", "Other, please describe"];
+  return safeOptions;
 }
 
 function locationHasHostel(location?: LocationOption) {
@@ -2495,7 +2510,7 @@ function VerificationStep(props: {
     const label = renderDynamicQuestionText(question.questionText, props.selectedCourse || ({ name: courseName } as Course));
     const options = question.questionType === "yes_no"
       ? ["Yes", "No"]
-      : question.options.map((option) => option.value);
+      : ensureClosedQuestionOptions(question.questionText, question.options.map((option) => option.value));
 
     if (question.questionType === "open") {
       return (

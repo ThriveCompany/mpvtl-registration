@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { getCenterManagerWhatsAppUrl } from "@/lib/center-contact";
 
 export type ApprovalEmailInput = {
   to: string;
@@ -69,7 +70,7 @@ const brand = {
   softRed: "#fff1f3",
 };
 
-function smtpConfigured() {
+export function isSmtpConfigured() {
   return Boolean(
     process.env.SMTP_HOST &&
       process.env.SMTP_PORT &&
@@ -415,6 +416,10 @@ MPVTL Registration Team`;
 export function renderUnapprovalEmail(input: DecisionEmailInput): RenderedEmail {
   const subject = "MPVTL Registration Update";
   const additionalReason = input.reviewReasonOther ? `<p style="margin:8px 0 0;color:${brand.charcoal};font-size:14px;line-height:24px;">${escapeHtml(input.reviewReasonOther)}</p>` : "";
+  const contactUrl = getCenterManagerWhatsAppUrl(
+    input.center,
+    `Hello MPVTL, I received a registration update for ${input.course} at ${input.center} and I need guidance.`,
+  );
   const html = renderBaseEmailTemplate({
     title: "Registration Update",
     body: `
@@ -431,6 +436,7 @@ export function renderUnapprovalEmail(input: DecisionEmailInput): RenderedEmail 
       <p style="margin:0;color:${brand.charcoal};font-size:14px;line-height:24px;">
         You may contact MPVTL for further guidance.
       </p>
+      ${renderButton("Contact Centre Manager", contactUrl)}
     `,
   });
   const text = `Dear ${input.fullName},
@@ -445,6 +451,9 @@ ${input.reviewReasonOther || ""}
 
 You may contact MPVTL for further guidance.
 
+Contact Centre Manager:
+${contactUrl}
+
 Thank you,
 MPVTL Registration Team`;
 
@@ -454,6 +463,10 @@ MPVTL Registration Team`;
 export function renderFurtherReviewEmail(input: DecisionEmailInput): RenderedEmail {
   const subject = "MPVTL Registration Requires Further Review";
   const additionalReason = input.reviewReasonOther ? `<p style="margin:8px 0 0;color:${brand.charcoal};font-size:14px;line-height:24px;">${escapeHtml(input.reviewReasonOther)}</p>` : "";
+  const contactUrl = getCenterManagerWhatsAppUrl(
+    input.center,
+    `Hello MPVTL, my registration for ${input.course} at ${input.center} requires further review. Please assist me.`,
+  );
   const html = renderBaseEmailTemplate({
     title: "Further Review Required",
     body: `
@@ -467,6 +480,7 @@ export function renderFurtherReviewEmail(input: DecisionEmailInput): RenderedEma
       <p style="margin:0;color:${brand.charcoal};font-size:14px;line-height:24px;">
         An MPVTL representative may contact you for clarification or additional information.
       </p>
+      ${renderButton("Contact Centre Manager", contactUrl)}
     `,
   });
   const text = `Dear ${input.fullName},
@@ -479,6 +493,9 @@ ${input.reviewReasonOther || ""}
 
 An MPVTL representative may contact you for clarification or additional information.
 
+Contact Centre Manager:
+${contactUrl}
+
 Thank you,
 MPVTL Registration Team`;
 
@@ -488,6 +505,10 @@ MPVTL Registration Team`;
 export function renderRevisedDecisionEmail(input: RevisedDecisionEmailInput): RenderedEmail {
   const subject = "MPVTL Updated Response Reviewed";
   const additionalReason = input.reviewReasonOther ? `<p style="margin:8px 0 0;color:${brand.charcoal};font-size:14px;line-height:24px;">${escapeHtml(input.reviewReasonOther)}</p>` : "";
+  const contactUrl = getCenterManagerWhatsAppUrl(
+    input.center,
+    `Hello MPVTL, my updated response for ${input.course} at ${input.center} has been reviewed. Please assist me with next steps.`,
+  );
   const html = renderBaseEmailTemplate({
     title: "Updated Response Reviewed",
     body: `
@@ -511,6 +532,7 @@ export function renderRevisedDecisionEmail(input: RevisedDecisionEmailInput): Re
       <p style="margin:0;color:${brand.charcoal};font-size:14px;line-height:24px;">
         An MPVTL representative will contact you if any further action is required.
       </p>
+      ${renderButton("Contact Centre Manager", contactUrl)}
     `,
   });
   const text = `Dear ${input.fullName},
@@ -525,6 +547,9 @@ ${input.reviewReasonOther || ""}
 
 An MPVTL representative will contact you if any further action is required.
 
+Contact Centre Manager:
+${contactUrl}
+
 Thank you,
 MPVTL Registration Team`;
 
@@ -532,7 +557,7 @@ MPVTL Registration Team`;
 }
 
 async function sendMail(input: MailInput) {
-  if (!smtpConfigured()) {
+  if (!isSmtpConfigured()) {
     console.log("SMTP not configured. Email content:", {
       from: getMailFrom(),
       ...input,

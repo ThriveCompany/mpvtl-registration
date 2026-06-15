@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import { NextResponse } from "next/server";
-import { sendVerificationEmail } from "@/lib/email";
+import { isSmtpConfigured, sendVerificationEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -19,6 +19,13 @@ function createVerificationCode() {
 }
 
 export async function POST(request: Request) {
+  if (!isSmtpConfigured()) {
+    return NextResponse.json(
+      { message: "Email verification is temporarily unavailable. Please contact support." },
+      { status: 503 },
+    );
+  }
+
   const body = await request.json().catch(() => null) as { email?: unknown } | null;
   const email = normalizeEmail(body?.email);
 
