@@ -181,10 +181,27 @@ const categories = [
   "Health & Safety",
 ];
 
-const trainingSessions = [
-  "October - December",
-  "January - March",
+const sessionQuarters = [
+  { startMonth: "January", endMonth: "March" },
+  { startMonth: "April", endMonth: "June" },
+  { startMonth: "July", endMonth: "September" },
+  { startMonth: "October", endMonth: "December" },
 ];
+
+function getTrainingSessions(referenceDate = new Date()) {
+  const currentQuarterIndex = Math.floor(referenceDate.getMonth() / 3);
+  const isQuarterOpeningDay = referenceDate.getMonth() % 3 === 0 && referenceDate.getDate() === 1;
+  const firstSessionIndex = isQuarterOpeningDay ? currentQuarterIndex : currentQuarterIndex + 1;
+
+  return [0, 1].map((offset) => {
+    const absoluteIndex = firstSessionIndex + offset;
+    const quarter = sessionQuarters[absoluteIndex % sessionQuarters.length];
+    const year = referenceDate.getFullYear() + Math.floor(absoluteIndex / sessionQuarters.length);
+    return `${quarter.startMonth} - ${quarter.endMonth}, ${year} Batch`;
+  });
+}
+
+const trainingSessions = getTrainingSessions();
 
 const shortCourseRequirements: Record<Level, string> = {
   Basic:
