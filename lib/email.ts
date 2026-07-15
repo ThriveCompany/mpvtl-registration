@@ -59,6 +59,12 @@ type MailInput = RenderedEmail & {
   to: string;
 };
 
+type SmtpLikeError = {
+  response?: unknown;
+  responseCode?: unknown;
+  code?: unknown;
+};
+
 const brand = {
   red: "#8f1d2c",
   redDark: "#6f1421",
@@ -85,6 +91,14 @@ function getMailFrom() {
 
 function getAppUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || "https://register.mpvtl.cloud").replace(/\/$/, "");
+}
+
+function isHighProbabilitySpamError(error: unknown) {
+  const smtpError = error as SmtpLikeError;
+  return (
+    smtpError?.responseCode === 550 &&
+    String(smtpError?.response || "").toLowerCase().includes("high-probability spam")
+  );
 }
 
 function escapeHtml(value: string | number | null | undefined) {
@@ -575,10 +589,28 @@ async function sendMail(input: MailInput) {
     },
   });
 
-  await transporter.sendMail({
-    from: getMailFrom(),
-    ...input,
-  });
+  const from = getMailFrom();
+
+  try {
+    await transporter.sendMail({
+      from,
+      ...input,
+    });
+  } catch (error) {
+    if (!isHighProbabilitySpamError(error)) throw error;
+
+    console.warn("SMTP rejected HTML email as high-probability spam. Retrying with plain text.", {
+      to: input.to,
+      subject: input.subject,
+    });
+
+    await transporter.sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+    });
+  }
 }
 
 export async function sendVerificationEmail(to: string, code: string) {
