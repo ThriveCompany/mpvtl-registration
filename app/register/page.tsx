@@ -182,8 +182,8 @@ const categories = [
 ];
 
 const trainingSessions = [
-  "July - September, 2026 Batch",
-  "October - December, 2026 Batch",
+  "October - December",
+  "January - March",
 ];
 
 const shortCourseRequirements: Record<Level, string> = {
@@ -3193,3 +3193,5 @@ function TextField({
     </label>
   );
 }
+
+
