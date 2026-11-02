@@ -47,10 +47,11 @@ The interactive environment is provided but not fully exercised on this host.
 | Second Paystack project preservation | PASS: tracked-file/status fingerprint unchanged, including all 25 previously changed/deleted paths |
 | Main branch | PASS: remains `710e7136d7c2f9686c527fdcfb155a7a72df0409` locally and as PR base |
 
-The lockfile's two incidental runtime-package updates from adding test tooling
-were restored to baseline; no existing runtime-package version is intentionally
-upgraded. Check the current PR-head CI result after that final lockfile-only
-adjustment. The linked run proves clean `npm ci --ignore-scripts`, Prisma
+Direct application dependencies are unchanged. Adding test tooling updates two
+shared transitive resolutions: nanoid 3.3.12 -> 3.3.20 and source-map-js 1.2.1 ->
+1.2.2. Retain npm's generated compatible tree: reverting only these entries caused
+`npm ci` to reject the lockfile and was corrected. Check the current PR-head CI
+result. The linked run proves clean `npm ci --ignore-scripts`, Prisma
 generation, lint, typecheck and all 25 tests on Linux. Final PR-head results are
 also recorded in the PR description. No production build or release was run.
 
