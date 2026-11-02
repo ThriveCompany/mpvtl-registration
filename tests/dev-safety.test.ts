@@ -11,6 +11,6 @@ describe("development isolation", () => {
     expect(env.SMTP_PASS).toBe("");
     expect(env).not.toHaveProperty("PAYSTACK_SECRET_KEY");
     expect(env).not.toHaveProperty("NODE_OPTIONS");
-    expect(env.PATH).toBe("/synthetic/bin");
+    expect(env).toHaveProperty("PATH", "/synthetic/bin");
   });
 });

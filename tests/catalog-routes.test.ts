@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GET as publicGET } from "@/app/api/registration-config/route";
+import { GET as coursesGET } from "@/app/api/admin/courses/route";
+import { GET as questionsGET } from "@/app/api/admin/questions/route";
+import { GET as builderGET } from "@/app/api/admin/form-builder/route";
 
 const doubles = vi.hoisted(() => ({
   bootstrap: vi.fn(), admin: vi.fn(),
@@ -22,8 +26,7 @@ describe("catalogue route boundaries", () => {
   });
 
   it("returns the public catalogue after initialization", async () => {
-    const { GET } = await import("@/app/api/registration-config/route");
-    const response = await GET();
+    const response = await publicGET();
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ courses: [{ id: "synthetic-course", name: "Synthetic course" }], categories: [], questions: [], formQuestions: [] });
     expect(doubles.bootstrap.mock.invocationCallOrder[0]).toBeLessThan(doubles.courses.mock.invocationCallOrder[0]);
@@ -32,8 +35,7 @@ describe("catalogue route boundaries", () => {
 
   it("preserves the existing empty-success response on bootstrap failure", async () => {
     doubles.bootstrap.mockRejectedValue(new Error("Synthetic bootstrap failure"));
-    const { GET } = await import("@/app/api/registration-config/route");
-    const response = await GET();
+    const response = await publicGET();
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ courses: [], categories: [], questions: [], formQuestions: [] });
     expect(doubles.courses).not.toHaveBeenCalled();
@@ -41,13 +43,13 @@ describe("catalogue route boundaries", () => {
 
   it.each(["courses", "questions", "form-builder"])("rejects unauthorized admin %s reads before bootstrapping", async (route) => {
     const handlers = {
-      courses: await import("@/app/api/admin/courses/route"),
-      questions: await import("@/app/api/admin/questions/route"),
-      "form-builder": await import("@/app/api/admin/form-builder/route"),
+      courses: coursesGET,
+      questions: questionsGET,
+      "form-builder": builderGET,
     };
     for (const admin of [null, { role: "CENTER_MANAGER", forcePasswordChange: false }, { role: "SUPER_ADMIN", forcePasswordChange: true }]) {
       doubles.admin.mockResolvedValue(admin);
-      const response = await handlers[route as keyof typeof handlers].GET();
+      const response = await handlers[route as keyof typeof handlers]();
       expect(response.status).toBe(403);
     }
     expect(doubles.bootstrap).not.toHaveBeenCalled();

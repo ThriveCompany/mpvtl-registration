@@ -257,7 +257,7 @@ export default async function RegistrationProfilePage({
               </h2>
               {isBasicRegistration && (
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Review literacy, motivation, practical availability, and the applicant's typed writing sample.
+                  Review literacy, motivation, practical availability, and the applicant&apos;s typed writing sample.
                 </p>
               )}
             </div>
