@@ -72,8 +72,10 @@ No Paystack API was called.
 ## CI and disclosure boundaries
 
 The proposed workflow is PR/manual-check only, read-only token, SHA-pinned
-checkout/setup actions, no persisted Git credentials, no secrets, no DB service,
-no deploy, migration or seed step. Do not upload raw logs, database dumps or
+checkout/setup actions, no persisted Git credentials and no production secrets.
+One job has no database; a separate job uses an ephemeral synthetic PostgreSQL
+service and the guarded synthetic-only schema/fixture setup. There is no deploy,
+production migration or legacy staff seed step. Do not upload raw logs, database dumps or
 environment snapshots as artifacts. Installing npm packages is not evidence
 that all transitive dependencies are vulnerability-free; record audit results
 separately and do not apply unreviewed automatic upgrades.

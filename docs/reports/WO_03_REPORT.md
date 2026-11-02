@@ -18,8 +18,9 @@ the displayed text is unchanged. No lint rules are disabled.
 - Add synthetic catalogue, route, authorization and isolation unit tests.
 - Add a Node pin, lockfile-based installation, loopback-only PostgreSQL Compose
   setup, synthetic fixture seed and guarded development helper.
-- Add PR CI with a read-only token, SHA-pinned actions, no production secrets,
-  database service, deployment, migration or staff seed.
+- Add PR CI with a read-only token, SHA-pinned actions, database-free unit checks
+  and a separate ephemeral synthetic-database setup/idempotency check. No
+  production secrets, deployment, production migrations or staff seed.
 - Remove two currently tracked stderr logs and ignore future `.err` files.
 - Document catalogue effects/callers, technical risks, Paystack-project suitability,
   a sanitized read-only VPS checklist and proposed WO-04.
@@ -34,9 +35,11 @@ The interactive environment is provided but not fully exercised on this host.
 | Baseline branch/HEAD/working tree | PASS before branch creation |
 | Docker Linux engine | BLOCKED: Docker Desktop Linux engine pipe unavailable |
 | Interactive PostgreSQL fixture setup / browser flow | NOT RUN: requires the unavailable local engine |
+| Hosted synthetic PostgreSQL setup/idempotency | Added as a separate CI job to validate setup despite the unavailable local Docker engine; see final PR-head CI result |
 | Dependency installation | PASS; dev dependencies and lockfile added; installation lifecycle scripts disabled |
 | Prisma client generation | PASS; no database connection |
 | Local TypeScript validation | PASS, exit 0; route types generated first |
+| Local lint | PASS, exit 0; zero errors and six existing hook warnings |
 | Local automated tests | PASS: 5 files, 25 tests, exit 0 |
 | Hosted lint/typecheck/tests | PASS: [run 41502948138](https://github.com/ThriveCompany/mpvtl-registration/actions/runs/41502948138), code revision `1558ca48c8e6326690dd39c14eba09d8c98140f9`; six existing hook warnings remain |
 | Initial failed checks | Explicitly superseded: worker-start/cold-import timeouts and JSX lint error; fixed with single thread, collection-time route imports and unchanged rendered apostrophe |
@@ -52,9 +55,9 @@ generation, lint, typecheck and all 25 tests on Linux. Final PR-head results are
 also recorded in the PR description. No production build or release was run.
 
 The test runner is configured for one thread worker to reduce process startup
-overhead. No production connections, migrations, seeds, email or payments were
-used to validate this batch. Database integration and end-to-end browser behaviour
-are not established by the unit suite.
+overhead. No production connections, production migrations, legacy staff seeds, email or payments were
+used to validate this batch. The separate CI database smoke check exercises
+synthetic schema/fixtures only; end-to-end browser behaviour is not established.
 
 ## Findings and follow-up
 

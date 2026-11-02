@@ -33,6 +33,7 @@ start Docker Desktop or change its configuration:
 ```sh
 npm run dev:db
 npm run dev:prepare
+npm run dev:verify
 npm run dev:isolated
 ```
 
@@ -70,7 +71,10 @@ with interactive test evidence; pin the reviewed digest if byte-identical DB
 images are required. Package installation also needs registry access on first use.
 
 CI runs the database-free checks with `contents: read`, no persisted checkout
-credentials, no repository secrets, no database services and no deployment step.
+credentials, no repository secrets and no deployment step. A separate job uses
+an ephemeral PostgreSQL service on the fixed synthetic port/database to execute
+the guarded setup twice and verify fixture counts and synthetic identities.
+It does not use production migrations, the staff seed or any external service.
 Do not substitute `pull_request_target` for `pull_request`.
 
 ## Boundaries

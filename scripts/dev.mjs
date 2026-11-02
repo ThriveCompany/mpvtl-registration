@@ -31,6 +31,7 @@ switch (process.argv[2]) {
   case "db:up": compose(["up", "-d", "--wait"]); break;
   case "db:down": compose(["down"]); break;
   case "generate": node("node_modules/prisma/build/index.js", ["generate"]); break;
+  case "verify": node("scripts/check-synthetic.mjs"); break;
   case "prepare":
     node("node_modules/prisma/build/index.js", ["generate"]);
     // Local disposable schema only: never use the staff seed or production migrations.
@@ -42,5 +43,5 @@ switch (process.argv[2]) {
     node("node_modules/next/dist/bin/next", ["typegen"]);
     node("node_modules/typescript/bin/tsc", ["--noEmit", "--incremental", "false"]);
     break;
-  default: throw new Error("Expected db:up, db:down, generate, prepare, start or typecheck");
+  default: throw new Error("Expected db:up, db:down, generate, prepare, verify, start or typecheck");
 }
