@@ -10,6 +10,8 @@ The original local `main` and HEAD matched the accepted baseline, with a clean
 working tree, before creating this dedicated branch. No application handler,
 catalogue implementation, production seed, database schema or migration is
 changed. The second local project is inspected only.
+The sole application-page edit escapes a JSX apostrophe to satisfy lint;
+the displayed text is unchanged. No lint rules are disabled.
 
 - Add standalone Next-compatible ESLint configuration and command.
 - Add fresh-checkout route-type generation and strict TypeScript validation.
@@ -24,17 +26,30 @@ changed. The second local project is inspected only.
 
 ## Evidence and validation
 
-Validation is in progress. Do not interpret this draft as a passing-check report.
+Database-free checks passed locally and in a clean GitHub Actions Linux checkout.
+The interactive environment is provided but not fully exercised on this host.
 
 | Check | Current result |
 | --- | --- |
 | Baseline branch/HEAD/working tree | PASS before branch creation |
 | Docker Linux engine | BLOCKED: Docker Desktop Linux engine pipe unavailable |
 | Interactive PostgreSQL fixture setup / browser flow | NOT RUN: requires the unavailable local engine |
-| Dependency installation | In progress; registry requests and local processes unusually slow |
-| Initial tests | 17 passed, but bootstrap worker startup timed out: overall FAIL, not a passing suite |
-| Initial lint/typecheck | Incomplete/failed while installation/configuration was changing; final rerun required |
-| Final lint/typecheck/test and hosted CI | Pending |
+| Dependency installation | PASS; dev dependencies and lockfile added; installation lifecycle scripts disabled |
+| Prisma client generation | PASS; no database connection |
+| Local TypeScript validation | PASS, exit 0; route types generated first |
+| Local automated tests | PASS: 5 files, 25 tests, exit 0 |
+| Hosted lint/typecheck/tests | PASS: [run 41502948138](https://github.com/ThriveCompany/mpvtl-registration/actions/runs/41502948138), code revision `1558ca48c8e6326690dd39c14eba09d8c98140f9`; six existing hook warnings remain |
+| Initial failed checks | Explicitly superseded: worker-start/cold-import timeouts and JSX lint error; fixed with single thread, collection-time route imports and unchanged rendered apostrophe |
+| Dependency security | INCOMPLETE: install audit summary 27 findings (16 moderate, 9 high, 2 critical); detailed audit timed out at 240 seconds; no automatic fixes applied |
+| Second Paystack project preservation | PASS: tracked-file/status fingerprint unchanged, including all 25 previously changed/deleted paths |
+| Main branch | PASS: remains `710e7136d7c2f9686c527fdcfb155a7a72df0409` locally and as PR base |
+
+The lockfile's two incidental runtime-package updates from adding test tooling
+were restored to baseline; no existing runtime-package version is intentionally
+upgraded. Check the current PR-head CI result after that final lockfile-only
+adjustment. The linked run proves clean `npm ci --ignore-scripts`, Prisma
+generation, lint, typecheck and all 25 tests on Linux. Final PR-head results are
+also recorded in the PR description. No production build or release was run.
 
 The test runner is configured for one thread worker to reduce process startup
 overhead. No production connections, migrations, seeds, email or payments were
@@ -50,7 +65,7 @@ SMTP fallback can log personal message content. The primary app has a payment
 placeholder and no payment ledger; the separate prototype is not a drop-in fit.
 
 UNKNOWN: deployed revision/build, PM2 cwd, nginx routing, migration state,
-credential use in production, full dependency exposure and backup restorability.
+credential use in production, complete dependency advisory attribution and backup restorability.
 No VPS session was opened. See:
 
 - [Development instructions](../DEVELOPMENT.md)
@@ -64,4 +79,4 @@ remove every GET write. Deployment remains separately authorised work.
 
 PRODUCTION CHANGES: NONE
 MAIN BRANCH CHANGES: NONE
-PR STATUS: DRAFT PREPARATION; update with actual PR and final evidence before handoff
+PR STATUS: OPEN DRAFT — https://github.com/ThriveCompany/mpvtl-registration/pull/1
