@@ -6,3 +6,6 @@ next-dev.err.log
 .env*
 !.env.example
 uploads/
+coverage/
+*.tsbuildinfo
+*.err

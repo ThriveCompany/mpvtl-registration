@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: synthetic
+      POSTGRES_PASSWORD: synthetic-local-only
+      POSTGRES_DB: mpvtl_wo03_synthetic
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - synthetic-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synthetic -d mpvtl_wo03_synthetic"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  synthetic-db:

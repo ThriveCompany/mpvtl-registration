@@ -1,5 +1,10 @@
 # MPVTL Short Course Registration
 
+For the isolated, synthetic-only development workflow, use
+[Development baseline](docs/DEVELOPMENT.md). The legacy deployment and seed
+instructions below are not part of WO-03 and must not be run against production
+under this work order.
+
 Next.js App Router project for the MPVTL short course registration experience and a simple PostgreSQL-backed registration management system.
 
 ## Local Development

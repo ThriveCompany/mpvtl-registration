@@ -1,0 +1,2827 @@
+{
+  "retrieved_on_client_date": "2026-11-06",
+  "source": "https://registry.npmjs.org/-/npm/v1/security/advisories/bulk",
+  "method": "POST package names and locked versions only; semver-match advisory ranges against each lockfile node; no install or upgrade",
+  "baseline_revision": "710e7136d7c2f9686c527fdcfb155a7a72df0409",
+  "reviewed_revision": "f00a60ab8463cd200cee93be361b675b93752b3b",
+  "snapshots": {
+    "baseline": [
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1120311,
+        "url": "https://github.com/advisories/GHSA-jxxr-4gwj-5jf2",
+        "severity": "moderate",
+        "affected_range": ">=5.0.0 <5.0.6",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130588,
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "affected_range": "<1.1.17",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130591,
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130734,
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130737,
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "affected_range": "<1.1.18",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1123897,
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "affected_range": "<1.1.16",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1123898,
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "affected_range": ">=3.0.0 <5.0.7",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240107,
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.11",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240108,
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "affected_range": "<1.1.19",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240111,
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.10",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240100,
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "affected_range": "<1.1.21",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240103,
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "affected_range": ">=4.0.0 <5.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240104,
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "affected_range": "<1.1.20",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "minimatch",
+        "advisory_id": 1244623,
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+        "severity": "moderate",
+        "affected_range": ">=7.0.0 <11.0.1",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch",
+            "version": "10.2.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "baseline-browser-mapping",
+        "advisory_id": 1193686,
+        "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv",
+        "severity": "moderate",
+        "affected_range": ">=2.0.0 <2.11.0",
+        "nodes": [
+          {
+            "path": "node_modules/baseline-browser-mapping",
+            "version": "2.10.24",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "browserslist",
+        "advisory_id": 1153171,
+        "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+        "severity": "high",
+        "affected_range": "<=4.28.6",
+        "nodes": [
+          {
+            "path": "node_modules/browserslist",
+            "version": "4.28.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "browserslist",
+        "advisory_id": 1153172,
+        "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g",
+        "severity": "high",
+        "affected_range": "<=4.28.6",
+        "nodes": [
+          {
+            "path": "node_modules/browserslist",
+            "version": "4.28.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "deepmerge-ts",
+        "advisory_id": 1145093,
+        "url": "https://github.com/advisories/GHSA-ggr8-5vv4-36mx",
+        "severity": "high",
+        "affected_range": "<8.0.0",
+        "nodes": [
+          {
+            "path": "node_modules/deepmerge-ts",
+            "version": "7.1.5",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120802,
+        "url": "https://github.com/advisories/GHSA-hpcv-96wg-7vj8",
+        "severity": "moderate",
+        "affected_range": "<=3.4.5",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120803,
+        "url": "https://github.com/advisories/GHSA-r47g-fvhr-h676",
+        "severity": "moderate",
+        "affected_range": "<=3.4.5",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120813,
+        "url": "https://github.com/advisories/GHSA-rp9w-3fw7-7cwq",
+        "severity": "moderate",
+        "affected_range": "<=3.4.6",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124233,
+        "url": "https://github.com/advisories/GHSA-cmwh-pvxp-8882",
+        "severity": "moderate",
+        "affected_range": "<=3.4.10",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124234,
+        "url": "https://github.com/advisories/GHSA-vxr8-fq34-vvx9",
+        "severity": "low",
+        "affected_range": "<3.4.9",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124235,
+        "url": "https://github.com/advisories/GHSA-gvmj-g25r-r7wr",
+        "severity": "low",
+        "affected_range": ">=3.0.0 <=3.4.7",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124236,
+        "url": "https://github.com/advisories/GHSA-x4vx-rjvf-j5p4",
+        "severity": "low",
+        "affected_range": "<=3.4.6",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124237,
+        "url": "https://github.com/advisories/GHSA-76mc-f452-cxcm",
+        "severity": "moderate",
+        "affected_range": "<3.4.7",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1240978,
+        "url": "https://github.com/advisories/GHSA-c2j3-45gr-mqc4",
+        "severity": "low",
+        "affected_range": "<=3.4.11",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1138538,
+        "url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7",
+        "severity": "moderate",
+        "affected_range": "<=3.4.12",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1241204,
+        "url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2",
+        "severity": "low",
+        "affected_range": "<=3.4.15",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242880,
+        "url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7",
+        "severity": "critical",
+        "affected_range": ">=3.4.4 <=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242881,
+        "url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr",
+        "severity": "high",
+        "affected_range": "<=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242882,
+        "url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f",
+        "severity": "low",
+        "affected_range": "<=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "effect",
+        "advisory_id": 1115356,
+        "url": "https://github.com/advisories/GHSA-38f7-945m-qr2g",
+        "severity": "high",
+        "affected_range": "<3.20.0",
+        "nodes": [
+          {
+            "path": "node_modules/effect",
+            "version": "3.18.4",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "js-yaml",
+        "advisory_id": 1121860,
+        "url": "https://github.com/advisories/GHSA-h67p-54hq-rp68",
+        "severity": "moderate",
+        "affected_range": ">=4.0.0 <=4.1.1",
+        "nodes": [
+          {
+            "path": "node_modules/js-yaml",
+            "version": "4.1.1",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "js-yaml",
+        "advisory_id": 1123911,
+        "url": "https://github.com/advisories/GHSA-52cp-r559-cp3m",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <4.3.0",
+        "nodes": [
+          {
+            "path": "node_modules/js-yaml",
+            "version": "4.1.1",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "js-yaml",
+        "advisory_id": 1138115,
+        "url": "https://github.com/advisories/GHSA-5p4m-2wfm-xmqj",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <4.3.1",
+        "nodes": [
+          {
+            "path": "node_modules/js-yaml",
+            "version": "4.1.1",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "js-yaml",
+        "advisory_id": 1193727,
+        "url": "https://github.com/advisories/GHSA-2883-xcg3-v3hh",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <4.3.2",
+        "nodes": [
+          {
+            "path": "node_modules/js-yaml",
+            "version": "4.1.1",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nanoid",
+        "advisory_id": 1138811,
+        "url": "https://github.com/advisories/GHSA-28wg-ghj8-5hjv",
+        "severity": "high",
+        "affected_range": "<3.3.16",
+        "nodes": [
+          {
+            "path": "node_modules/nanoid",
+            "version": "3.3.12",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nanoid",
+        "advisory_id": 1139427,
+        "url": "https://github.com/advisories/GHSA-2v37-7h3g-55p8",
+        "severity": "high",
+        "affected_range": "<3.3.18",
+        "nodes": [
+          {
+            "path": "node_modules/nanoid",
+            "version": "3.3.12",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1117931,
+        "url": "https://github.com/advisories/GHSA-8h8q-6873-q5fj",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118942,
+        "url": "https://github.com/advisories/GHSA-3g8h-86w9-wvmq",
+        "severity": "low",
+        "affected_range": ">=12.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118944,
+        "url": "https://github.com/advisories/GHSA-ffhc-5mcf-pf4q",
+        "severity": "moderate",
+        "affected_range": ">=13.4.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118946,
+        "url": "https://github.com/advisories/GHSA-vfv6-92ff-j949",
+        "severity": "low",
+        "affected_range": ">=13.4.6 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118948,
+        "url": "https://github.com/advisories/GHSA-gx5p-jg67-6x7h",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118950,
+        "url": "https://github.com/advisories/GHSA-mg66-mrh9-m8jx",
+        "severity": "high",
+        "affected_range": ">=15.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118952,
+        "url": "https://github.com/advisories/GHSA-h64f-5h5j-jqjh",
+        "severity": "moderate",
+        "affected_range": ">=10.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118954,
+        "url": "https://github.com/advisories/GHSA-c4j6-fc7j-m34r",
+        "severity": "high",
+        "affected_range": ">=13.4.13 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118956,
+        "url": "https://github.com/advisories/GHSA-492v-c6pp-mqqv",
+        "severity": "high",
+        "affected_range": ">=15.4.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118958,
+        "url": "https://github.com/advisories/GHSA-wfc6-r584-vfw7",
+        "severity": "moderate",
+        "affected_range": ">=14.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118960,
+        "url": "https://github.com/advisories/GHSA-267c-6grr-h53f",
+        "severity": "high",
+        "affected_range": ">=15.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118962,
+        "url": "https://github.com/advisories/GHSA-36qx-fr4f-26g5",
+        "severity": "high",
+        "affected_range": ">=12.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124185,
+        "url": "https://github.com/advisories/GHSA-89xv-2m56-2m9x",
+        "severity": "high",
+        "affected_range": ">=14.1.1 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124172,
+        "url": "https://github.com/advisories/GHSA-m99w-x7hq-7vfj",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124187,
+        "url": "https://github.com/advisories/GHSA-68g3-v927-f742",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124189,
+        "url": "https://github.com/advisories/GHSA-4633-3j49-mh5q",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124191,
+        "url": "https://github.com/advisories/GHSA-4c39-4ccg-62r3",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124193,
+        "url": "https://github.com/advisories/GHSA-p9j2-gv94-2wf4",
+        "severity": "high",
+        "affected_range": ">=12.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124195,
+        "url": "https://github.com/advisories/GHSA-q8wf-6r8g-63ch",
+        "severity": "moderate",
+        "affected_range": ">=15.5.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124197,
+        "url": "https://github.com/advisories/GHSA-955p-x3mx-jcvp",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1193677,
+        "url": "https://github.com/advisories/GHSA-p293-qw3h-jr36",
+        "severity": "critical",
+        "affected_range": ">=13.4.0 <15.5.24",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1193733,
+        "url": "https://github.com/advisories/GHSA-2xp9-vwfh-vxw4",
+        "severity": "critical",
+        "affected_range": ">=10.0.0 <15.5.24",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1241494,
+        "url": "https://github.com/advisories/GHSA-mcj8-r9mp-w47p",
+        "severity": "moderate",
+        "affected_range": ">=15.0.0 <15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1241491,
+        "url": "https://github.com/advisories/GHSA-4jqv-mc3x-m676",
+        "severity": "moderate",
+        "affected_range": ">=15.0.0 <15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1242819,
+        "url": "https://github.com/advisories/GHSA-p3m5-59mp-jv5r",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <=15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1242817,
+        "url": "https://github.com/advisories/GHSA-2464-fhr4-w9xw",
+        "severity": "critical",
+        "affected_range": ">=10.0.0 <=15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "next",
+        "advisory_id": 1244536,
+        "url": "https://github.com/advisories/GHSA-26hh-7cqf-hhc6",
+        "severity": "high",
+        "affected_range": ">=15.2.0 <15.5.18",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1130709,
+        "url": "https://github.com/advisories/GHSA-fxqj-rqcc-2cmp",
+        "severity": "moderate",
+        "affected_range": "<=8.5.22",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          },
+          {
+            "path": "node_modules/postcss",
+            "version": "8.5.13",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1117015,
+        "url": "https://github.com/advisories/GHSA-qx2v-qp2m-jg93",
+        "severity": "moderate",
+        "affected_range": "<8.5.10",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1124252,
+        "url": "https://github.com/advisories/GHSA-6g55-p6wh-862q",
+        "severity": "high",
+        "affected_range": "<=8.5.11",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1139510,
+        "url": "https://github.com/advisories/GHSA-r28c-9q8g-f849",
+        "severity": "high",
+        "affected_range": "<=8.5.17",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          },
+          {
+            "path": "node_modules/postcss",
+            "version": "8.5.13",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1158513,
+        "url": "https://github.com/advisories/GHSA-p6gq-j5cr-w38f",
+        "severity": "high",
+        "affected_range": "<=9.0.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1120795,
+        "url": "https://github.com/advisories/GHSA-268h-hp4c-crq3",
+        "severity": "moderate",
+        "affected_range": "<=8.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1120796,
+        "url": "https://github.com/advisories/GHSA-wqvq-jvpq-h66f",
+        "severity": "moderate",
+        "affected_range": "<=8.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193741,
+        "url": "https://github.com/advisories/GHSA-8m3c-c648-2xjj",
+        "severity": "moderate",
+        "affected_range": "<=9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193770,
+        "url": "https://github.com/advisories/GHSA-wmmp-3585-3rmp",
+        "severity": "moderate",
+        "affected_range": "<9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193778,
+        "url": "https://github.com/advisories/GHSA-2x7j-588g-ccc2",
+        "severity": "high",
+        "affected_range": "<9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193779,
+        "url": "https://github.com/advisories/GHSA-cc9r-2j5m-2m83",
+        "severity": "moderate",
+        "affected_range": ">=6.9.16 <9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243442,
+        "url": "https://github.com/advisories/GHSA-4ffr-jq9g-5ffx",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243443,
+        "url": "https://github.com/advisories/GHSA-g73g-hqqh-jr95",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243444,
+        "url": "https://github.com/advisories/GHSA-4g23-2xm8-66gc",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243092,
+        "url": "https://github.com/advisories/GHSA-m943-m63m-w62w",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243093,
+        "url": "https://github.com/advisories/GHSA-85x2-q946-cp5h",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1241195,
+        "url": "https://github.com/advisories/GHSA-r7g4-qg5f-qqm2",
+        "severity": "high",
+        "affected_range": "<=8.0.7",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1240114,
+        "url": "https://github.com/advisories/GHSA-v53p-9fqp-m79j",
+        "severity": "high",
+        "affected_range": "<=10.0.5",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1239931,
+        "url": "https://github.com/advisories/GHSA-6vj9-mwq6-2f5v",
+        "severity": "moderate",
+        "affected_range": ">=5.0.0 <10.0.2",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1240033,
+        "url": "https://github.com/advisories/GHSA-8vvx-rff5-p5rq",
+        "severity": "moderate",
+        "affected_range": "<10.0.2",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1242826,
+        "url": "https://github.com/advisories/GHSA-39m8-27wv-hr27",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243091,
+        "url": "https://github.com/advisories/GHSA-8c8m-p3m8-cjg8",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss-selector-parser",
+        "advisory_id": 1153170,
+        "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92",
+        "severity": "low",
+        "affected_range": ">=6.1.0 <6.1.3",
+        "nodes": [
+          {
+            "path": "node_modules/postcss-selector-parser",
+            "version": "6.1.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "postcss-selector-parser",
+        "advisory_id": 1243379,
+        "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+        "severity": "moderate",
+        "affected_range": "<6.1.5",
+        "nodes": [
+          {
+            "path": "node_modules/postcss-selector-parser",
+            "version": "6.1.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1124066,
+        "url": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj",
+        "severity": "high",
+        "affected_range": "<0.35.0",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1193725,
+        "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c",
+        "severity": "high",
+        "affected_range": "<0.35.4",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1241331,
+        "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w",
+        "severity": "high",
+        "affected_range": "<0.35.5",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ]
+      },
+      {
+        "package": "source-map-js",
+        "advisory_id": 1241209,
+        "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q",
+        "severity": "high",
+        "affected_range": ">=1.0.0 <1.2.2",
+        "nodes": [
+          {
+            "path": "node_modules/source-map-js",
+            "version": "1.2.1",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ]
+      }
+    ],
+    "reviewed": [
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1120311,
+        "url": "https://github.com/advisories/GHSA-jxxr-4gwj-5jf2",
+        "severity": "moderate",
+        "affected_range": ">=5.0.0 <5.0.6",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130588,
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "affected_range": "<1.1.17",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130591,
+        "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130734,
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1130737,
+        "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+        "severity": "high",
+        "affected_range": "<1.1.18",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1123897,
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "affected_range": "<1.1.16",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1123898,
+        "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+        "severity": "high",
+        "affected_range": ">=3.0.0 <5.0.7",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240107,
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.11",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240108,
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "affected_range": "<1.1.19",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240111,
+        "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "severity": "high",
+        "affected_range": ">=4.0.0 <5.0.10",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240100,
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "affected_range": "<1.1.21",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240103,
+        "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "severity": "moderate",
+        "affected_range": ">=4.0.0 <5.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+            "version": "5.0.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "brace-expansion",
+        "advisory_id": 1240104,
+        "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "severity": "high",
+        "affected_range": "<1.1.20",
+        "nodes": [
+          {
+            "path": "node_modules/brace-expansion",
+            "version": "1.1.14",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "minimatch",
+        "advisory_id": 1244623,
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+        "severity": "moderate",
+        "affected_range": ">=7.0.0 <11.0.1",
+        "nodes": [
+          {
+            "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch",
+            "version": "10.2.5",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "baseline-browser-mapping",
+        "advisory_id": 1193686,
+        "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv",
+        "severity": "moderate",
+        "affected_range": ">=2.0.0 <2.11.0",
+        "nodes": [
+          {
+            "path": "node_modules/baseline-browser-mapping",
+            "version": "2.10.24",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "browserslist",
+        "advisory_id": 1153171,
+        "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+        "severity": "high",
+        "affected_range": "<=4.28.6",
+        "nodes": [
+          {
+            "path": "node_modules/browserslist",
+            "version": "4.28.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "browserslist",
+        "advisory_id": 1153172,
+        "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g",
+        "severity": "high",
+        "affected_range": "<=4.28.6",
+        "nodes": [
+          {
+            "path": "node_modules/browserslist",
+            "version": "4.28.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "deepmerge-ts",
+        "advisory_id": 1145093,
+        "url": "https://github.com/advisories/GHSA-ggr8-5vv4-36mx",
+        "severity": "high",
+        "affected_range": "<8.0.0",
+        "nodes": [
+          {
+            "path": "node_modules/deepmerge-ts",
+            "version": "7.1.5",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120802,
+        "url": "https://github.com/advisories/GHSA-hpcv-96wg-7vj8",
+        "severity": "moderate",
+        "affected_range": "<=3.4.5",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120803,
+        "url": "https://github.com/advisories/GHSA-r47g-fvhr-h676",
+        "severity": "moderate",
+        "affected_range": "<=3.4.5",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1120813,
+        "url": "https://github.com/advisories/GHSA-rp9w-3fw7-7cwq",
+        "severity": "moderate",
+        "affected_range": "<=3.4.6",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124233,
+        "url": "https://github.com/advisories/GHSA-cmwh-pvxp-8882",
+        "severity": "moderate",
+        "affected_range": "<=3.4.10",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124234,
+        "url": "https://github.com/advisories/GHSA-vxr8-fq34-vvx9",
+        "severity": "low",
+        "affected_range": "<3.4.9",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124235,
+        "url": "https://github.com/advisories/GHSA-gvmj-g25r-r7wr",
+        "severity": "low",
+        "affected_range": ">=3.0.0 <=3.4.7",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124236,
+        "url": "https://github.com/advisories/GHSA-x4vx-rjvf-j5p4",
+        "severity": "low",
+        "affected_range": "<=3.4.6",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1124237,
+        "url": "https://github.com/advisories/GHSA-76mc-f452-cxcm",
+        "severity": "moderate",
+        "affected_range": "<3.4.7",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1240978,
+        "url": "https://github.com/advisories/GHSA-c2j3-45gr-mqc4",
+        "severity": "low",
+        "affected_range": "<=3.4.11",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1138538,
+        "url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7",
+        "severity": "moderate",
+        "affected_range": "<=3.4.12",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1241204,
+        "url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2",
+        "severity": "low",
+        "affected_range": "<=3.4.15",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242880,
+        "url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7",
+        "severity": "critical",
+        "affected_range": ">=3.4.4 <=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242881,
+        "url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr",
+        "severity": "high",
+        "affected_range": "<=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "dompurify",
+        "advisory_id": 1242882,
+        "url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f",
+        "severity": "low",
+        "affected_range": "<=3.4.16",
+        "nodes": [
+          {
+            "path": "node_modules/dompurify",
+            "version": "3.4.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "effect",
+        "advisory_id": 1115356,
+        "url": "https://github.com/advisories/GHSA-38f7-945m-qr2g",
+        "severity": "high",
+        "affected_range": "<3.20.0",
+        "nodes": [
+          {
+            "path": "node_modules/effect",
+            "version": "3.18.4",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1117931,
+        "url": "https://github.com/advisories/GHSA-8h8q-6873-q5fj",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118942,
+        "url": "https://github.com/advisories/GHSA-3g8h-86w9-wvmq",
+        "severity": "low",
+        "affected_range": ">=12.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118944,
+        "url": "https://github.com/advisories/GHSA-ffhc-5mcf-pf4q",
+        "severity": "moderate",
+        "affected_range": ">=13.4.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118946,
+        "url": "https://github.com/advisories/GHSA-vfv6-92ff-j949",
+        "severity": "low",
+        "affected_range": ">=13.4.6 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118948,
+        "url": "https://github.com/advisories/GHSA-gx5p-jg67-6x7h",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118950,
+        "url": "https://github.com/advisories/GHSA-mg66-mrh9-m8jx",
+        "severity": "high",
+        "affected_range": ">=15.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118952,
+        "url": "https://github.com/advisories/GHSA-h64f-5h5j-jqjh",
+        "severity": "moderate",
+        "affected_range": ">=10.0.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118954,
+        "url": "https://github.com/advisories/GHSA-c4j6-fc7j-m34r",
+        "severity": "high",
+        "affected_range": ">=13.4.13 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118956,
+        "url": "https://github.com/advisories/GHSA-492v-c6pp-mqqv",
+        "severity": "high",
+        "affected_range": ">=15.4.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118958,
+        "url": "https://github.com/advisories/GHSA-wfc6-r584-vfw7",
+        "severity": "moderate",
+        "affected_range": ">=14.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118960,
+        "url": "https://github.com/advisories/GHSA-267c-6grr-h53f",
+        "severity": "high",
+        "affected_range": ">=15.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1118962,
+        "url": "https://github.com/advisories/GHSA-36qx-fr4f-26g5",
+        "severity": "high",
+        "affected_range": ">=12.2.0 <15.5.16",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124185,
+        "url": "https://github.com/advisories/GHSA-89xv-2m56-2m9x",
+        "severity": "high",
+        "affected_range": ">=14.1.1 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124172,
+        "url": "https://github.com/advisories/GHSA-m99w-x7hq-7vfj",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124187,
+        "url": "https://github.com/advisories/GHSA-68g3-v927-f742",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124189,
+        "url": "https://github.com/advisories/GHSA-4633-3j49-mh5q",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124191,
+        "url": "https://github.com/advisories/GHSA-4c39-4ccg-62r3",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124193,
+        "url": "https://github.com/advisories/GHSA-p9j2-gv94-2wf4",
+        "severity": "high",
+        "affected_range": ">=12.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124195,
+        "url": "https://github.com/advisories/GHSA-q8wf-6r8g-63ch",
+        "severity": "moderate",
+        "affected_range": ">=15.5.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1124197,
+        "url": "https://github.com/advisories/GHSA-955p-x3mx-jcvp",
+        "severity": "moderate",
+        "affected_range": ">=13.0.0 <15.5.21",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1193677,
+        "url": "https://github.com/advisories/GHSA-p293-qw3h-jr36",
+        "severity": "critical",
+        "affected_range": ">=13.4.0 <15.5.24",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1193733,
+        "url": "https://github.com/advisories/GHSA-2xp9-vwfh-vxw4",
+        "severity": "critical",
+        "affected_range": ">=10.0.0 <15.5.24",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1241494,
+        "url": "https://github.com/advisories/GHSA-mcj8-r9mp-w47p",
+        "severity": "moderate",
+        "affected_range": ">=15.0.0 <15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1241491,
+        "url": "https://github.com/advisories/GHSA-4jqv-mc3x-m676",
+        "severity": "moderate",
+        "affected_range": ">=15.0.0 <15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1242819,
+        "url": "https://github.com/advisories/GHSA-p3m5-59mp-jv5r",
+        "severity": "high",
+        "affected_range": ">=13.0.0 <=15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1242817,
+        "url": "https://github.com/advisories/GHSA-2464-fhr4-w9xw",
+        "severity": "critical",
+        "affected_range": ">=10.0.0 <=15.5.27",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "next",
+        "advisory_id": 1244536,
+        "url": "https://github.com/advisories/GHSA-26hh-7cqf-hhc6",
+        "severity": "high",
+        "affected_range": ">=15.2.0 <15.5.18",
+        "nodes": [
+          {
+            "path": "node_modules/next",
+            "version": "15.5.15",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1130709,
+        "url": "https://github.com/advisories/GHSA-fxqj-rqcc-2cmp",
+        "severity": "moderate",
+        "affected_range": "<=8.5.22",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1117015,
+        "url": "https://github.com/advisories/GHSA-qx2v-qp2m-jg93",
+        "severity": "moderate",
+        "affected_range": "<8.5.10",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1124252,
+        "url": "https://github.com/advisories/GHSA-6g55-p6wh-862q",
+        "severity": "high",
+        "affected_range": "<=8.5.11",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss",
+        "advisory_id": 1139510,
+        "url": "https://github.com/advisories/GHSA-r28c-9q8g-f849",
+        "severity": "high",
+        "affected_range": "<=8.5.17",
+        "nodes": [
+          {
+            "path": "node_modules/next/node_modules/postcss",
+            "version": "8.4.31",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1158513,
+        "url": "https://github.com/advisories/GHSA-p6gq-j5cr-w38f",
+        "severity": "high",
+        "affected_range": "<=9.0.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1120795,
+        "url": "https://github.com/advisories/GHSA-268h-hp4c-crq3",
+        "severity": "moderate",
+        "affected_range": "<=8.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1120796,
+        "url": "https://github.com/advisories/GHSA-wqvq-jvpq-h66f",
+        "severity": "moderate",
+        "affected_range": "<=8.0.8",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193741,
+        "url": "https://github.com/advisories/GHSA-8m3c-c648-2xjj",
+        "severity": "moderate",
+        "affected_range": "<=9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193770,
+        "url": "https://github.com/advisories/GHSA-wmmp-3585-3rmp",
+        "severity": "moderate",
+        "affected_range": "<9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193778,
+        "url": "https://github.com/advisories/GHSA-2x7j-588g-ccc2",
+        "severity": "high",
+        "affected_range": "<9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1193779,
+        "url": "https://github.com/advisories/GHSA-cc9r-2j5m-2m83",
+        "severity": "moderate",
+        "affected_range": ">=6.9.16 <9.1.0",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243442,
+        "url": "https://github.com/advisories/GHSA-4ffr-jq9g-5ffx",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243443,
+        "url": "https://github.com/advisories/GHSA-g73g-hqqh-jr95",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.12",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243444,
+        "url": "https://github.com/advisories/GHSA-4g23-2xm8-66gc",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243092,
+        "url": "https://github.com/advisories/GHSA-m943-m63m-w62w",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243093,
+        "url": "https://github.com/advisories/GHSA-85x2-q946-cp5h",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1241195,
+        "url": "https://github.com/advisories/GHSA-r7g4-qg5f-qqm2",
+        "severity": "high",
+        "affected_range": "<=8.0.7",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1240114,
+        "url": "https://github.com/advisories/GHSA-v53p-9fqp-m79j",
+        "severity": "high",
+        "affected_range": "<=10.0.5",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1239931,
+        "url": "https://github.com/advisories/GHSA-6vj9-mwq6-2f5v",
+        "severity": "moderate",
+        "affected_range": ">=5.0.0 <10.0.2",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1240033,
+        "url": "https://github.com/advisories/GHSA-8vvx-rff5-p5rq",
+        "severity": "moderate",
+        "affected_range": "<10.0.2",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1242826,
+        "url": "https://github.com/advisories/GHSA-39m8-27wv-hr27",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <=10.0.9",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "nodemailer",
+        "advisory_id": 1243091,
+        "url": "https://github.com/advisories/GHSA-8c8m-p3m8-cjg8",
+        "severity": "moderate",
+        "affected_range": ">=3.0.0 <10.1.4",
+        "nodes": [
+          {
+            "path": "node_modules/nodemailer",
+            "version": "8.0.7",
+            "dependency_scope": "production",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss-selector-parser",
+        "advisory_id": 1153170,
+        "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92",
+        "severity": "low",
+        "affected_range": ">=6.1.0 <6.1.3",
+        "nodes": [
+          {
+            "path": "node_modules/postcss-selector-parser",
+            "version": "6.1.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "postcss-selector-parser",
+        "advisory_id": 1243379,
+        "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+        "severity": "moderate",
+        "affected_range": "<6.1.5",
+        "nodes": [
+          {
+            "path": "node_modules/postcss-selector-parser",
+            "version": "6.1.2",
+            "dependency_scope": "development",
+            "optional": false
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1124066,
+        "url": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj",
+        "severity": "high",
+        "affected_range": "<0.35.0",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1193725,
+        "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c",
+        "severity": "high",
+        "affected_range": "<0.35.4",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      },
+      {
+        "package": "sharp",
+        "advisory_id": 1241331,
+        "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w",
+        "severity": "high",
+        "affected_range": "<0.35.5",
+        "nodes": [
+          {
+            "path": "node_modules/sharp",
+            "version": "0.34.5",
+            "dependency_scope": "production",
+            "optional": true
+          }
+        ],
+        "introduced_by_wo03": false
+      }
+    ]
+  }
+}

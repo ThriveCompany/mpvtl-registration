@@ -7,11 +7,21 @@
     "prebuild": "node scripts/clean-next-build.js",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
-    "lint": "next lint",
+    "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:dev": "prisma migrate dev",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "typecheck": "node scripts/dev.mjs typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prisma:generate:dev": "node scripts/dev.mjs generate",
+    "dev:db": "node scripts/dev.mjs db:up",
+    "dev:db:stop": "node scripts/dev.mjs db:down",
+    "dev:prepare": "node scripts/dev.mjs prepare",
+    "dev:isolated": "node scripts/dev.mjs start",
+    "dev:verify": "node scripts/dev.mjs verify",
+    "build:isolated": "node scripts/dev.mjs build"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -27,6 +37,7 @@
     "recharts": "^3.8.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.13.1",
     "@types/nodemailer": "^8.0.0",
@@ -38,6 +49,11 @@
     "postcss": "^8.5.1",
     "prisma": "^6.19.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.12"
+  },
+  "engines": {
+    "node": "24.14.x",
+    "npm": "11.x"
   }
 }
