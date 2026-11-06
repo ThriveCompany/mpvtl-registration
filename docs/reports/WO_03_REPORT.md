@@ -93,7 +93,7 @@ Both critical packages are production dependencies, not development-only:
 - `dompurify@3.4.5`, optional production dependency of `jspdf@4.2.1`:
   GHSA-cg2g-xh64-v4q7 (template/shadow-root sanitization bypass).
 
-All four advisory matches and versions predate WO-03. No newly introduced
+All four advisories match versions already present at the original baseline. No newly introduced
 package/advisory pair was found at any severity in this snapshot. This does not
 prove production exploitability or replace a separately reviewed remediation
 batch. No upgrade, override, `npm audit fix` or exploit test was performed.
