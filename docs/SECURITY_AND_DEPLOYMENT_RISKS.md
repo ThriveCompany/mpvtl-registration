@@ -1,6 +1,6 @@
 # WO-03 security and deployment assessment
 
-Inspected 2 November 2026. VERIFIED refers to source/metadata inspected, INFERRED
+Inspected 2 November 2026; build/security attribution updated 6 November 2026. VERIFIED refers to source/metadata inspected, INFERRED
 to implications, UNKNOWN to uninspected runtime behaviour. This is a bounded
 assessment, not a complete penetration test or release approval.
 
@@ -11,7 +11,7 @@ assessment, not a complete penetration test or release approval.
 | High | Production source revision, PM2 cwd, nginx upstream and migration state are unverified | UNKNOWN; complete approved read-only checklist before release |
 | High | Main was reported unprotected; no prior tests/Actions workflow/deployment record | VERIFIED discovery metadata; PR adds checks only. Repository rules/required gates need owner settings review; no settings changed |
 | High | Payment UI is a placeholder; primary schema has no payment ledger | VERIFIED; fee policy and payment design required before implementation. Do not transplant the separate prototype |
-| High | npm install audit summary reported 27 vulnerabilities: 16 moderate, 9 high, 2 critical | VERIFIED for the installed dependency tree during WO-03; detailed audit timed out at 240 seconds. Full advisory attribution remains INCOMPLETE; obtain a reviewed audit and fixes before release. No audit fix/force or broad dependency upgrade is included |
+| High | Original npm install audit summary reported 27 vulnerabilities: 16 moderate, 9 high, 2 critical | Critical attribution VERIFIED on 6 November against baseline/reviewed lockfiles: production `next@15.5.15` and optional production `dompurify@3.4.5`, four critical advisories, all pre-existing. See [attribution and limits](security/WO_03_SECURITY_ATTRIBUTION.md). Full npm remediation calculation still times out; no fixes/upgrades applied |
 | Medium | SMTP fallback logs message content, including potentially personal applicant/account data | VERIFIED source; enforce restricted logs/retention and replace fallback with redacted diagnostics in a separate behavioural change |
 | Medium | Tracked development stderr files encourage accidental diagnostic publication | VERIFIED; two tracked .err files inspected without copying contents into this report. One was empty; the other was a single short diagnostic. No email-like string, user-path or SMTP-content marker was detected. This is not proof of clean Git history. Removed current files and ignored .err; history remains |
 | Medium | Generic dev/migration/seed commands still accept caller environment | VERIFIED; use the new fixed synthetic workflow only. Legacy commands retained for compatibility |

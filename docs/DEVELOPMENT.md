@@ -77,6 +77,36 @@ the guarded setup twice and verify fixture counts and synthetic identities.
 It does not use production migrations, the staff seed or any external service.
 Do not substitute `pull_request_target` for `pull_request`.
 
+## Offline build validation
+
+A third CI job starts from its own clean checkout, runs `npm ci --ignore-scripts`
+and guarded Prisma generation, then explicitly pulls `node:24.14.1-bookworm`.
+It logs the image digest and invokes the real `npm run build` (including its
+existing prebuild cleanup) through:
+
+```sh
+npm run build:isolated
+```
+
+The helper requires a local Docker context and the Linux image already present.
+On a compatible Linux development host, acquire the image beforehand using
+`docker pull node:24.14.1-bookworm`. Dependencies/Prisma engines must also have
+been installed/generated for that container's Linux platform; Windows-host
+node_modules are not a supported substitute. CI is the canonical clean Linux check.
+
+The build container uses `--network=none`, a read-only root filesystem, temporary
+`/tmp`, and only the checkout mounted at `/workspace`. No user home, production
+environment or credentials directory is mounted. NODE_ENV is `production` to
+exercise the real optimizer, but every supplied application setting is synthetic:
+database `127.0.0.1:1/no_database`, loopback public URL, synthetic JWT secret,
+blank SMTP/integration endpoints. Dotenv files cause refusal. There is no DB
+service in this job. Acquisition has network access; the build has none.
+
+Do not disable database checks, mock build imports, skip static generation or
+remove the network restriction to make a failing build pass. Report any required
+external access as a blocker. Build output is validation-only and must not be
+deployed with these settings.
+
 ## Boundaries
 
 Do not use legacy `npm run seed`, migrations or the generic `npm run dev` for
