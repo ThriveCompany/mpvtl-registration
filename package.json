@@ -20,7 +20,8 @@
     "dev:db:stop": "node scripts/dev.mjs db:down",
     "dev:prepare": "node scripts/dev.mjs prepare",
     "dev:isolated": "node scripts/dev.mjs start",
-    "dev:verify": "node scripts/dev.mjs verify"
+    "dev:verify": "node scripts/dev.mjs verify",
+    "build:isolated": "node scripts/dev.mjs build"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
